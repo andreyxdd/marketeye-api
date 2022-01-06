@@ -3,7 +3,7 @@ Methods to handle connection to MongoDB
 """
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from ..core.settings import MONGO_URI, MONGO_MAX_CONNECTIONS, MONGO_MIN_CONNECTIONS
+from core.settings import MONGO_URI, MONGO_MAX_CONNECTIONS, MONGO_MIN_CONNECTIONS
 
 
 class Database:  # pylint: disable=R0903

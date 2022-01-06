@@ -1,14 +1,14 @@
 """
-FastAPI v-template
+MarketEye API v1
 """
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
-from .core.settings import DEFAULT_ROUTE_STR
-from .api import router as endpoint_router
-from .db.mongodb import close, connect
+from core.settings import DEFAULT_ROUTE_STR
+from api import router as endpoint_router
+from db.mongodb import close, connect
 
-app = FastAPI(title="FastAPI app", version="template")
+app = FastAPI(title="MarketEye API", version="1")
 
 app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 
@@ -28,7 +28,7 @@ async def on_app_shutdown():
 @app.get("/")
 async def home():
     """Home page"""
-    return Response("FastAPI v-template")
+    return Response("MarketEye API v1")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 import smtplib
 from typing import Optional, Union
 
-from ..core.settings import (
+from core.settings import (
     DEV_SENDER_EMAIL,
     DEV_SENDER_SERVICE_PASSWORD,
     DEV_SENDER_SERVICE,

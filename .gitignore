@@ -130,3 +130,6 @@ dmypy.json
 
 # VS-code settings
 .vscode
+
+# Script to initialize local environmental variables (windows, cmd)
+envars.bat
