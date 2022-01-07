@@ -40,7 +40,7 @@ def compute_base_analytics(df):
     """
 
     # making sure the last row in dataframe coincides with the first date in the past period
-    df.sort_values(by="date")
+    df = df.sort_values(by="date")
 
     # MACD
     macd = DataFrame(get_ema_n(df["close"], 12) - get_ema_n(df["close"], 26)).rename(
@@ -99,7 +99,7 @@ def compute_extra_analytics(df, n_trading_days: Optional[int] = 15):
     """
 
     # making sure the last row in dataframe coincides with the first date in the past period
-    df.sort_values(by="date")
+    df = df.sort_values(by="date")
 
     # last day volume change in fractions
     one_day_volume_change = DataFrame(df[["volume"]].pct_change()["volume"]).rename(
@@ -191,12 +191,12 @@ def compute_extra_analytics(df, n_trading_days: Optional[int] = 15):
         "mfi": get_money_flow_index(
             typical_price["typical"], df["volume"], n_trading_days
         ),
-        "ema3": ema3,
-        "ema9": ema9,
-        "ema12": ema12,
-        "ema20": ema20,
-        "ema26": ema26,
-        "ema50": ema50,
+        "ema3": ema3[-1],
+        "ema9": ema9[-1],
+        "ema12": ema12[-1],
+        "ema20": ema20[-1],
+        "ema26": ema26[-1],
+        "ema50": ema50[-1],
     }
 
 
@@ -216,14 +216,12 @@ def get_money_flow_ratio(typical_prices, volumes, n_days) -> float:
     positive_mf = 0
     negative_mf = 10e-5  # can't divide by zero
 
-    # getting typical price 15 days ago
-    typical_price_before_period = typical_prices.iloc[n_days]  # the last row
-
     # computing positive and negative money flow
-    for i in range(n_days):
+    for i in range(n_days - 1):
         current_typical_price = typical_prices.iloc[-(i + 1)]  # previous to the last
         raw_mf = current_typical_price * volumes.iloc[-(i + 1)]
-        if current_typical_price > typical_price_before_period[-i]:
+
+        if current_typical_price > typical_prices.iloc[-(i + 2)]:
             positive_mf += raw_mf
         else:
             negative_mf += raw_mf
