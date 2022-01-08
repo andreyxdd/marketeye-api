@@ -31,10 +31,7 @@ DEV_RECIEVER_EMAIL = os.getenv("DEV_RECIEVER_EMAIL")
 QUANDL_API_KEY = os.getenv("QUANDL_API_KEY")
 
 # URL setting to get market analytics using external datasets
-MARKET_DATA_URL = os.getenv(
-    "MARKET_DATA_URL",
-    "https://markets.businessinsider.com/ajax/Valor_HistoricPriceList",
-)
+MI_BASE_URL = os.getenv("MI_BASE_URL")
 MI_SP500_CODE = os.getenv("MI_SP500_CODE", "998434")
 MI_SP500_DATASET = os.getenv("MI_SP500_DATASET", "SNC")
 MI_VIX_CODE = os.getenv("MI_VIX_CODE", "1689105")

@@ -174,3 +174,43 @@ def get_date_string(epoch: int) -> str:
         str: date-string. Fromat is YYYY-MM-DD.
     """
     return datetime.strftime(datetime.utcfromtimestamp(epoch / 1000), "%Y-%m-%d")
+
+
+def get_market_insider_url_string(date_past: str, date_future: str) -> str:
+    """
+    Funciton to construct a specific string, which is a part of request to the
+    external API - Market Insider data table.
+    For instance, given 'datePast = 2021-11-26' and 'dateFuture = 2021-12-30' the function returns:
+    Nov.%2026%202021_Dec.%2030%202021
+
+    Args:
+        date_past (str): date_string representing the start of the period
+        date_future (str): date_string representing the start of the period
+
+    Raises:
+        Exception: date_past can't be higher than date_future
+
+    Returns:
+        str: part of the request string
+    """
+    if get_epoch(date_past) > get_epoch(date_future):
+        raise Exception(
+            "handle_datetimes.py, def get_market_insider_url:"
+            + f"'date_past' {date_past} should not be higher than 'date_future' {date_future}"
+        )
+
+    past_date = datetime.strptime(date_past, "%Y-%m-%d")
+    future_date = datetime.strptime(date_future, "%Y-%m-%d")
+
+    past_string = (
+        f"{past_date.strftime('%b')}.%20"
+        + f"{past_date.strftime('%d')}%20"
+        + f"{past_date.strftime('%Y')}"
+    )
+    future_string = (
+        f"{future_date.strftime('%b')}.%20"
+        + f"{future_date.strftime('%d')}%20"
+        + f"{future_date.strftime('%Y')}"
+    )
+
+    return f"{past_string}_{future_string}"

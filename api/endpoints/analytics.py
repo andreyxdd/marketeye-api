@@ -1,11 +1,15 @@
 """
 Endpoints to access stock market analytics
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 
 from core.settings import API_KEY
 from utils.handle_external_apis import get_ticker_analytics
+from utils.handle_datetimes import is_valid_date
+from utils.handle_external_apis import get_market_sp500, get_market_vixs
+from db.crud.analytics import get_normalazied_cvi_slope
+from db.mongodb import AsyncIOMotorClient, get_database
 
 analytics_router = APIRouter()
 
@@ -38,7 +42,38 @@ async def read_ticker_analytics(date: str, ticker: str, api_key: str):
     Returns:
         dict: see compute_base_analytics and compute_extra_analytics for details
     """
+    is_valid_date(date)
+
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     return get_ticker_analytics(ticker, date)
+
+
+@analytics_router.get("/get_market_analytics")
+async def read_market_analytics(
+    date: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+):
+    """
+    Endpoint to get analytics for market as a whole
+
+    Args:
+        date (str): analytics for which date
+        api_key (str): key to allow/disallow a request
+
+    Raises:
+        HTTPException: Incorrect API key provided
+
+    Returns:
+        dict:
+    """
+    is_valid_date(date)
+
+    if api_key != API_KEY:
+        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
+
+    return {
+        "SP500": get_market_sp500(date),
+        **get_market_vixs(date),
+        "normalazied_CVI_slope": await get_normalazied_cvi_slope(db, date),
+    }
