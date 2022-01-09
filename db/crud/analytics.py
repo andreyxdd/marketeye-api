@@ -2,11 +2,13 @@
 Methods to handle CRUD operation with analytics collection in the db
 """
 from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from db.mongodb import AsyncIOMotorClient
 from core.settings import MONGO_DB_NAME
 from utils.handle_datetimes import get_epoch
 from utils.handle_calculations import get_slope_normalized
+from utils.handle_external_apis import get_quandl_tickers, get_ticker_base_analytics
 
 MONGO_COLLECTION_NAME = "analytics"
 
@@ -129,4 +131,166 @@ async def get_normalazied_cvi_slope(
         print("Error message:", e)
         raise Exception(
             "server/db/crud/analytics.py def get_normalazied_CVI_slope reported an error"
+        ) from e
+
+
+async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str):
+    """
+    Function to compute analytics for the given EOD data for the tickers
+    present in the Quandl database for the given date
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): starting date, for which to compute and insert data
+
+    Raises:
+        Exception: Any error occured except MongoDB "BulkWriteError"
+    """
+    try:
+        tickers_to_insert = await get_missing_tickers(conn, date)
+
+        if tickers_to_insert:
+            print(
+                "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
+                + f" The total number of tickers to insert is {len(tickers_to_insert)}"
+            )
+
+            analytics_to_insert = []
+
+            with ThreadPoolExecutor() as executor:
+                future_list = [
+                    executor.submit(get_ticker_base_analytics, t, date)
+                    for t in tickers_to_insert
+                ]
+
+                for future in as_completed(future_list):
+                    analytics_to_insert.append(future.result())
+
+            analytics_to_insert = list(
+                filter(None, analytics_to_insert)
+            )  # removing empty objects
+
+            print(
+                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
+                + " Tickers analytics were computed"
+            )
+
+            response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
+                analytics_to_insert, ordered=False
+            )
+            print(
+                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
+                + f" Tickers analytics were inserted via {response}"
+            )
+        else:
+            print(
+                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
+                + f" No tickers to insert for {date}"
+            )
+
+    except Exception as e:  # pylint: disable=W0703
+        print("Error message:", e)
+        if type(e).__name__ != "BulkWriteError":
+            raise Exception(
+                "db/crud/analytics.py, def compute_base_analytics_and_insert: reported an error"
+            ) from e
+
+        print(
+            "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
+            + f" Mongodb {type(e).__name__} occured during insert_many() operation."
+            + "Still, new base analytics data has been inserted."
+        )
+
+
+async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> list[str]:
+    """
+    Function that returns a list of all the tickers that
+    are present in the analytics mongodb collection for the given date
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to search for
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[str]: list of strings (tickers' names)
+    """
+    try:
+        epoch_date = get_epoch(date)
+        cursor = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].distinct(
+            "ticker", {"date": epoch_date}
+        )
+        return list(cursor)
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py, def get_analytics_tickers reported an error"
+        ) from e
+
+
+async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> list[str]:
+    """
+    Function that returns a list of tickers that are present in the
+    Quandl API response but are missing in the MongoDB analytics collection
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to search for
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[str]: list of strings (missing tickers)
+    """
+    try:
+        # tickers-;ist from quandl
+        quandl_tickers = get_quandl_tickers(date)
+        # tickers list from analytics collection in mongodb
+        db_tickers = await get_analytics_tickers(conn, date)
+        # array substraction - result is an array
+        return list(set(quandl_tickers) - set(db_tickers))
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py, def get_missing_tickers reported an error"
+        ) from e
+
+
+async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
+    """
+    Function to remove all the stocks base analytics data for the provided date.
+    Make sure that provided date is for the 'America/New_York' timezone
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date IN THE 'America/New_York' TIMEZONE
+
+    Raises:
+        Exception: Method reports an error
+    """
+    try:
+        epoch_date = get_epoch(date)
+        deleted_docs = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].delete_many(
+            {"date": epoch_date}
+        )
+        deleted_docs_count = deleted_docs.deleted_count
+
+        if deleted_docs_count > 0:
+            print(
+                "db/crud/analytics.py, def remove_base_analytics:"
+                + f" Successfully removed {deleted_docs_count}"
+                + f"documents dated by {date} ({epoch_date})"
+            )
+        else:
+            print(
+                "db/crud/analytics.py, def remove_base_analytics:"
+                + f" No documents were found for {date} ({epoch_date})"
+            )
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "b/crud/eod.py, def remove_base_analytics reported an error"
         ) from e

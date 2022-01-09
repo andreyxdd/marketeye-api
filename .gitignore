@@ -133,3 +133,6 @@ dmypy.json
 
 # Script to initialize local environmental variables (windows, cmd)
 envars.bat
+
+# Script to test/populate db (or for other genral purposes
+test.py

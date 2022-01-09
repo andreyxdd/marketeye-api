@@ -70,17 +70,19 @@ def get_ticker_analytics(
         )
 
         if quandl_df.shape[0] < actual_offset_n_days:
-            raise Exception(
+            print(
                 f"Not enough tradings days ({quandl_df.shape[0]}) for the given ticker {ticker}"
             )
+            return {}
 
         return {
             **compute_base_analytics(quandl_df),
             **compute_extra_analytics(quandl_df),
         }
     except Exception as e:
+        print("Error message:", e)
         raise Exception(
-            "handle_external_apis.py, get_ticker_analytics reported an error"
+            "utils/handle_external_apis.py, get_ticker_analytics reported an error"
         ) from e
 
 
@@ -89,6 +91,7 @@ def get_ticker_base_analytics(
     date: str,
     offset_n_days: Optional[int] = 85,
     actual_offset_n_days: Optional[int] = 50,
+    to_paginate: Optional[bool] = True,
 ) -> dict:
     """
     Function that returns only base analytics for a single stock
@@ -103,9 +106,10 @@ def get_ticker_base_analytics(
             offset of calendar days back in the past. Defaults to 85.
         actual_offset_n_days (Optional[int], optional):
             number of trading days actually needed to compute analytics. Defaults to 50.
+        to_paginate (Optional[bool], optional):
+            bool to allow a pagination when making API call to Quandl. Defaults to True.
 
     Raises:
-        Exception: Quandl databse don't have enough EOD data for the given ticker (not enough days)
         Exception: Method reported an error
 
     Returns:
@@ -121,17 +125,21 @@ def get_ticker_base_analytics(
                 "columns": ["ticker", "date", "open", "high", "low", "close", "volume"]
             },
             date={"gte": offset_date, "lte": date},
+            paginate=to_paginate,
         )
 
+        #  Quandl database don't have enough EOD data for the given ticker (not enough days)
         if quandl_df.shape[0] < actual_offset_n_days:
-            raise Exception(
+            print(
                 f"Not enough tradings days ({quandl_df.shape[0]}) for the given ticker {ticker}"
             )
+            return {}
 
         return compute_base_analytics(quandl_df)
     except Exception as e:
+        print("Error message:", e)
         raise Exception(
-            "handle_external_apis.py, get_ticker_base_analytics reported an error"
+            "utils/handle_external_apis.py, get_ticker_base_analytics reported an error"
         ) from e
 
 
@@ -173,7 +181,7 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "handle_external_apis.py, def get_market_sp500 reported an error"
+            "utils/handle_external_apis.py, def get_market_sp500 reported an error"
         ) from e
 
 
@@ -239,5 +247,25 @@ def get_market_vixs(
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "handle_external_apis.py, def get_market_vixs reported an error"
+            "utils/handle_external_apis.py, def get_market_vixs reported an error"
+        ) from e
+
+
+def get_quandl_tickers(date: str):
+    """
+    Function to get the list of all the tickers for the given date
+
+    Args:
+        date (str): date, for which to search
+
+    Returns:
+        list: list of strings (tickers' names)
+    """
+    try:
+        response = quandl.get_table("QUOTEMEDIA/PRICES", date=date, paginate=True)
+        return response["ticker"].values.tolist()
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "utils/handle_external_apis.py, def get_quandl_tickers reported an error"
         ) from e

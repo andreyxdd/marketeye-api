@@ -137,6 +137,7 @@ def is_valid_date(date_string: str, date_format: Optional[str] = "%Y-%m-%d") -> 
         datetime.strptime(date_string, date_format)
         is_valid = True
     except Exception as e:
+        print("Error message:", e)
         raise Exception(
             "handle_datetimes.py, is_valid_date:"
             + f" Erroneus date-string provided, it should have a format of {date_format}"

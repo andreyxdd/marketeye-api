@@ -1,0 +1,102 @@
+"""
+Script to set and run cronjob.
+The idea is to compute and insert stocks analytics every trading day (often Monday to Friday)
+
+Raises:
+    Exception: If asyncio is not imported properly use trollius
+"""
+
+from time import time
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from db.mongodb import connect, get_database, close
+from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
+from utils.handle_emails import notify_developer
+from utils.handle_datetimes import (
+    get_today_utc_date_in_timezone,
+    get_past_date,
+    get_epoch,
+)
+
+
+try:
+    import asyncio
+except ImportError:
+    import trollius as asyncio
+
+
+async def run_crud_ops(date_to_insert: str, date_to_remove: str):
+    """
+    Method to run certain crud operations on the analytics collection.
+
+    Args:
+        date_to_insert (str):
+            date, for which new base analytics is computed and inserted into db
+        date_to_remove (str):
+            date, for which old base analytics is removed from db
+
+    Raises:
+        Exception: [description]
+    """
+
+    # connecting mongo db and getting its connection string
+    await connect()
+    conn = await get_database()
+
+    await compute_base_analytics_and_insert(conn, date_to_insert)
+
+    await remove_base_analytics(conn, date_to_remove)
+
+    # disconneting mongo db
+    await close()
+
+
+async def cronjob():
+    """
+    Function that defines the cronjob:
+        - first, todays date is found (in NY time zone with respect to UTC)
+        - then, past date (3 month ago) is found
+        - next, the crud operations are run for the above dates.
+
+    The functions also notifies developer about the results of the cronjob.
+    """
+
+    print("\n--------------------------------------------------------")
+
+    print("Running cronjob ...\n")
+    start_time = time()
+
+    try:
+        curr_date = get_today_utc_date_in_timezone("America/New_York")
+        past_date = get_past_date(90, curr_date)
+
+        await run_crud_ops(curr_date, past_date)
+
+        notify_developer(
+            body="Today cronjob has completed successfully."
+            + "\nCheck MongoDB to see if today base analytics data"
+            + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
+        )
+
+    except Exception as e:  # pylint: disable=W0703
+        print("cronjob.py: Something went wrong.")
+        print("Error message:", e)
+        notify_developer(
+            body=f"Cronjob reported an error: {curr_date} ({get_epoch(curr_date)})"
+            + f" with rror message:\n\n {e}"
+        )
+
+    print(f"\nCronjob finished on {round(time() - start_time, 2)} seconds")
+    print("--------------------------------------------------------")
+
+
+if __name__ == "__main__":
+    # making sure the cronjob is run by the NY timezone
+    scheduler = AsyncIOScheduler(timezone="America/New_York")
+    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=17, minute=5)
+    scheduler.start()
+
+    # Blocking execution when Ctrl+C (Ctrl+Break on Windows) is pressed
+    try:
+        asyncio.get_event_loop().run_forever()
+    except (KeyboardInterrupt, SystemExit):
+        pass
