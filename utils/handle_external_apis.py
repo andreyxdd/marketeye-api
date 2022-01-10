@@ -5,7 +5,11 @@ from typing import Optional
 from pandas import json_normalize
 from requests import get
 import quandl
-from utils.handle_datetimes import get_past_date, get_market_insider_url_string
+from utils.handle_datetimes import (
+    get_date_string,
+    get_past_date,
+    get_market_insider_url_string,
+)
 from utils.handle_calculations import (
     compute_base_analytics,
     compute_extra_analytics,
@@ -33,7 +37,9 @@ def get_ticker_analytics(
 ) -> dict:
     """
     Function that returns analytics (base and extra) for a single stock
-    represneted by the ticker
+    represneted by the ticker. If Quandl databse don't have enough EOD
+    data for the given ticker (not enough actural days), the empty
+    dictionary is returned.
 
     Args:
         ticker (str):
@@ -49,7 +55,6 @@ def get_ticker_analytics(
             for the actual_offset_n_days. Defaults to False.
 
     Raises:
-        Exception: Quandl databse don't have enough EOD data for the given ticker (not enough days)
         Exception: Method reported an error
 
     Returns:
@@ -88,13 +93,15 @@ def get_ticker_analytics(
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
-    offset_n_days: Optional[int] = 365,
-    actual_offset_n_days: Optional[int] = 200,
+    offset_n_days: Optional[int] = 45,
+    actual_offset_n_days: Optional[int] = 15,
     to_paginate: Optional[bool] = True,
 ) -> dict:
     """
     Function that returns only base analytics for a single stock
-    represneted by the ticker
+    represneted by the ticker. If Quandl databse don't have enough EOD
+    data for the given ticker (not enough actural days), the empty
+    dictionary is returned.
 
     Args:
         ticker (str):
@@ -132,9 +139,7 @@ def get_ticker_base_analytics(
 
         #  Quandl database don't have enough EOD data for the given ticker (not enough days)
         if quandl_df.shape[0] < actual_offset_n_days:
-            print(
-                f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}"
-            )
+            # print(f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}")
             return {}
 
         return compute_base_analytics(quandl_df)
@@ -142,6 +147,65 @@ def get_ticker_base_analytics(
         print("Error message:", e)
         raise Exception(
             "utils/handle_external_apis.py, get_ticker_base_analytics reported an error"
+        ) from e
+
+
+def get_ticker_extra_analytics(
+    ticker: str,
+    date: str,
+    offset_n_days: Optional[int] = 85,
+    actual_offset_n_days: Optional[int] = 50,
+    test_offset: Optional[bool] = False,
+) -> dict:
+    """
+    Function that returns extra analytics for a single stock
+    represneted by the ticker. If Quandl databse don't have enough EOD
+    data for the given ticker (not enough actural days), the empty
+    dictionary is returned.
+
+    Args:
+        ticker (str):
+            stock ticker, e.g. "TSLA"
+        date (str):
+            date string, at which the analytics should be evaluated
+        offset_n_days (Optional[int], optional):
+            offset of calendar days back in the past. Defaults to 85.
+        actual_offset_n_days (Optional[int], optional):
+            number of trading days actually needed to compute analytics. Defaults to 50.
+        test_offset (Optional[bool], optional):
+            Boolean to check if Quandl API has enough EOD records
+            for the actual_offset_n_days. Defaults to False.
+
+    Raises:
+        Exception: Method reported an error
+
+    Returns:
+        dict: see output for compute_extra_analytics
+    """
+    try:
+
+        offset_date = get_past_date(offset_n_days, date)
+
+        quandl_df = quandl.get_table(
+            "QUOTEMEDIA/PRICES",
+            ticker=ticker,
+            qopts={
+                "columns": ["ticker", "date", "open", "high", "low", "close", "volume"]
+            },
+            date={"gte": offset_date, "lte": date},
+        )
+
+        if test_offset and quandl_df.shape[0] < actual_offset_n_days:
+            print(
+                f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}"
+            )
+            return {}
+
+        return compute_extra_analytics(quandl_df)
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "utils/handle_external_apis.py, get_ticker_extra_analytics reported an error"
         ) from e
 
 
@@ -260,6 +324,9 @@ def get_quandl_tickers(date: str):
     Args:
         date (str): date, for which to search
 
+    Raises:
+        Exception: Method reported an error
+
     Returns:
         list: list of strings (tickers' names)
     """
@@ -270,4 +337,33 @@ def get_quandl_tickers(date: str):
         print("Error message:", e)
         raise Exception(
             "utils/handle_external_apis.py, def get_quandl_tickers reported an error"
+        ) from e
+
+
+def extend_base_analytics(base_analytics: dict):
+    """
+    Function that extends the provided base_analytics object (see
+    output schema for the compute_base_analytics) with extra_analytics
+    object (see output schema for the compute_extra_analytics)
+
+    Args:
+        base_analytics (dict): see output schema for the compute_base_analytics
+
+    Raises:
+        Exception: Method reported an error
+
+    Returns:
+        dict: combination of returned values from compute_base_analytics and compute_extra_analytics
+    """
+    try:
+        return {
+            **base_analytics,
+            **get_ticker_extra_analytics(
+                base_analytics["ticker"], get_date_string(base_analytics["date"])
+            ),
+        }
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "utils/handle_external_apis.py, def extend_base_analytics reported an error"
         ) from e

@@ -9,7 +9,11 @@ from db.mongodb import AsyncIOMotorClient
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from utils.handle_datetimes import get_epoch
 from utils.handle_calculations import get_slope_normalized
-from utils.handle_external_apis import get_quandl_tickers, get_ticker_base_analytics
+from utils.handle_external_apis import (
+    get_quandl_tickers,
+    get_ticker_base_analytics,
+    extend_base_analytics,
+)
 
 MONGO_COLLECTION_NAME = "analytics"
 
@@ -179,7 +183,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             print(
                 "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
-                + f" The total number of tickers to insert is {n_tickers}"
+                + f" The total number of tickers to analyze is {n_tickers}"
             )
 
             for partition in partitions:
@@ -364,7 +368,8 @@ async def get_analytics_sorted_by_one_day_avg_mf(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        return items
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(extend_base_analytics, items))
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -399,7 +404,8 @@ async def get_analytics_sorted_by_three_day_avg_mf(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        return items
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(extend_base_analytics, items))
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -438,7 +444,8 @@ async def get_analytics_by_five_precents_open_close_change(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        return items
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(extend_base_analytics, items))
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -474,7 +481,8 @@ async def get_analytics_sorted_by_volume(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        return items
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(extend_base_analytics, items))
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -509,7 +517,8 @@ async def get_analytics_sorted_by_three_day_avg_volume(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        return items
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(extend_base_analytics, items))
     except Exception as e:
         print("Error message:", e)
         raise Exception(
