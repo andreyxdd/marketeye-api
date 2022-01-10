@@ -89,7 +89,7 @@ async def cronjob():
 if __name__ == "__main__":
     # making sure the cronjob is run by the NY timezone
     scheduler = AsyncIOScheduler(timezone="America/New_York")
-    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=17, minute=5)
+    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=18, minute=15)
     scheduler.start()
 
     # Blocking execution when Ctrl+C (Ctrl+Break on Windows) is pressed
