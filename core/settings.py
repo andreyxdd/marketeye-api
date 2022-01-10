@@ -29,6 +29,8 @@ DEV_RECIEVER_EMAIL = os.getenv("DEV_RECIEVER_EMAIL")
 
 # Quandl API key
 QUANDL_API_KEY = os.getenv("QUANDL_API_KEY")
+QUANDL_RATE_LIMIT = int(os.getenv("QUANDL_RATE_LIMIT"))
+QUANDL_SLEEP_MINUTES = int(os.getenv("QUANDL_SLEEP_MINUTES"))
 
 # URL setting to get market analytics using external datasets
 MI_BASE_URL = os.getenv("MI_BASE_URL")

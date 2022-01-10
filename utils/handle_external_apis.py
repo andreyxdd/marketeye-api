@@ -29,6 +29,7 @@ def get_ticker_analytics(
     date: str,
     offset_n_days: Optional[int] = 85,
     actual_offset_n_days: Optional[int] = 50,
+    test_offset: Optional[bool] = False,
 ) -> dict:
     """
     Function that returns analytics (base and extra) for a single stock
@@ -43,6 +44,9 @@ def get_ticker_analytics(
             offset of calendar days back in the past. Defaults to 85.
         actual_offset_n_days (Optional[int], optional):
             number of trading days actually needed to compute analytics. Defaults to 50.
+        test_offset (Optional[bool], optional):
+            Boolean to check if Quandl API has enough EOD records
+            for the actual_offset_n_days. Defaults to False.
 
     Raises:
         Exception: Quandl databse don't have enough EOD data for the given ticker (not enough days)
@@ -52,11 +56,6 @@ def get_ticker_analytics(
         dict: combination of returned values from compute_base_analytics and compute_extra_analytics
     """
     try:
-        # offset of calendar days back in the past
-        offset_n_days = 85
-
-        # number of trading days actually needed to compute analytics
-        actual_offset_n_days = 50
 
         offset_date = get_past_date(offset_n_days, date)
 
@@ -69,9 +68,9 @@ def get_ticker_analytics(
             date={"gte": offset_date, "lte": date},
         )
 
-        if quandl_df.shape[0] < actual_offset_n_days:
+        if test_offset and quandl_df.shape[0] < actual_offset_n_days:
             print(
-                f"Not enough tradings days ({quandl_df.shape[0]}) for the given ticker {ticker}"
+                f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}"
             )
             return {}
 
@@ -89,8 +88,8 @@ def get_ticker_analytics(
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
-    offset_n_days: Optional[int] = 85,
-    actual_offset_n_days: Optional[int] = 50,
+    offset_n_days: Optional[int] = 365,
+    actual_offset_n_days: Optional[int] = 200,
     to_paginate: Optional[bool] = True,
 ) -> dict:
     """
@@ -103,9 +102,12 @@ def get_ticker_base_analytics(
         date (str):
             date string, at which the analytics should be evaluated
         offset_n_days (Optional[int], optional):
-            offset of calendar days back in the past. Defaults to 85.
+            offset of calendar days back in the past.
+            Defaults to 365 (full year).
         actual_offset_n_days (Optional[int], optional):
-            number of trading days actually needed to compute analytics. Defaults to 50.
+            number of trading days actually needed for stock to
+            be included in the analytics collection.
+            Defaults to 200 (approximately days in full year without weekends).
         to_paginate (Optional[bool], optional):
             bool to allow a pagination when making API call to Quandl. Defaults to True.
 
@@ -131,7 +133,7 @@ def get_ticker_base_analytics(
         #  Quandl database don't have enough EOD data for the given ticker (not enough days)
         if quandl_df.shape[0] < actual_offset_n_days:
             print(
-                f"Not enough tradings days ({quandl_df.shape[0]}) for the given ticker {ticker}"
+                f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}"
             )
             return {}
 

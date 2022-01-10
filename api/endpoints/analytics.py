@@ -5,10 +5,20 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 
 from core.settings import API_KEY
-from utils.handle_external_apis import get_ticker_analytics
 from utils.handle_datetimes import is_valid_date
-from utils.handle_external_apis import get_market_sp500, get_market_vixs
-from db.crud.analytics import get_normalazied_cvi_slope
+from utils.handle_external_apis import (
+    get_ticker_analytics,
+    get_market_sp500,
+    get_market_vixs,
+)
+from db.crud.analytics import (
+    get_normalazied_cvi_slope,
+    get_analytics_sorted_by_one_day_avg_mf,
+    get_analytics_sorted_by_three_day_avg_mf,
+    get_analytics_by_five_precents_open_close_change,
+    get_analytics_sorted_by_volume,
+    get_analytics_sorted_by_three_day_avg_volume,
+)
 from db.mongodb import AsyncIOMotorClient, get_database
 
 analytics_router = APIRouter()
@@ -47,7 +57,12 @@ async def read_ticker_analytics(date: str, ticker: str, api_key: str):
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
-    return get_ticker_analytics(ticker, date)
+    return get_ticker_analytics(
+        ticker,
+        date,
+        600,
+        365,
+    )
 
 
 @analytics_router.get("/get_market_analytics")
@@ -76,4 +91,42 @@ async def read_market_analytics(
         "SP500": get_market_sp500(date),
         **get_market_vixs(date),
         "normalazied_CVI_slope": await get_normalazied_cvi_slope(db, date),
+    }
+
+
+@analytics_router.get("/get_analytics_lists_by_criteria")
+async def read_analytics_by_criteria(
+    date: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+) -> dict:
+    """
+    Endpoint to get analytics (both base and extra) for a single stock
+
+    Args:
+        date (str): analytics for which date
+        ticker (str): ticker representing the stock
+        api_key (str): key to allow/disallow a request
+
+    Raises:
+        HTTPException: Incorrect API key provided
+
+    Returns:
+        dict:
+            each field is a list of outputs for the following
+            functions compute_base_analytics and compute_extra_analytics for details
+    """
+    is_valid_date(date)
+
+    if api_key != API_KEY:
+        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
+
+    return {
+        "by_one_day_avg_mf": await get_analytics_sorted_by_one_day_avg_mf(db, date),
+        "by_three_day_avg_mf": await get_analytics_sorted_by_three_day_avg_mf(db, date),
+        "by_five_prec_open_close_change": await get_analytics_by_five_precents_open_close_change(
+            db, date
+        ),
+        "by_volume": await get_analytics_sorted_by_volume(db, date),
+        "by_three_day_avg_volume": await get_analytics_sorted_by_three_day_avg_volume(
+            db, date
+        ),
     }

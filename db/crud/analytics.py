@@ -1,11 +1,12 @@
 """
 Methods to handle CRUD operation with analytics collection in the db
 """
+from time import sleep
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from db.mongodb import AsyncIOMotorClient
-from core.settings import MONGO_DB_NAME
+from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from utils.handle_datetimes import get_epoch
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import get_quandl_tickers, get_ticker_base_analytics
@@ -87,14 +88,14 @@ async def get_normalazied_cvi_slope(
         float: nomalized CVI slope
     """
     try:
-        epoc_date = get_epoch(date)
+        epoch_date = get_epoch(date)
 
         # getting lists of advanced and declining stocks
         list_num_adv_stocks = await get_analytics_by_open_close_change(
-            conn, n_trading_days, epoc_date
+            conn, n_trading_days, epoch_date
         )
         list_num_dec_stocks = await get_analytics_by_open_close_change(
-            conn, n_trading_days, epoc_date, "$lt"
+            conn, n_trading_days, epoch_date, "$lt"
         )
         counter_length = len(list_num_adv_stocks)
 
@@ -146,25 +147,66 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
     Raises:
         Exception: Any error occured except MongoDB "BulkWriteError"
     """
+    analytics_to_insert = []
+
     try:
         tickers_to_insert = await get_missing_tickers(conn, date)
+        n_tickers = len(tickers_to_insert)
+
+        #################################
+        ### CAREFUL! HARDCODING BELOW ###
+        #################################
+
+        # Quandl API has a limit: 5000 calls per 10 minutes
+        # if the list of tickers is more than 5000 it is divided accrodingly
+        partitions = []
+        if n_tickers >= QUANDL_RATE_LIMIT:
+            while len(tickers_to_insert) >= QUANDL_RATE_LIMIT:
+                partial_tickers_to_insert = tickers_to_insert[:QUANDL_RATE_LIMIT]
+                tickers_to_insert = tickers_to_insert[
+                    QUANDL_RATE_LIMIT:
+                ]  # changes length
+                partitions.append(partial_tickers_to_insert)
+            partitions.append(tickers_to_insert)  # adding left overs
+        else:
+            partitions.append(tickers_to_insert)
+
+        #################################
+        #################################
+        #################################
 
         if tickers_to_insert:
+
             print(
                 "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
-                + f" The total number of tickers to insert is {len(tickers_to_insert)}"
+                + f" The total number of tickers to insert is {n_tickers}"
             )
 
-            analytics_to_insert = []
+            for partition in partitions:
 
-            with ThreadPoolExecutor() as executor:
-                future_list = [
-                    executor.submit(get_ticker_base_analytics, t, date)
-                    for t in tickers_to_insert
-                ]
+                # set timeout for 10 minutes to prevent exceeding rate limit of API calls
+                if n_tickers > QUANDL_RATE_LIMIT:
+                    print(
+                        "\n--------------------------------------------------------------------"
+                    )
+                    print(
+                        " Sleeping for 10 minutes to prevent exceeding Quandl API rate limit"
+                    )
+                    print(
+                        "--------------------------------------------------------------------\n"
+                    )
+                    sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
 
-                for future in as_completed(future_list):
-                    analytics_to_insert.append(future.result())
+                # getting base analytics for the list of
+                # tickers in the current partition
+                with ThreadPoolExecutor() as executor:
+                    future_list = [
+                        executor.submit(get_ticker_base_analytics, ticker, date)
+                        for ticker in partition
+                    ]
+
+                    for future in as_completed(future_list):
+                        analytics_to_insert.append(future.result())
 
             analytics_to_insert = list(
                 filter(None, analytics_to_insert)
@@ -172,7 +214,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             print(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + " Tickers analytics were computed"
+                + f" Tickers analytics were computed: total of {len(analytics_to_insert)}"
             )
 
             response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
@@ -187,7 +229,6 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
                 + f" No tickers to insert for {date}"
             )
-
     except Exception as e:  # pylint: disable=W0703
         print("Error message:", e)
         if type(e).__name__ != "BulkWriteError":
@@ -282,7 +323,7 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
             print(
                 "db/crud/analytics.py, def remove_base_analytics:"
                 + f" Successfully removed {deleted_docs_count}"
-                + f"documents dated by {date} ({epoch_date})"
+                + f" documents dated by {date} ({epoch_date})"
             )
         else:
             print(
@@ -293,4 +334,185 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
         print("Error message:", e)
         raise Exception(
             "b/crud/eod.py, def remove_base_analytics reported an error"
+        ) from e
+
+
+async def get_analytics_sorted_by_one_day_avg_mf(
+    conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
+) -> list[dict]:
+    """
+    Function to get top 20 stocks by one day average money flow
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to serach for
+        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[dict]:
+            list of dict. See compute_base_analytics and compute_extra_analytics for details
+    """
+    try:
+        epoch_date = get_epoch(date)
+        cursor = (
+            conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
+            .find({"date": epoch_date}, {"_id": False})
+            .sort("one_day_avg_mf", -1)
+            .limit(lim)
+        )
+        items = await cursor.to_list(length=lim)
+        return items
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py, def get_analytics_sorted_by_one_day_avg_mf reported an error"
+        ) from e
+
+
+async def get_analytics_sorted_by_three_day_avg_mf(
+    conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
+) -> list[dict]:
+    """
+    Function to get top 20 stocks by three day average money flow
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to serach for
+        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[dict]:
+            list of dict. See compute_base_analytics and compute_extra_analytics for details
+    """
+    try:
+        epoch_date = get_epoch(date)
+        cursor = (
+            conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
+            .find({"date": epoch_date}, {"_id": False})
+            .sort("three_day_avg_mf", -1)
+            .limit(lim)
+        )
+        items = await cursor.to_list(length=lim)
+        return items
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py, def get_analytics_sorted_by_three_day_avg_mf reported an error"
+        ) from e
+
+
+async def get_analytics_by_five_precents_open_close_change(
+    conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
+) -> list[dict]:
+    """
+    Function to get top stocks (maximum 20) that overcame 5% change
+    between open-close price for the provided date
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to serach for
+        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[dict]:
+            list of dict. See compute_base_analytics and compute_extra_analytics for details
+    """
+    try:
+        epoch_date = get_epoch(date)
+        cursor = (
+            conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
+            .find(
+                {"date": epoch_date, "one_day_open_close_change": {"$gt": 0.05}},
+                {"_id": False},
+            )
+            .sort("one_day_open_close_change", -1)
+            .limit(lim)
+        )
+        items = await cursor.to_list(length=lim)
+        return items
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py,"
+            + " def get_analytics_by_five_precents_open_close_change reported an error"
+        ) from e
+
+
+async def get_analytics_sorted_by_volume(
+    conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
+) -> list[dict]:
+    """
+    Function to get top 20 stocks by volume for the provided date
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to serach for
+        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[dict]:
+            list of dict. See compute_base_analytics and compute_extra_analytics for details
+    """
+    try:
+        epoch_date = get_epoch(date)
+        cursor = (
+            conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
+            .find({"date": epoch_date}, {"_id": False})
+            .sort("volume", -1)
+            .limit(lim)
+        )
+        items = await cursor.to_list(length=lim)
+        return items
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py, def get_analytics_sorted_by_volume reported an error"
+        ) from e
+
+
+async def get_analytics_sorted_by_three_day_avg_volume(
+    conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
+) -> list[dict]:
+    """
+    Function to get top 20 stocks by volume for the provided date
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date to serach for
+        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[dict]:
+            list of dict. See compute_base_analytics and compute_extra_analytics for details
+    """
+    try:
+        epoch_date = get_epoch(date)
+        cursor = (
+            conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
+            .find({"date": epoch_date}, {"_id": False})
+            .sort("three_day_avg_volume", -1)
+            .limit(lim)
+        )
+        items = await cursor.to_list(length=lim)
+        return items
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py,"
+            + " def get_analytics_sorted_by_three_day_avg_volume reported an error"
         ) from e
