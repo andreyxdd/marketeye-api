@@ -18,6 +18,7 @@ from db.crud.analytics import (
     get_analytics_by_five_precents_open_close_change,
     get_analytics_sorted_by_volume,
     get_analytics_sorted_by_three_day_avg_volume,
+    get_dates,
 )
 from db.mongodb import AsyncIOMotorClient, get_database
 
@@ -130,3 +131,25 @@ async def read_analytics_by_criteria(
             db, date
         ),
     }
+
+
+@analytics_router.get("/get_dates")
+async def read_dates(
+    api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+) -> dict:
+    """
+    Endpoint to get all the distinctive dates present in the analytics collection
+
+    Args:
+        api_key (str): key to allow/disallow a request
+
+    Raises:
+        HTTPException: Incorrect API key provided
+
+    Returns:
+        dict: one field ("dates") correspongding to list of epoch dates
+    """
+    if api_key != API_KEY:
+        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
+
+    return {"dates": await get_dates(db)}

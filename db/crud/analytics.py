@@ -516,3 +516,24 @@ async def get_analytics_sorted_by_three_day_avg_volume(
             "db/crud/analytics.py,"
             + " def get_analytics_sorted_by_three_day_avg_volume reported an error"
         ) from e
+
+
+async def get_dates(conn: AsyncIOMotorClient) -> list:
+    """
+    Function to get all the distinct date from the analytics collection
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list: list of dates in epoch format
+    """
+    try:
+        cursor = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].distinct("date")
+        return list(cursor)
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception("db/crud/analytics.py, def get_dates reported an error") from e
