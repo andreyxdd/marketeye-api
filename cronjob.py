@@ -33,9 +33,6 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str):
             date, for which new base analytics is computed and inserted into db
         date_to_remove (str):
             date, for which old base analytics is removed from db
-
-    Raises:
-        Exception: [description]
     """
 
     # connecting mongo db and getting its connection string

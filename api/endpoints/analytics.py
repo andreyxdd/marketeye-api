@@ -58,12 +58,7 @@ async def read_ticker_analytics(date: str, ticker: str, api_key: str):
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
-    return get_ticker_analytics(
-        ticker,
-        date,
-        600,
-        365,
-    )
+    return get_ticker_analytics(ticker, date)
 
 
 @analytics_router.get("/get_market_analytics")
