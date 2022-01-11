@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from db.mongodb import AsyncIOMotorClient
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
-from utils.handle_datetimes import get_epoch
+from utils.handle_datetimes import get_date_string, get_epoch
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
     get_quandl_tickers,
@@ -542,7 +542,10 @@ async def get_dates(conn: AsyncIOMotorClient) -> list:
     """
     try:
         cursor = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].distinct("date")
-        return list(cursor)
+        return [  # ed - epoch_date
+            {"epoch": ed, "date_string": get_date_string(ed)} for ed in list(cursor)
+        ]
+
     except Exception as e:
         print("Error message:", e)
         raise Exception("db/crud/analytics.py, def get_dates reported an error") from e

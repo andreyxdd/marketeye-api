@@ -64,7 +64,7 @@ async def cronjob():
 
     try:
         curr_date = get_today_utc_date_in_timezone("America/New_York")
-        past_date = get_past_date(90, curr_date)
+        past_date = get_past_date(91, curr_date)
 
         await run_crud_ops(curr_date, past_date)
 
@@ -89,7 +89,7 @@ async def cronjob():
 if __name__ == "__main__":
     # making sure the cronjob is run by the NY timezone
     scheduler = AsyncIOScheduler(timezone="America/New_York")
-    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=18, minute=15)
+    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=17, minute=5)
     scheduler.start()
 
     # Blocking execution when Ctrl+C (Ctrl+Break on Windows) is pressed

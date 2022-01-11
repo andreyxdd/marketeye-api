@@ -147,4 +147,4 @@ async def read_dates(
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
-    return {"dates": await get_dates(db)}
+    return await get_dates(db)
