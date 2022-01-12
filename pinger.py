@@ -17,6 +17,6 @@ except Exception as e:  # pylint: disable=W0703
     notify_developer(
         body=(
             f"Pinger reported an error at {datetime.utcnow()} UTC time."
-            + "Something went wrong: \n{e}"
+            + f" Something went wrong: \n {e}"
         )
     )
