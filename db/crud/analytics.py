@@ -48,7 +48,7 @@ async def get_analytics_by_open_close_change(
             {
                 "$match": {
                     "date": {"$lte": epoch_date},
-                    "lastDayOpenClosePriceChange": {query: 0},
+                    "one_day_open_close_change": {query: 0},
                 }
             },
             {"$unwind": "$date"},

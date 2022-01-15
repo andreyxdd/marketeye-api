@@ -265,7 +265,7 @@ def get_slope_normalized(array_x: list[float], array_y: list[float]) -> float:
         raise Exception("Passed arrays hould be of the same size")
 
     # converting array to pandas.dataframe to normalize them
-    df = DataFrame(array_y, columns=["x"])
+    df = DataFrame(array_x, columns=["x"])
     df["y"] = DataFrame(array_y)
     normalized_df = (df - df.min()) / (df.max() - df.min())
 
