@@ -16,6 +16,7 @@ from core.settings import (
 def notify_developer(
     recievers: Optional[Union[list[str], str]] = None,
     body: Optional[str] = "Test Notification",
+    subject: Optional[str] = "Developer Notification",
 ):
     """
     Function to notify email (usually when certain code exceptions appears during runtime)
@@ -37,7 +38,7 @@ def notify_developer(
     for reciever in recievers:
         msg = (
             f"From: {DEV_SENDER_EMAIL}\r\nTo: {reciever}\r\n"
-            + "Content-Type: text/plain; charset='utf-8'\r\nSubject: Developer Notification\r\n\r\n"
+            + f"Content-Type: text/plain; charset='utf-8'\r\nSubject: {subject}\r\n\r\n"
             + body
         )
         server.sendmail(DEV_SENDER_EMAIL, reciever, msg.encode("utf8"))

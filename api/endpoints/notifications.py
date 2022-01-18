@@ -17,6 +17,7 @@ class Notification(BaseModel):  # pylint: disable=R0903
     """
 
     email_body: str
+    email_subject: str
 
 
 @notifications_router.get("/")
@@ -44,13 +45,15 @@ async def run_developer_notification(notification: Notification, api_key: str):
         HTTPException: Notifications has not been sent due to internal error
 
     Returns:
-        dict: {"detail": str}
+        dict: {"detail": "message with status"}
     """
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     try:
-        notify_developer(body=notification.email_body)
+        notify_developer(
+            body=notification.email_body, subject=notification.email_subject
+        )
         return {"detail": "Notifications has been sent successfully"}
     except Exception as e:
         raise HTTPException(status_code=503, detail=e) from e

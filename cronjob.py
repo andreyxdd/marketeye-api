@@ -24,7 +24,7 @@ except ImportError:
     import trollius as asyncio
 
 
-async def run_crud_ops(date_to_insert: str, date_to_remove: str):
+async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     """
     Method to run certain crud operations on the analytics collection.
 
@@ -39,12 +39,14 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str):
     await connect()
     conn = await get_database()
 
-    await compute_base_analytics_and_insert(conn, date_to_insert)
+    msg = await compute_base_analytics_and_insert(conn, date_to_insert)
 
     await remove_base_analytics(conn, date_to_remove)
 
     # disconneting mongo db
     await close()
+
+    return msg
 
 
 async def cronjob():
@@ -66,12 +68,15 @@ async def cronjob():
         curr_date = get_today_utc_date_in_timezone("America/New_York")
         past_date = get_past_date(91, curr_date)
 
-        await run_crud_ops(curr_date, past_date)
+        msg = await run_crud_ops(curr_date, past_date)
 
         notify_developer(
             body="Today cronjob has completed successfully."
-            + "\nCheck MongoDB to see if today base analytics data"
+            + " Check MongoDB to see if today base analytics data"
             + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
+            + "\n\n----------------------- Logs ---------------------------\n\n"
+            + f"{msg}"
+            + "\n\n--------------------------------------------------------"
         )
 
     except Exception as e:  # pylint: disable=W0703
@@ -79,7 +84,8 @@ async def cronjob():
         print("Error message:", e)
         notify_developer(
             body=f"Cronjob reported an error: {curr_date} ({get_epoch(curr_date)})"
-            + f" with rror message:\n\n {e}"
+            + f" with rror message:\n\n {e}",
+            subject="Cronjob Report",
         )
 
     print(f"\nCronjob finished on {round(time() - start_time, 2)} seconds")
@@ -89,7 +95,7 @@ async def cronjob():
 if __name__ == "__main__":
     # making sure the cronjob is run by the NY timezone
     scheduler = AsyncIOScheduler(timezone="America/New_York")
-    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=17, minute=5)
+    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=17, minute=10)
     scheduler.start()
 
     # Blocking execution when Ctrl+C (Ctrl+Break on Windows) is pressed

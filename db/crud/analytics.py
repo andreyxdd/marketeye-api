@@ -139,7 +139,7 @@ async def get_normalazied_cvi_slope(
         ) from e
 
 
-async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str):
+async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str) -> str:
     """
     Function to compute analytics for the given EOD data for the tickers
     present in the Quandl database for the given date
@@ -150,8 +150,12 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
     Raises:
         Exception: Any error occured except MongoDB "BulkWriteError"
+
+    Returns:
+        str: report message (with line breaks)
     """
     analytics_to_insert = []
+    msg = []
 
     try:
         tickers_to_insert = await get_missing_tickers(conn, date)
@@ -181,10 +185,11 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
         if tickers_to_insert:
 
-            print(
+            msg.append(
                 "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
                 + f" The total number of tickers to analyze is {n_tickers}"
             )
+            print(msg[-1])
 
             for partition in partitions:
 
@@ -216,23 +221,28 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
                 filter(None, analytics_to_insert)
             )  # removing empty objects
 
-            print(
+            msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
                 + f" Tickers analytics were computed: total of {len(analytics_to_insert)}"
             )
+            print(msg[-1])
 
             response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
                 analytics_to_insert, ordered=False
             )
-            print(
+            msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
                 + f" Tickers analytics were inserted via {response}"
             )
+            print(msg[-1])
         else:
-            print(
+            msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
                 + f" No tickers to insert for {date}"
             )
+            print(msg[-1])
+
+        return "\n\n".join(msg)
     except Exception as e:  # pylint: disable=W0703
         print("Error message:", e)
         if type(e).__name__ != "BulkWriteError":
