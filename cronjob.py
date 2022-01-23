@@ -7,7 +7,6 @@ Raises:
 """
 
 from time import time
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db.mongodb import connect, get_database, close
 from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
 from utils.handle_emails import notify_developer
@@ -93,13 +92,8 @@ async def cronjob():
 
 
 if __name__ == "__main__":
-    # making sure the cronjob is run by the NY timezone
-    scheduler = AsyncIOScheduler(timezone="America/New_York")
-    scheduler.add_job(cronjob, "cron", day_of_week="mon-fri", hour=17, minute=10)
-    scheduler.start()
-
     # Blocking execution when Ctrl+C (Ctrl+Break on Windows) is pressed
     try:
-        asyncio.get_event_loop().run_forever()
+        asyncio.run(cronjob())  # initiating a cronjob
     except (KeyboardInterrupt, SystemExit):
         pass
