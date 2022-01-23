@@ -1,4 +1,4 @@
-name: pinger
+name: cronjob
 
 on:
   schedule:
