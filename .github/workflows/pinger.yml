@@ -1,24 +1,17 @@
-# This is a basic workflow to help you get started with Actions
-
 name: pinger
 
-# Controls when the workflow will run
 on:
   schedule:
-    - cron: '*/5 * * * *'
+  - cron: "*/5 * * * *"
+  workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    
-      - name: checkout repo content
-      - uses: actions/checkout@v2
+      - name: Checkout repository content
+        uses: actions/checkout@v2 # Checkout the repository content to github runner.
 
       - name: Setup Python Version
         uses: actions/setup-python@v2
@@ -28,7 +21,5 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install --upgrade pip requests typing
 
-      - name: execute pinger
-        env: 
-          PING_URL: ${{ secrets.PING_URL }}
+      - name: Execute Python script
         run: python pinger.py
