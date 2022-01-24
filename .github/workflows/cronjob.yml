@@ -2,7 +2,7 @@ name: cronjob
 
 on:
   schedule:
-  - cron: "10 10 * * 1-5" # every 10:10 pm (UTC) from Monday to Friday
+  - cron: "10 22 * * 1-5" # every 10:10 pm (UTC) from Monday to Friday
   workflow_dispatch:
 
 jobs:
