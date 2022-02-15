@@ -186,7 +186,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         if tickers_to_insert:
 
             msg.append(
-                "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
+                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
                 + f" The total number of tickers to analyze is {n_tickers}"
             )
             print(msg[-1])
