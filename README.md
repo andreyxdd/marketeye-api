@@ -39,7 +39,7 @@ Currently, the following warnings are ignored:
 
 It is recommended to initiate the linter tool in the code editor. For example, in VSCode, press ```ctrl+shift+p```, search for ```Select linter``` and choose ```pylint```.
 
-### Linting and pre-commit hooks
+### Pre-commit Hooks
 
 This template project also utilizes the pre-commit hooks (see ```.pre-commit-config.yaml``` for details). Besides running ```pylint``` in all files in the directory and subdirectories, the pre-commit hooks upgrade packages with ```pyupgrade``` and check code for formating with ```black```. To use pre-commit hooks, before committing, run:
 ```$ pre-commit install```
