@@ -6,9 +6,7 @@ Furthermore, the API provides methods for sorting all the stocks (for the given 
 
 ## Deployment
 
-The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB handles data storage.
-
-You can learn a bit more about the MarketEye API via [FastAPI docs](https://marketeye-api.herokuapp.com/docs).
+The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB handles data storage. You can learn a bit more about the MarketEye API via [FastAPI docs](https://marketeye-api.herokuapp.com/docs).
 
 ## Source Code Structure
 
