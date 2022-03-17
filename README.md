@@ -1,14 +1,26 @@
-# Template starter project based on FastAPI and MongoDB
+# MarketEye API
 
-## Structure
+MarketEye API provides methods for computing technical indicators for individual stocks (e.g. MACD, EMAs, MFI, etc.) as well as indicators describing a market as a whole (e.g. CVI, VIX, etc.). MarketEye API fetches the EOD (end of the day) historical data from Nasdaq Data Link API. The only markets analyzed are NASDAQ and NYSE.
+
+Furthermore, the API provides methods for sorting all the stocks (for the given date) based on several implemented criteria.
+
+# Deployment
+
+The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB handles data storage.
+
+You can learn a bit more about the MarketEye API via [FastAPI docs](https://marketeye-api.herokuapp.com/docs).
+
+## Source Code Structure
 
 - api: for implementing endpoints
 - core: general settings of the project, i.e. initiating environmental variables
 - db: for establishing a connection to MongoDB and implementing methods for CRUD operations
 - utils: general utility folder, e.g. useful methods to handle date-time objects and sending emails (via smtplib)
 - ```main.py```: script to initiate the server, open/close connection to db
+- .github/workflows: for running the ```cronjob.py``` that fetches the EOD stock prices later to be used for calculations
 
-## Launching
+## Running Locally
+
 First, initiate the virtual environment in the root folder. Then install all the necessary packages with:
 ```
 pip install -r requirements.txt
