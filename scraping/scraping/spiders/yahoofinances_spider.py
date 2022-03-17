@@ -40,7 +40,7 @@ class YahoofinanceSpider(scrapy.Spider):
 
     name = "yahoo.finance-spider"
 
-    start_urls = ["https://finance.yahoo.com/"]
+    start_urls = ["https://finance.yahoo.com/", "https://finance.yahoo.com/news/"]
 
     def parse(self, response):
         """

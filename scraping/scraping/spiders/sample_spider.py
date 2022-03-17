@@ -25,7 +25,9 @@ class SampleSpider(scrapy.Spider):  # pylint: disable=R0903
         }
         """
 
-        for post in response.css("div.page"):
+        posts = response.css("div.page")
+
+        for post in posts:
             yield {
                 "title": post.css(".page-title a::text")[0].get(),
                 "link": post.css(".page-title a::attr(href)")[0].get(),

@@ -1,11 +1,20 @@
-{"url": "https://finance.yahoo.com/news/elon-musk-recommends-investing-physical-180112580.html", "tickers": ["TSLA", "YVAP", "DOGE", "III"]}
-{"url": "https://finance.yahoo.com/news/alibaba-makes-stunning-rebound-surges-37-in-one-day-212855912.html", "tickers": ["BABA", "JD", "BIDU", "PDD", "YVAP", "DIDI", "NIO"]}
-{"url": "https://finance.yahoo.com/m/a57cde88-e70f-33a1-8341-3e92d1fdb932/investors-sue-vanguard-after.html", "tickers": []}
-{"url": "https://finance.yahoo.com/news/one-japanese-salaryman-nearly-decade-230449387.html", "tickers": ["YVAP", "TOKYO", "OECD"]}
-{"url": "https://finance.yahoo.com/m/97aeee8e-34e4-3ac8-a2f8-03afb2f5b34d/the-8-worst-performing-s-p.html", "tickers": ["GSPC", "EPAM", "FB", "PYPL"]}
-{"url": "https://finance.yahoo.com/m/8efb9246-b0bf-39e3-9f9e-0a741c784c3f/wendy-s-follows-mcdonald-s-.html", "tickers": ["WEN", "MCD", "CMG"]}
-{"url": "https://finance.yahoo.com/m/d1f574e1-9900-30c0-9b7f-79ca8b6296d2/cathie-wood-watch-ark-buys.html", "tickers": []}
-{"url": "https://finance.yahoo.com/news/2-strong-buy-dividend-stocks-153547123.html", "tickers": ["HTGC", "CEQP", "CEQP-P", "EPS", "FCF", "BDC", "IPO", "JMP"]}
-{"url": "https://finance.yahoo.com/m/1bcc7f48-2f96-3c99-b928-b6d92a209590/china-shares-soar-after.html", "tickers": ["HSI"]}
-{"url": "https://finance.yahoo.com/m/5dbd15ce-8ddb-3ed8-ac60-b7545df1f7f9/alibaba-stock-looks-like-it-s.html", "tickers": ["KEN", "SHREVE", "BABA"]}
 {"url": "https://finance.yahoo.com/m/36ebb21c-3f8a-31df-8f12-bc4d12618cb5/china%E2%80%99s-intervention-sends.html", "tickers": ["DAL", "AMC"]}
+{"url": "https://finance.yahoo.com/m/2dbb31e6-83e7-3a6e-9099-49099e74d32e/amazon-alphabet-and-8-other.html", "tickers": ["AMZN", "GOOGL"]}
+{"url": "https://finance.yahoo.com/news/stock-markets-supposed-drop-fed-061746895.html", "tickers": ["GSPC", "YVAP", "ISI"]}
+{"url": "https://finance.yahoo.com/news/the-federal-reserve-just-hiked-interest-rates-heres-the-next-shoe-to-drop-163308621.html", "tickers": ["DJI", "WSM", "SPY", "GSPC", "YVAP", "SDID", "LPL", "GDP"]}
+{"url": "https://finance.yahoo.com/news/the-keystone-xl-pipeline-has-nothing-to-do-with-gas-prices-175038384.html", "tickers": ["CL=F", "YVAP", "XL", "GLB", "TC", "SEIS"]}
+{"url": "https://finance.yahoo.com/m/a4defdae-b44c-3a08-b1e2-a8ed7eaadd2d/this-key-defense-company-is.html", "tickers": ["LMT", "RTX"]}
+{"url": "https://finance.yahoo.com/news/one-japanese-salaryman-nearly-decade-230449387.html", "tickers": ["YVAP", "TOKYO", "OECD"]}
+{"url": "https://finance.yahoo.com/news/fed-interest-rate-hikes-could-impact-small-businesses-155858878.html", "tickers": ["YVAP", "LEE", "AFP", "BRAD"]}
+{"url": "https://finance.yahoo.com/m/f188ed19-f768-355f-908c-8a2e55c3d1e4/%E2%80%98my-daughter-continues-to.html", "tickers": []}
+{"url": "https://finance.yahoo.com/news/koch-industries-continues-operations-russian-184543482.html", "tickers": ["NYC"]}
+{"url": "https://finance.yahoo.com/news/flood-risk-threatens-delay-wheat-182110849.html", "tickers": ["SLIDE", "NYC"]}
+{"url": "https://finance.yahoo.com/news/vista-backed-datto-explores-options-220743945.html", "tickers": ["MSP", "NYC"]}
+{"url": "https://finance.yahoo.com/m/66c69275-e647-3335-a9b5-24301a56479c/russian-oil-has-become-a.html", "tickers": ["CL=F", "CAD"]}
+{"url": "https://finance.yahoo.com/news/stocks-aided-upbeat-powell-bonds-220806400.html", "tickers": ["GSPC", "NYC", "MSCI"]}
+{"url": "https://finance.yahoo.com/news/senate-democrats-seek-probe-wells-183356047.html", "tickers": []}
+{"url": "https://finance.yahoo.com/news/canadian-pacific-set-halt-operations-014737642.html", "tickers": ["CP", "NTR", "NYC"]}
+{"url": "https://finance.yahoo.com/news/1-high-energy-costs-intensify-183042968.html", "tickers": ["UPDATE"]}
+{"url": "https://finance.yahoo.com/news/u-democrats-introduce-bill-curb-183525577.html", "tickers": ["SLIDE", "PC"]}
+{"url": "https://finance.yahoo.com/news/lennar-forecasts-strong-q2-profit-184208474.html", "tickers": ["LEN-B", "FILE", "PHOTO"]}
+{"url": "https://finance.yahoo.com/news/wells-fargo-pressed-senators-race-171439115.html", "tickers": ["NYC"]}
