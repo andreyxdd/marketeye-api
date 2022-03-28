@@ -22,6 +22,9 @@ untickers = [
     "CANCEL",
     "DONE",
     "CRYPTO",
+    "CAD",
+    "USD",
+    "LONDON",
 ]
 
 
@@ -71,7 +74,17 @@ class YahoofinanceSpider(scrapy.Spider):
         }
         """
 
-        content = "".join(response.css("div.caas-content").getall()).strip()
+        # scraping text from all paragraph tags
+        content = " ".join(response.css("p::text").getall()).strip()
+
+        # scraping "pill" element with the ticker (if exists)
+        content += " ".join(
+            response.css("span.xray-entity-title-link::text").getall()
+        ).strip()
+
+        # scraping elements on the right side-bar that
+        # show related and recent quotes (if exists)
+        content += " ".join(response.css("a[href^='/quote/']::text").getall())
 
         tickers = list(
             filter(check_ticker, reticker.TickerExtractor().extract(content))
