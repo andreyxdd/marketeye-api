@@ -138,4 +138,4 @@ envars.bat
 test.py
 
 # Scrapping results
-scraping/*.jl
+*.jl
