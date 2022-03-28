@@ -5,6 +5,8 @@ Initial attempt to scrape the yahoo.finance home page
 import scrapy
 import reticker
 
+from scraping.selenium_helpers import find_links_after_scroll
+
 untickers = [
     "SYMBOL",
     "POST",
@@ -38,7 +40,7 @@ class YahoofinanceSpider(scrapy.Spider):
     YahoofinanceSpider is an extension of the scrapy.Spider class.
     """
 
-    name = "yahoo.finance-spider"
+    name = "yahoo.finances-spider"
 
     start_urls = ["https://finance.yahoo.com/", "https://finance.yahoo.com/news/"]
 
@@ -53,9 +55,7 @@ class YahoofinanceSpider(scrapy.Spider):
         }
         """
 
-        suburls = response.css(
-            "li.js-stream-content a.js-content-viewer::attr(href)"
-        ).getall()
+        suburls = find_links_after_scroll(response.url, "js-content-viewer")
 
         for suburl in suburls:
             yield scrapy.Request(response.urljoin(suburl), self.parse_article_page)

@@ -136,3 +136,6 @@ envars.bat
 
 # Script to test/populate db (or for other genral purposes
 test.py
+
+# Scrapping results
+scraping/*.jl
