@@ -1,5 +1,5 @@
 """
-Initial attempt to scrape the yahoo.finance home page
+Scraping the yahoo.finance home and news pages
 """
 
 import scrapy
@@ -43,7 +43,7 @@ class YahoofinanceSpider(scrapy.Spider):
     YahoofinanceSpider is an extension of the scrapy.Spider class.
     """
 
-    name = "yahoo.finances-spider"
+    name = "yahoo.finance-spider"
 
     start_urls = ["https://finance.yahoo.com/", "https://finance.yahoo.com/news/"]
 
