@@ -1,5 +1,5 @@
 """
-Initial attempt to scrape the cnbc home page
+Scraping cnbc website for tickers
 """
 
 import scrapy
@@ -13,7 +13,15 @@ class CNBCSpider(scrapy.Spider):
 
     name = "cnbc-spider"
 
-    start_urls = ["https://www.cnbc.com/"]
+    start_urls = [
+        "https://www.cnbc.com/",
+        "https://www.cnbc.com/markets/",
+        "https://www.cnbc.com/business/",
+        "https://www.cnbc.com/investing/",
+        "https://www.cnbc.com/technology/",
+        "https://www.cnbc.com/politics/",
+        "https://www.cnbc.com/investingclub/",
+    ]
 
     def parse(self, response):
         """
@@ -26,14 +34,21 @@ class CNBCSpider(scrapy.Spider):
         }
         """
 
-        suburls = response.css("div.SecondaryCard-headline a::attr(href)").getall()
+        # list of hrefs (to article pages) found on the page
+        suburls = []
+        # will be concatenated
 
-        # list concatenation
+        # cnbc.com/
+        suburls += response.css("div.SecondaryCard-headline a::attr(href)").getall()
         suburls += response.css("div.RiverHeadline-headline a::attr(href)").getall()
         suburls += response.css("a.Card-title::attr(href)").getall()
 
+        # cnbc.com /markets | /business | /investing so on ...
+        suburls += response.css("div.Card-titleContainer a::attr(href)").getall()
+        suburls += response.css("div.Card-standardBreakerCard a::attr(href)").getall()
+
         for suburl in suburls:
-            if suburl.startswith("https://www.cnbc.com/"):  # make sure it is url
+            if suburl.startswith("https://www.cnbc.com/"):  # make sure it's url
                 yield scrapy.Request(url=suburl, callback=self.parse_article_page)
 
     def parse_article_page(self, response):  # pylint: disable=R0201
@@ -52,6 +67,12 @@ class CNBCSpider(scrapy.Spider):
 
         # scraping article text content
         content += " ".join(response.css("div.group p::text").getall()).strip()
+
+        # cnbc.com/video
+        content += " ".join(response.css("h1::text").getall()).strip()
+        content += " ".join(
+            response.css(".ClipPlayer-clipPlayerIntroSummary::text").getall()
+        ).strip()
 
         tickers = reticker.TickerExtractor().extract(content)
 
