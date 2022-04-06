@@ -1,19 +1,21 @@
 """
-Scraping for tickers news section of the tipranks website
+Scraping for tickers news section of the motley-fool website
 """
 
 import scrapy
 import reticker
 
 
-class TipranksSpider(scrapy.Spider):
+class FoolSpider(scrapy.Spider):
     """
-    TipranksSpider is an extension of the scrapy.Spider class.
+    FoolSpider is an extension of the scrapy.Spider class.
     """
 
-    name = "tipranks-spider"
+    name = "fool-spider"
 
-    start_urls = ["https://www.tipranks.com/news/category/news"]
+    start_urls = [
+        "https://www.fool.com/investing-news/?page=" + str(i) for i in range(1, 11)
+    ]
 
     def parse(self, response):
         """
@@ -30,12 +32,17 @@ class TipranksSpider(scrapy.Spider):
         suburls = []
         # will be concatenated
 
+        suburls += response.css("div.content-block a::attr(href)").getall()
         suburls += response.css(
-            "div.w12.displayflex.hoverOpacity80.mb6.mobile_mb5 a::attr(href)"
+            "div.content-block.listed-articles a::attr(href)"
         ).getall()
 
+        # removig duplicates
+        suburls = list(dict.fromkeys(suburls))
+
         for suburl in suburls:
-            yield scrapy.Request(response.urljoin(suburl), self.parse_article_page)
+            if suburl.startswith("/investing"):
+                yield scrapy.Request(response.urljoin(suburl), self.parse_article_page)
 
     def parse_article_page(self, response):  # pylint: disable=R0201
         """
@@ -48,17 +55,18 @@ class TipranksSpider(scrapy.Spider):
         }
         """
 
-        # scraping title
+        # scraping titles
         content = " ".join(response.css("h1::text").getall()).strip()
+        content += " ".join(response.css("h2::text").getall()).strip()
 
-        # scraping article text
-        content += " ".join(response.css("article p::text").getall()).strip()
+        # scraping text paragraphs
+        content += " ".join(response.css("p::text").getall()).strip()
 
-        # scraping text in 'strong'
-        content += " ".join(response.css("p strong::text").getall()).strip()
+        # scraping text in 'spans' (usually tickers)
+        content += " ".join(response.css("p span a::text").getall()).strip()
 
         # scraping the tickers in the side-bar last news section
-        content += " ".join(response.css("a span::text").getall()).strip()
+        content += " ".join(response.css("h2 a::text").getall()).strip()
 
         tickers = reticker.TickerExtractor().extract(content)
 
