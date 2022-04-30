@@ -43,7 +43,7 @@ async def read_ticker_analytics(date: str, ticker: str, api_key: str):
     Endpoint to get analytics (both base and extra) for a single stock
 
     Args:
-        date (str): analytics for which date
+        date (str): analytics for which date in the format of YYYY-MM-DD
         ticker (str): ticker representing the stock
         api_key (str): key to allow/disallow a request
 
@@ -69,7 +69,7 @@ async def read_market_analytics(
     Endpoint to get analytics for market as a whole
 
     Args:
-        date (str): analytics for which date
+        date (str): analytics for which date in the format of YYYY-MM-DD
         api_key (str): key to allow/disallow a request
 
     Raises:
@@ -98,7 +98,7 @@ async def read_analytics_by_criteria(
     Endpoint to get analytics (both base and extra) for a single stock
 
     Args:
-        date (str): analytics for which date
+        date (str): analytics for which date in the format of YYYY-MM-DD
         ticker (str): ticker representing the stock
         api_key (str): key to allow/disallow a request
 
