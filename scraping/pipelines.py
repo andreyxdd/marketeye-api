@@ -21,7 +21,7 @@ class MongoPipeline:
         self.client = pymongo.MongoClient(MONGO_URI)
         self.db = self.client[MONGO_DB_NAME]
 
-    def open_spider(self):
+    def open_spider(self, spider):  # pylint: disable=W0613
         """
         Method to handle the spider start up
         """
@@ -36,13 +36,13 @@ class MongoPipeline:
                 "scraping/scraping/pipe;ines.py, def open_spider reported an error"
             ) from e
 
-    def close_spider(self):
+    def close_spider(self, spider):  # pylint: disable=W0613
         """
         Method to handle the spider compleition
         """
         self.client.close()
 
-    def process_item(self, item):
+    def process_item(self, item, spider):  # pylint: disable=W0613
         """
         Processing the item by incrementing the mentions count
         if a given ticker is in the list of ticker for the current date
