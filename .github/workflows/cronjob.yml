@@ -23,9 +23,6 @@ jobs:
         with:
           path: "requirements.txt"
 
-      - name: Installing webdriver-manager
-        run: pip install webdriver-manager selenium
-
       - name: Execute Python script
         env: 
             API_KEY: ${{ secrets.API_KEY }}

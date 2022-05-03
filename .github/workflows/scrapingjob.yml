@@ -1,0 +1,34 @@
+name: cronjob
+
+on:
+  schedule:
+  - cron: "10 23 * * 1-5" # every 10:10 pm (UTC) from Monday to Friday
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository content
+        uses: actions/checkout@v2 # Checkout the repository content to github runner.
+
+      - name: Setup Python Version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9.9
+
+      - name: Install Python dependencies
+        uses: py-actions/py-dependency-install@v2
+        with:
+          path: "requirements.txt"
+
+      - name: Installing webdriver-manager
+        run: pip install webdriver-manager selenium
+
+      - name: Execute Python script
+        env:
+            MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+            MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+            MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+        run: python scrapingjob.py

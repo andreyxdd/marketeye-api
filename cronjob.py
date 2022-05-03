@@ -1,32 +1,20 @@
 """
-Script to set and run analytics-computing and scraping cronjobs.
-The idea is to compute and insert stocks analytics and
-scraping every trading day (often Monday to Friday)
+Script to set and run analytics-computing cronjobs.
+The idea is to compute and insert stocks analytics every trading day (often Monday to Friday)
 
 Raises:
     Exception: If asyncio is not imported properly use trollius
 """
 
 from time import time
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
 from db.mongodb import connect, get_database, close
 from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
 from utils.handle_emails import notify_developer
 from utils.handle_datetimes import (
-    # get_today_utc_date_in_timezone,
+    get_today_utc_date_in_timezone,
     get_past_date,
     get_epoch,
 )
-
-from scraping.spiders.cnbc_spider import CNBCSpider
-from scraping.spiders.cnn_spider import CNNSpider
-from scraping.spiders.fool_spider import FoolSpider
-from scraping.spiders.marketwatch_spider import MarketwatchSpider
-from scraping.spiders.morningstar_spider import MorningstarSpider
-from scraping.spiders.reuters_spider import ReutersSpider
-from scraping.spiders.tipranks_spider import TipranksSpider
-from scraping.spiders.yahoofinance_spider import YahoofinanceSpider
 
 try:
     import asyncio
@@ -74,10 +62,18 @@ async def cronjob():
     start_time = time()
 
     try:
-        # get_today_utc_date_in_timezone("America/New_York")
-        curr_date = "2022-05-02"
+        curr_date = get_today_utc_date_in_timezone("America/New_York")
         past_date = get_past_date(91, curr_date)
         msg = await run_crud_ops(curr_date, past_date)
+
+        notify_developer(
+            body="Today analytics cronjob has completed successfully."
+            + " Check MongoDB to see if today base analytics data"
+            + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
+            + "\n\n----------------------- Logs ---------------------------\n\n"
+            + f"{msg}"
+            + "\n\n--------------------------------------------------------"
+        )
 
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
@@ -88,48 +84,7 @@ async def cronjob():
             subject="Cronjob Report",
         )
 
-    notify_developer(
-        body="Today analytics cronjob has completed successfully."
-        + " Check MongoDB to see if today base analytics data"
-        + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
-        + "\n\n----------------------- Logs ---------------------------\n\n"
-        + f"{msg}"
-        + "\n\n--------------------------------------------------------"
-    )
-
     print(f"\nAnalytics cronjob finished on {round(time() - start_time, 2)} seconds")
-    print("--------------------------------------------------------")
-
-    print("\n--------------------------------------------------------")
-    print("Running scraping cronjob ...\n")
-    start_time = time()
-
-    try:
-        process = CrawlerProcess(get_project_settings())
-        process.crawl(CNBCSpider)
-        process.crawl(CNNSpider)
-        process.crawl(FoolSpider)
-        process.crawl(MarketwatchSpider)
-        process.crawl(MorningstarSpider)
-        process.crawl(ReutersSpider)
-        process.crawl(TipranksSpider)
-        process.crawl(YahoofinanceSpider)
-        process.start()
-    except Exception as e:  # pylint: disable=W0703
-        print("cronjob.py: Something went wrong.")
-        print("Error message:", e)
-        notify_developer(
-            body=f"Scraping cronjob reported an error: {curr_date} ({get_epoch(curr_date)})"
-            + f" with rror message:\n\n {e}",
-            subject="Cronjob Report",
-        )
-
-    notify_developer(
-        body="Today scraping cronjob has completed successfully."
-        + " Check MongoDB to see today scraping data"
-    )
-
-    print(f"\nScraping cronjob finished on {round(time() - start_time, 2)} seconds")
     print("--------------------------------------------------------")
 
 
