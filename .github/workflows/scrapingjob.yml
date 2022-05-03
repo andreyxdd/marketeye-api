@@ -1,4 +1,4 @@
-name: cronjob
+name: scrapingjob
 
 on:
   schedule:
