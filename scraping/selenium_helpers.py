@@ -2,21 +2,20 @@
     Module with helper-functions based on the selenium
 """
 
-import os
 import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 # initializing selenium driver
 chrome_options = webdriver.ChromeOptions()
-chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--no-sandbox")
 
 driver = webdriver.Chrome(
-    executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options
+    ChromeDriverManager().install(), chrome_options=chrome_options
 )
 
 
