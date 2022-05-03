@@ -14,7 +14,7 @@ from db.mongodb import connect, get_database, close
 from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
 from utils.handle_emails import notify_developer
 from utils.handle_datetimes import (
-    get_today_utc_date_in_timezone,
+    # get_today_utc_date_in_timezone,
     get_past_date,
     get_epoch,
 )
@@ -74,7 +74,8 @@ async def cronjob():
     start_time = time()
 
     try:
-        curr_date = get_today_utc_date_in_timezone("America/New_York")
+        # get_today_utc_date_in_timezone("America/New_York")
+        curr_date = "2022-05-02"
         past_date = get_past_date(91, curr_date)
         msg = await run_crud_ops(curr_date, past_date)
 
