@@ -3,7 +3,7 @@ Scrapy pipeline to handle each output from a spider
 """
 import pymongo
 from core.settings import MONGO_URI, MONGO_DB_NAME
-from utils.handle_datetimes import get_epoch  # , get_today_utc_date_in_timezone
+from utils.handle_datetimes import get_epoch, get_today_utc_date_in_timezone
 
 MONGO_COLLECTION_NAME = "analytics"
 
@@ -13,8 +13,7 @@ class MongoPipeline:
     A class to handle the pipeline base on pymongo
     """
 
-    # get_today_utc_date_in_timezone("America/New_York"))
-    epoch_date = get_epoch("2022-05-02")
+    epoch_date = get_epoch(get_today_utc_date_in_timezone("America/New_York"))
     db_tickers = []
 
     def __init__(self):

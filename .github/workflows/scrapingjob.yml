@@ -1,9 +1,10 @@
 name: scrapingjob
 
 on:
-  schedule:
-  - cron: "10 23 * * 1-5" # every 10:10 pm (UTC) from Monday to Friday
-  workflow_dispatch:
+  workflow_run:
+    workflows: [cronjob]
+    types:
+      - completed
 
 jobs:
   build:

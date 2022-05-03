@@ -70,8 +70,8 @@ async def scrapingjob():
         curr_date = get_today_utc_date_in_timezone("America/New_York")
         notify_developer(
             body=f"Scraping cronjob reported an error: {curr_date} ({get_epoch(curr_date)})"
-            + f" with rror message:\n\n {e}",
-            subject="Cronjob Report",
+            + f" with error message:\n\n {e}",
+            subject="Scrapingjob Report",
         )
 
     print(f"\nScraping cronjob finished on {round(time() - start_time, 2)} seconds")
