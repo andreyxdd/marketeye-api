@@ -8,7 +8,9 @@ Raises:
 """
 
 from time import time
-from scrapy.crawler import CrawlerProcess
+from twisted.internet import reactor
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.log import configure_logging
 from scrapy.utils.project import get_project_settings
 from utils.handle_emails import notify_developer
 from utils.handle_datetimes import (
@@ -33,36 +35,37 @@ except ImportError:
 
 async def scrapingjob():
     """
-    Function that defines the cronjob:
-        - first, todays date is found (in NY time zone with respect to UTC)
-        - then, past date (3 month ago) is found
-        - next, the crud operations are run for the above dates.
-
-    The functions also notifies developer about the results of the cronjob.
+    Function that defines the scrapingjob
+    The functions also notifies developer about the results of the scrapingjob.
     """
 
     print("\n--------------------------------------------------------")
-    print("Running scraping cronjob ...\n")
+    print("Running scrapingjob ...\n")
     start_time = time()
 
     try:
-        process = CrawlerProcess(get_project_settings())
-        process.crawl(CNBCSpider)
-        process.crawl(CNNSpider)
-        process.crawl(FoolSpider)
-        process.crawl(MarketwatchSpider)
-        process.crawl(MorningstarSpider)
-        process.crawl(ReutersSpider)
-        process.crawl(TipranksSpider)
-        process.crawl(YahoofinanceSpider)
-        process.start()
+        configure_logging()
+        settings = get_project_settings()
+        runner = CrawlerRunner(settings)
+        runner.crawl(CNBCSpider)
+        runner.crawl(CNNSpider)
+        runner.crawl(FoolSpider)
+        runner.crawl(MarketwatchSpider)
+        runner.crawl(MorningstarSpider)
+        runner.crawl(ReutersSpider)
+        runner.crawl(TipranksSpider)
+        runner.crawl(YahoofinanceSpider)
+        dry = runner.join()
+        dry.addBoth(lambda _: reactor.stop())
+
+        reactor.run()
 
         notify_developer(
             body="Today scraping cronjob has completed successfully."
             + " Check MongoDB to see today scraping data"
         )
     except Exception as e:  # pylint: disable=W0703
-        print("cronjob.py: Something went wrong.")
+        print("scrapingjob.py: Something went wrong.")
         print("Error message:", e)
         curr_date = get_today_utc_date_in_timezone("America/New_York")
         notify_developer(
