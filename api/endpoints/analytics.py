@@ -19,6 +19,7 @@ from db.crud.analytics import (
     get_analytics_sorted_by_volume,
     get_analytics_sorted_by_three_day_avg_volume,
     get_dates,
+    get_mentions,
 )
 from db.mongodb import AsyncIOMotorClient, get_database
 
@@ -38,7 +39,9 @@ async def home():
 
 
 @analytics_router.get("/get_ticker_analytics")
-async def read_ticker_analytics(date: str, ticker: str, api_key: str):
+async def read_ticker_analytics(
+    date: str, ticker: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+):
     """
     Endpoint to get analytics (both base and extra) for a single stock
 
@@ -58,7 +61,10 @@ async def read_ticker_analytics(date: str, ticker: str, api_key: str):
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
-    return get_ticker_analytics(ticker, date)
+    return {
+        **get_ticker_analytics(ticker, date),
+        **await get_mentions(db, ticker, date),
+    }
 
 
 @analytics_router.get("/get_market_analytics")
