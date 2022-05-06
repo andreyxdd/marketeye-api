@@ -378,8 +378,8 @@ async def get_analytics_sorted_by_one_day_avg_mf(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        with ThreadPoolExecutor() as executor:
-            return list(executor.map(extend_base_analytics, items))
+
+        return await get_assembled_data(conn, items)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -414,8 +414,8 @@ async def get_analytics_sorted_by_three_day_avg_mf(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        with ThreadPoolExecutor() as executor:
-            return list(executor.map(extend_base_analytics, items))
+
+        return await get_assembled_data(conn, items)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -454,8 +454,8 @@ async def get_analytics_by_five_precents_open_close_change(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        with ThreadPoolExecutor() as executor:
-            return list(executor.map(extend_base_analytics, items))
+
+        return await get_assembled_data(conn, items)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -491,8 +491,8 @@ async def get_analytics_sorted_by_volume(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        with ThreadPoolExecutor() as executor:
-            return list(executor.map(extend_base_analytics, items))
+
+        return await get_assembled_data(conn, items)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -527,8 +527,8 @@ async def get_analytics_sorted_by_three_day_avg_volume(
             .limit(lim)
         )
         items = await cursor.to_list(length=lim)
-        with ThreadPoolExecutor() as executor:
-            return list(executor.map(extend_base_analytics, items))
+
+        return await get_assembled_data(conn, items)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -605,3 +605,42 @@ async def get_mentions(conn: AsyncIOMotorClient, ticker: str, date: str) -> list
     except Exception as e:
         print("Error message:", e)
         raise Exception("db/crud/analytics.py, def get_dates reported an error") from e
+
+
+async def get_assembled_data(conn: AsyncIOMotorClient, analytics: list[dict]):
+    """
+    Function to get all the data related to the analytics colletions:
+    base, extra, and scraping results
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        analytcis (dict): base analytics data list
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list[dict]:
+            list of dict. See compute_base_analytics, compute_extra_analytics,
+            and get_mentions methods for details
+    """
+    try:
+
+        analytics_and_scraping = [
+            dict(
+                {k: v for k, v in item.items() if k != "mentions"},
+                **await get_mentions(
+                    conn, item["ticker"], get_date_string(item["date"])
+                ),
+            )
+            for item in analytics
+        ]
+
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(extend_base_analytics, analytics_and_scraping))
+
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/analytics.py, def get_assembled_data reported an error"
+        ) from e
