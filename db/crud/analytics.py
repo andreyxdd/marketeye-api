@@ -1,6 +1,7 @@
 """
 Methods to handle CRUD operation with analytics collection in the db
 """
+import asyncio
 from time import sleep
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -12,7 +13,7 @@ from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
     get_quandl_tickers,
     get_ticker_base_analytics,
-    extend_base_analytics,
+    get_ticker_extra_analytics,
 )
 
 MONGO_COLLECTION_NAME = "analytics"
@@ -379,7 +380,14 @@ async def get_analytics_sorted_by_one_day_avg_mf(
         )
         items = await cursor.to_list(length=lim)
 
-        return await get_assembled_data(conn, items)
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
+                for item in items
+            ]
+
+            return await asyncio.gather(*futures)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -415,7 +423,14 @@ async def get_analytics_sorted_by_three_day_avg_mf(
         )
         items = await cursor.to_list(length=lim)
 
-        return await get_assembled_data(conn, items)
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
+                for item in items
+            ]
+
+            return await asyncio.gather(*futures)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -455,7 +470,14 @@ async def get_analytics_by_five_precents_open_close_change(
         )
         items = await cursor.to_list(length=lim)
 
-        return await get_assembled_data(conn, items)
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
+                for item in items
+            ]
+
+            return await asyncio.gather(*futures)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -492,7 +514,14 @@ async def get_analytics_sorted_by_volume(
         )
         items = await cursor.to_list(length=lim)
 
-        return await get_assembled_data(conn, items)
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
+                for item in items
+            ]
+
+            return await asyncio.gather(*futures)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -528,7 +557,14 @@ async def get_analytics_sorted_by_three_day_avg_volume(
         )
         items = await cursor.to_list(length=lim)
 
-        return await get_assembled_data(conn, items)
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
+                for item in items
+            ]
+
+            return await asyncio.gather(*futures)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -583,17 +619,19 @@ async def get_mentions(conn: AsyncIOMotorClient, ticker: str, date: str) -> list
     try:
         dates = [date, get_past_date(1, date), get_past_date(2, date)]
 
-        mentions = []
-        mentions_sum = 0
+        coroutines = []
         for curr_date in dates:
-            epoch_date = get_epoch(curr_date)
-            res = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].find_one(
-                {"date": epoch_date, "ticker": ticker}
+            coroutines.append(
+                conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].find_one(
+                    {"date": get_epoch(curr_date), "ticker": ticker}
+                )
             )
 
+        mentions = []
+        mentions_sum = 0
+        for res in await asyncio.gather(*coroutines):
             if res and "mentions" in res:
                 mentions_sum += res["mentions"]
-
             mentions.append(mentions_sum)
 
         return {
@@ -604,43 +642,40 @@ async def get_mentions(conn: AsyncIOMotorClient, ticker: str, date: str) -> list
 
     except Exception as e:
         print("Error message:", e)
-        raise Exception("db/crud/analytics.py, def get_dates reported an error") from e
+        raise Exception(
+            "db/crud/analytics.py, def get_mentions reported an error"
+        ) from e
 
 
-async def get_assembled_data(conn: AsyncIOMotorClient, analytics: list[dict]):
+async def extend_base_analytics(conn: AsyncIOMotorClient, base_analytics: dict):
     """
-    Function to get all the data related to the analytics colletions:
-    base, extra, and scraping results
+    Function that extends the provided base_analytics object (see
+    output schema for the compute_base_analytics) with extra_analytics
+    object (see output schema for the compute_extra_analytics) and
+    get_mentions fmethod output
 
     Args:
         conn (AsyncIOMotorClient): db-connection string
-        analytcis (dict): base analytics data list
+        base_analytics (dict): see output schema for the compute_base_analytics
 
     Raises:
-        Exception: Method reports an error
+        Exception: Method reported an error
 
     Returns:
-        list[dict]:
-            list of dict. See compute_base_analytics, compute_extra_analytics,
-            and get_mentions methods for details
+        dict: combination of returned values from compute_base_analytics,
+        compute_extra_analytics, get_mentions
     """
     try:
+        ticker = base_analytics["ticker"]
+        date = get_date_string(base_analytics["date"])
 
-        analytics_and_scraping = [
-            dict(
-                {k: v for k, v in item.items() if k != "mentions"},
-                **await get_mentions(
-                    conn, item["ticker"], get_date_string(item["date"])
-                ),
-            )
-            for item in analytics
-        ]
-
-        with ThreadPoolExecutor() as executor:
-            return list(executor.map(extend_base_analytics, analytics_and_scraping))
-
+        return {
+            **base_analytics,
+            **get_ticker_extra_analytics(ticker, date),
+            **await get_mentions(conn, ticker, date),
+        }
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "db/crud/analytics.py, def get_assembled_data reported an error"
+            "db/crud/analytics.py, def extend_base_analytics reported an error"
         ) from e

@@ -6,7 +6,6 @@ from pandas import json_normalize
 from requests import get
 import quandl
 from utils.handle_datetimes import (
-    get_date_string,
     get_past_date,
     get_market_insider_url_string,
 )
@@ -337,33 +336,4 @@ def get_quandl_tickers(date: str):
         print("Error message:", e)
         raise Exception(
             "utils/handle_external_apis.py, def get_quandl_tickers reported an error"
-        ) from e
-
-
-def extend_base_analytics(base_analytics: dict):
-    """
-    Function that extends the provided base_analytics object (see
-    output schema for the compute_base_analytics) with extra_analytics
-    object (see output schema for the compute_extra_analytics)
-
-    Args:
-        base_analytics (dict): see output schema for the compute_base_analytics
-
-    Raises:
-        Exception: Method reported an error
-
-    Returns:
-        dict: combination of returned values from compute_base_analytics and compute_extra_analytics
-    """
-    try:
-        return {
-            **base_analytics,
-            **get_ticker_extra_analytics(
-                base_analytics["ticker"], get_date_string(base_analytics["date"])
-            ),
-        }
-    except Exception as e:
-        print("Error message:", e)
-        raise Exception(
-            "utils/handle_external_apis.py, def extend_base_analytics reported an error"
         ) from e

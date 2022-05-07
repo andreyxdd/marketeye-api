@@ -1,6 +1,11 @@
 """
 Endpoints to access stock market analytics
 """
+
+import time
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 
@@ -15,7 +20,6 @@ from db.crud.analytics import (
     get_normalazied_cvi_slope,
     get_analytics_sorted_by_one_day_avg_mf,
     get_analytics_sorted_by_three_day_avg_mf,
-    get_analytics_by_five_precents_open_close_change,
     get_analytics_sorted_by_volume,
     get_analytics_sorted_by_three_day_avg_volume,
     get_dates,
@@ -116,21 +120,37 @@ async def read_analytics_by_criteria(
             each field is a list of outputs for the following
             functions compute_base_analytics and compute_extra_analytics for details
     """
+    start = time.time()
     is_valid_date(date)
 
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            await loop.run_in_executor(
+                executor, get_analytics_sorted_by_one_day_avg_mf, db, date
+            ),
+            await loop.run_in_executor(
+                executor, get_analytics_sorted_by_three_day_avg_mf, db, date
+            ),
+            await loop.run_in_executor(
+                executor, get_analytics_sorted_by_volume, db, date
+            ),
+            await loop.run_in_executor(
+                executor, get_analytics_sorted_by_three_day_avg_volume, db, date
+            ),
+        ]
+
+    res = await asyncio.gather(*futures)
+
     return {
-        "by_one_day_avg_mf": await get_analytics_sorted_by_one_day_avg_mf(db, date),
-        "by_three_day_avg_mf": await get_analytics_sorted_by_three_day_avg_mf(db, date),
-        "by_five_prec_open_close_change": await get_analytics_by_five_precents_open_close_change(
-            db, date
-        ),
-        "by_volume": await get_analytics_sorted_by_volume(db, date),
-        "by_three_day_avg_volume": await get_analytics_sorted_by_three_day_avg_volume(
-            db, date
-        ),
+        "by_one_day_avg_mf": res[0],
+        "by_three_day_avg_mf": res[1],
+        "by_volume": res[2],
+        "by_three_day_avg_volume": res[3],
+        "time": time.time() - start,
     }
 
 
