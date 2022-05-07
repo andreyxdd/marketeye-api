@@ -1,2 +1,2 @@
-web: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --timeout 15
+web: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app
 clock: python cronjob.py
