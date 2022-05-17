@@ -66,7 +66,7 @@ async def read_ticker_analytics(
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     return {
-        **get_ticker_analytics(ticker, date),
+        **get_ticker_analytics(ticker, date, 45, 15),
         **await get_mentions(db, ticker, date),
     }
 
