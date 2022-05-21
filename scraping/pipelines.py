@@ -3,9 +3,14 @@ Scrapy pipeline to handle each output from a spider
 """
 import pymongo
 from core.settings import MONGO_URI, MONGO_DB_NAME
-from utils.handle_datetimes import get_epoch, get_today_utc_date_in_timezone
+from utils.handle_datetimes import (
+    get_today_utc_date_in_timezone,
+    get_past_date,
+    get_epoch,
+)
+from utils.handle_external_apis import get_quandl_tickers
 
-MONGO_COLLECTION_NAME = "analytics"
+MONGO_COLLECTION_NAME = "scrapes"
 
 
 class MongoPipeline:
@@ -13,8 +18,8 @@ class MongoPipeline:
     A class to handle the pipeline base on pymongo
     """
 
-    epoch_date = get_epoch(get_today_utc_date_in_timezone("America/New_York"))
-    db_tickers = []
+    date = get_today_utc_date_in_timezone("America/New_York")
+    quandl_tickers = []
 
     def __init__(self):
         self.client = pymongo.MongoClient(MONGO_URI)
@@ -24,20 +29,15 @@ class MongoPipeline:
         """
         Method to handle the spider start up
         """
-        try:
-            cursor = self.db[MONGO_COLLECTION_NAME].distinct(
-                "ticker", {"date": self.epoch_date}
-            )
-            self.db_tickers = list(cursor)
-        except Exception as e:
-            print("Error message:", e)
-            raise Exception(
-                "scraping/scraping/pipe;ines.py, def open_spider reported an error"
-            ) from e
 
-        # if no tickers in the database then terminate the spider
-        if not self.db_tickers:
-            spider.crawler.engine.close_spider(self, reason="finished")
+        curr_date = self.date
+        while True:
+            self.quandl_tickers = get_quandl_tickers(curr_date)
+
+            if len(self.quandl_tickers) > 0:
+                break
+
+            curr_date = get_past_date(1, self.date)
 
     def close_spider(self, spider):  # pylint: disable=W0613
         """
@@ -53,9 +53,12 @@ class MongoPipeline:
 
         try:
             for ticker in item["tickers"]:
-                if ticker in self.db_tickers:
+                if ticker in self.quandl_tickers:
                     self.db[MONGO_COLLECTION_NAME].update_one(
-                        {"ticker": ticker, "date": self.epoch_date},
+                        {
+                            "ticker": ticker,
+                            "date": get_epoch(self.date),
+                        },
                         {"$inc": {"mentions": 1}},
                     )
         except Exception as e:

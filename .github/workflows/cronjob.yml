@@ -2,12 +2,33 @@ name: cronjob
 
 on:
   schedule:
-  - cron: "10 22 * * 1-5" # every 10:10 pm (UTC) from Monday to Friday
+  - cron: "10 22 * * *" # every day at 10:10 pm (UTC)
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env: 
+      API_KEY: ${{ secrets.API_KEY }}
+      DEV_RECIEVER_EMAIL: ${{ secrets.DEV_RECIEVER_EMAIL }}
+      DEV_SENDER_EMAIL: ${{ secrets.DEV_SENDER_EMAIL }}
+      DEV_SENDER_SERVICE: ${{ secrets.DEV_SENDER_SERVICE }}
+      DEV_SENDER_SERVICE_PASSWORD: ${{ secrets.DEV_SENDER_SERVICE_PASSWORD }}
+      DEV_SENDER_SERVICE_PORT: ${{ secrets.DEV_SENDER_SERVICE_PORT }}
+      MI_BASE_URL: ${{ secrets.MI_BASE_URL }}
+      MI_SP500_CODE: ${{ secrets.MI_SP500_CODE }}
+      MI_SP500_DATASET: ${{ secrets.MI_SP500_DATASET }}
+      MI_VIX_CODE: ${{ secrets.MI_VIX_CODE }}
+      MI_VIX_DATASET: ${{ secrets.MI_VIX_DATASET }}
+      MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      PING_URL: ${{ secrets.PING_URL }}
+      QUANDL_API_KEY: ${{ secrets.QUANDL_API_KEY }}
+      QUANDL_RATE_LIMIT: ${{ secrets.QUANDL_RATE_LIMIT }}
+      QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
+      USER_AGENT: ${{ secrets.USER_AGENT }}
 
     steps:
       - name: Checkout repository content
@@ -23,25 +44,11 @@ jobs:
         with:
           path: "requirements.txt"
 
-      - name: Execute Python script
-        env: 
-            API_KEY: ${{ secrets.API_KEY }}
-            DEV_RECIEVER_EMAIL: ${{ secrets.DEV_RECIEVER_EMAIL }}
-            DEV_SENDER_EMAIL: ${{ secrets.DEV_SENDER_EMAIL }}
-            DEV_SENDER_SERVICE: ${{ secrets.DEV_SENDER_SERVICE }}
-            DEV_SENDER_SERVICE_PASSWORD: ${{ secrets.DEV_SENDER_SERVICE_PASSWORD }}
-            DEV_SENDER_SERVICE_PORT: ${{ secrets.DEV_SENDER_SERVICE_PORT }}
-            MI_BASE_URL: ${{ secrets.MI_BASE_URL }}
-            MI_SP500_CODE: ${{ secrets.MI_SP500_CODE }}
-            MI_SP500_DATASET: ${{ secrets.MI_SP500_DATASET }}
-            MI_VIX_CODE: ${{ secrets.MI_VIX_CODE }}
-            MI_VIX_DATASET: ${{ secrets.MI_VIX_DATASET }}
-            MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
-            MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-            MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
-            PING_URL: ${{ secrets.PING_URL }}
-            QUANDL_API_KEY: ${{ secrets.QUANDL_API_KEY }}
-            QUANDL_RATE_LIMIT: ${{ secrets.QUANDL_RATE_LIMIT }}
-            QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
-            USER_AGENT: ${{ secrets.USER_AGENT }}
-        run: python cronjob.py
+      - name: Installing webdriver-manager
+        run: pip install webdriver-manager selenium
+
+      #- name: Update srocks 'analytics' collection
+      #  run: python cronjob.py
+
+      - name: Scrape media news and update 'scrape' collection
+        run: python scrapingjob.py
