@@ -60,7 +60,9 @@ class MongoPipeline:
                             "date": get_epoch(self.date),
                         },
                         {"$inc": {"mentions": 1}},
+                        upsert=True,
                     )
+
         except Exception as e:
             print("Error message:", e)
             raise Exception(
