@@ -9,6 +9,7 @@ Raises:
 from time import time
 from db.mongodb import connect, get_database, close
 from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
+from db.crud.scrapes import remove_scrapes
 from utils.handle_emails import notify_developer
 from utils.handle_datetimes import (
     get_today_utc_date_in_timezone,
@@ -40,6 +41,7 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     msg = await compute_base_analytics_and_insert(conn, date_to_insert)
 
     await remove_base_analytics(conn, date_to_remove)
+    await remove_scrapes(conn, date_to_remove)
 
     # disconneting mongo db
     await close()

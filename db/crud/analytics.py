@@ -1,14 +1,15 @@
 """
-Methods to handle CRUD operation with analytics collection in the db
+Methods to handle CRUD operation with 'analytics' collection in the db
 """
 import asyncio
 from time import sleep
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from db.mongodb import AsyncIOMotorClient
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
-from utils.handle_datetimes import get_date_string, get_epoch, get_past_date
+from db.mongodb import AsyncIOMotorClient
+from db.crud.scrapes import get_mentions
+from utils.handle_datetimes import get_date_string, get_epoch
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
     get_quandl_tickers,
@@ -348,7 +349,7 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "b/crud/eod.py, def remove_base_analytics reported an error"
+            "db/crud/analytics.py, def remove_base_analytics reported an error"
         ) from e
 
 
@@ -595,56 +596,6 @@ async def get_dates(conn: AsyncIOMotorClient) -> list:
     except Exception as e:
         print("Error message:", e)
         raise Exception("db/crud/analytics.py, def get_dates reported an error") from e
-
-
-async def get_mentions(conn: AsyncIOMotorClient, ticker: str, date: str) -> list:
-    """
-    Function to get mentions counts from the analytics collection
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date to serach for
-        ticker (str): stock ticker abbreviation
-
-    Raises:
-        Exception: Method reports an error
-
-    Returns:
-        dict: {
-            mentions_over_one_day: number,
-            mentions_over_two_days: number,
-            mentions_over_three_days: number
-        }
-    """
-    try:
-        dates = [date, get_past_date(1, date), get_past_date(2, date)]
-
-        coroutines = []
-        for curr_date in dates:
-            coroutines.append(
-                conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].find_one(
-                    {"date": get_epoch(curr_date), "ticker": ticker}
-                )
-            )
-
-        mentions = []
-        mentions_sum = 0
-        for res in await asyncio.gather(*coroutines):
-            if res and "mentions" in res:
-                mentions_sum += res["mentions"]
-            mentions.append(mentions_sum)
-
-        return {
-            "mentions_over_one_day": mentions[0],
-            "mentions_over_two_days": mentions[1],
-            "mentions_over_three_days": mentions[2],
-        }
-
-    except Exception as e:
-        print("Error message:", e)
-        raise Exception(
-            "db/crud/analytics.py, def get_mentions reported an error"
-        ) from e
 
 
 async def extend_base_analytics(conn: AsyncIOMotorClient, base_analytics: dict):

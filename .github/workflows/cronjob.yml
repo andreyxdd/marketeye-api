@@ -29,6 +29,7 @@ jobs:
       QUANDL_RATE_LIMIT: ${{ secrets.QUANDL_RATE_LIMIT }}
       QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
       USER_AGENT: ${{ secrets.USER_AGENT }}
+      DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
 
     steps:
       - name: Checkout repository content

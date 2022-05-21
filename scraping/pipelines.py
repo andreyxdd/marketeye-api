@@ -2,11 +2,11 @@
 Scrapy pipeline to handle each output from a spider
 """
 import pymongo
-from core.settings import MONGO_URI, MONGO_DB_NAME
+from core.settings import MONGO_URI, MONGO_DB_NAME, DATE_TO_SCRAPE
 from utils.handle_datetimes import (
-    get_today_utc_date_in_timezone,
-    get_past_date,
     get_epoch,
+    get_past_date,
+    get_today_utc_date_in_timezone,
 )
 from utils.handle_external_apis import get_quandl_tickers
 
@@ -18,7 +18,11 @@ class MongoPipeline:
     A class to handle the pipeline base on pymongo
     """
 
-    date = get_today_utc_date_in_timezone("America/New_York")
+    date = (
+        DATE_TO_SCRAPE
+        if DATE_TO_SCRAPE
+        else get_today_utc_date_in_timezone("America/New_York")
+    )
     quandl_tickers = []
 
     def __init__(self):

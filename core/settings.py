@@ -46,3 +46,6 @@ DEFAULT_HEADERS = {
     "accept-language": "en-GB,en;q=0.9,en-US;q=0.8,ru;q=0.7",
     "accept-encoding": "gzip, deflate, br",
 }
+
+# Date for scraping pipelines
+DATE_TO_SCRAPE = os.getenv("DATE_TO_SCRAPE")
