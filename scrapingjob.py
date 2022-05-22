@@ -43,6 +43,8 @@ async def scrapingjob():
     print("Running scrapingjob ...\n")
     start_time = time()
 
+    curr_date = get_today_utc_date_in_timezone("America/New_York")
+
     try:
         configure_logging()
         settings = get_project_settings()
@@ -61,13 +63,13 @@ async def scrapingjob():
         reactor.run()
 
         notify_developer(
-            body="Today scraping cronjob has completed successfully."
+            body="Today, {curr_date}({get_epoch(curr_date)}),"
+            + " scraping cronjob has completed successfully."
             + " Check MongoDB to see today scraping data"
         )
     except Exception as e:  # pylint: disable=W0703
         print("scrapingjob.py: Something went wrong.")
         print("Error message:", e)
-        curr_date = get_today_utc_date_in_timezone("America/New_York")
         notify_developer(
             body=f"Scraping cronjob reported an error: {curr_date} ({get_epoch(curr_date)})"
             + f" with error message:\n\n {e}",

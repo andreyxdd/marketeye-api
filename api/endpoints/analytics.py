@@ -18,10 +18,7 @@ from utils.handle_external_apis import (
 )
 from db.crud.analytics import (
     get_normalazied_cvi_slope,
-    get_analytics_sorted_by_one_day_avg_mf,
-    get_analytics_sorted_by_three_day_avg_mf,
-    get_analytics_sorted_by_volume,
-    get_analytics_sorted_by_three_day_avg_volume,
+    get_analytics_sorted_by,
     get_dates,
     get_mentions,
 )
@@ -130,16 +127,19 @@ async def read_analytics_by_criteria(
     with ThreadPoolExecutor() as executor:
         futures = [
             await loop.run_in_executor(
-                executor, get_analytics_sorted_by_one_day_avg_mf, db, date
+                executor, get_analytics_sorted_by, db, date, "one_day_avg_mf"
             ),
             await loop.run_in_executor(
-                executor, get_analytics_sorted_by_three_day_avg_mf, db, date
+                executor, get_analytics_sorted_by, db, date, "three_day_avg_mf"
             ),
             await loop.run_in_executor(
-                executor, get_analytics_sorted_by_volume, db, date
+                executor, get_analytics_sorted_by, db, date, "volume"
             ),
             await loop.run_in_executor(
-                executor, get_analytics_sorted_by_three_day_avg_volume, db, date
+                executor, get_analytics_sorted_by, db, date, "three_day_avg_volume"
+            ),
+            await loop.run_in_executor(
+                executor, get_analytics_sorted_by, db, date, "macd"
             ),
         ]
 
@@ -150,7 +150,8 @@ async def read_analytics_by_criteria(
         "by_three_day_avg_mf": res[1],
         "by_volume": res[2],
         "by_three_day_avg_volume": res[3],
-        "time": time.time() - start,
+        "by_macd": res[4],
+        "timing": time.time() - start,
     }
 
 
