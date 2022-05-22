@@ -20,8 +20,8 @@ from db.crud.analytics import (
     get_normalazied_cvi_slope,
     get_analytics_sorted_by,
     get_dates,
-    get_mentions,
 )
+from db.crud.scrapes import get_mentions
 from db.mongodb import AsyncIOMotorClient, get_database
 
 analytics_router = APIRouter()
