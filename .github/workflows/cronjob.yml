@@ -46,7 +46,7 @@ jobs:
           path: "requirements.txt"
 
       - name: Installing webdriver-manager
-        run: pip install webdriver-manager selenium
+        run: pip install webdriver_manager webdriver-manager selenium
 
       - name: Update stocks 'analytics' collection
         run: python cronjob.py
