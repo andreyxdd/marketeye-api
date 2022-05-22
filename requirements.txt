@@ -17,4 +17,5 @@ trollius==2.1.post2
 uvicorn==0.16.0
 gunicorn
 dnspython
+webdriver-manager
 scrapy-user-agents==0.1.1
