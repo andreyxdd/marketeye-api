@@ -8,6 +8,8 @@ on:
 jobs:
   job:
     runs-on: ubuntu-latest
+    
+    environment: marketeye-api
 
     env: 
       API_KEY: ${{ secrets.API_KEY }}
