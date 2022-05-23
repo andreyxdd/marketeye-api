@@ -6,8 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  ping-job:
     runs-on: ubuntu-latest
+    
+    environment: marketeye-api
 
     steps:
       - name: Checkout repository content
