@@ -41,7 +41,7 @@ class MongoPipeline:
             if len(self.quandl_tickers) > 0:
                 break
 
-            curr_date = get_past_date(1, self.date)
+            curr_date = get_past_date(1, curr_date)
 
     def close_spider(self, spider):  # pylint: disable=W0613
         """
