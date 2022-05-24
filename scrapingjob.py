@@ -63,7 +63,7 @@ async def scrapingjob():
         reactor.run()
 
         notify_developer(
-            body="Today, {curr_date}({get_epoch(curr_date)}),"
+            body=f"Today, {curr_date}({get_epoch(curr_date)}),"
             + " scraping cronjob has completed successfully."
             + " Check MongoDB to see today scraping data"
         )
