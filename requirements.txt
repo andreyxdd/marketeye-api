@@ -18,3 +18,6 @@ uvicorn==0.16.0
 gunicorn
 dnspython
 scrapy-user-agents==0.1.1
+html5lib
+bs4
+fake_headers

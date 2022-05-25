@@ -5,6 +5,7 @@ from typing import Optional
 from pandas import json_normalize
 from requests import get
 import quandl
+from fake_headers import Headers
 from utils.handle_datetimes import (
     get_past_date,
     get_market_insider_url_string,
@@ -16,7 +17,6 @@ from utils.handle_calculations import (
 )
 from core.settings import (
     QUANDL_API_KEY,
-    DEFAULT_HEADERS,
     MI_BASE_URL,
     MI_SP500_CODE,
     MI_SP500_DATASET,
@@ -234,7 +234,7 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
             + f"{MI_SP500_DATASET}"
         )
 
-        response = get(request, headers=DEFAULT_HEADERS)
+        response = get(request, headers=Headers(headers=True).generate())
 
         if response.status_code != 200:
             raise Exception(
@@ -287,7 +287,7 @@ def get_market_vixs(
             + f"{MI_VIX_DATASET}"
         )
 
-        response = get(request, headers=DEFAULT_HEADERS)
+        response = get(request, headers=Headers(headers=True).generate())
 
         if response.status_code != 200:
             raise Exception(
