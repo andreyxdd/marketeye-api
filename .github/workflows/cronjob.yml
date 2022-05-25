@@ -8,6 +8,8 @@ on:
 jobs:
   job:
     runs-on: ubuntu-latest
+    
+    environment: marketeye-api
 
     env: 
       API_KEY: ${{ secrets.API_KEY }}
@@ -46,9 +48,9 @@ jobs:
           path: "requirements.txt"
 
       - name: Installing webdriver-manager
-        run: pip install webdriver-manager selenium
+        run: pip install webdriver_manager webdriver-manager selenium
 
-      - name: Update srocks 'analytics' collection
+      - name: Update stocks 'analytics' collection
         run: python cronjob.py
 
       - name: Scrape media news and update 'scrape' collection
