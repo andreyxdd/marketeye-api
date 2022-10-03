@@ -47,11 +47,5 @@ jobs:
         with:
           path: "requirements.txt"
 
-      - name: Installing webdriver-manager
-        run: pip install webdriver-manager
-
       - name: Update stocks 'analytics' collection
         run: python cronjob.py
-
-      - name: Scrape media news and update 'scrape' collection
-        run: python scrapingjob.py
