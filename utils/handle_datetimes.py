@@ -27,7 +27,7 @@ def get_array_of_past_dates(
     n_days: int,
     base_date: Optional[Union[datetime, str]] = None,
     timezone: Optional[str] = "America/New_York",
-) -> list[str]:
+) -> "list[str]":
     """
     Function to construct an array of date-strings
 

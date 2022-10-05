@@ -14,7 +14,7 @@ from core.settings import (
 
 
 def notify_developer(
-    recievers: Optional[Union[list[str], str]] = None,
+    recievers: Optional[Union["list[str]", str]] = None,
     body: Optional[str] = "Test Notification",
     subject: Optional[str] = "Developer Notification",
 ):

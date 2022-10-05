@@ -25,7 +25,7 @@ async def get_analytics_by_open_close_change(
     n_trading_days: int,
     epoch_date: int,
     query: Optional[str] = "$gt",
-) -> list[dict]:
+) -> "list[dict]":
     """
     Function to get list of objects as {"_id": (epochDate), "count": (number)} where
     the number of advancing (query="$gt") or declining (query="$lt") is counted.
@@ -259,7 +259,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         )
 
 
-async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> list[str]:
+async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]":
     """
     Function that returns a list of all the tickers that
     are present in the analytics mongodb collection for the given date
@@ -287,7 +287,7 @@ async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> list[str
         ) from e
 
 
-async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> list[str]:
+async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]":
     """
     Function that returns a list of tickers that are present in the
     Quandl API response but are missing in the MongoDB analytics collection
@@ -355,7 +355,7 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
 
 async def get_analytics_by_five_precents_open_close_change(
     conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
-) -> list[dict]:
+) -> "list[dict]":
     """
     Function to get top stocks (maximum 20) that overcame 5% change
     between open-close price for the provided date
@@ -403,7 +403,7 @@ async def get_analytics_by_five_precents_open_close_change(
 
 async def get_analytics_sorted_by(
     conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
-) -> list[dict]:
+) -> "list[dict]":
     """
     Function to get top 20 stocks by the given criterion
 
