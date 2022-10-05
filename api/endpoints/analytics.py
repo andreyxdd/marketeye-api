@@ -123,26 +123,13 @@ async def read_analytics_by_criteria(
     if api_key != API_KEY:
         raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor() as executor:
-        futures = [
-            await loop.run_in_executor(
-                executor, get_analytics_sorted_by, db, date, "one_day_avg_mf"
-            ),
-            await loop.run_in_executor(
-                executor, get_analytics_sorted_by, db, date, "three_day_avg_mf"
-            ),
-            await loop.run_in_executor(
-                executor, get_analytics_sorted_by, db, date, "volume"
-            ),
-            await loop.run_in_executor(
-                executor, get_analytics_sorted_by, db, date, "three_day_avg_volume"
-            ),
-            await loop.run_in_executor(
-                executor, get_analytics_sorted_by, db, date, "macd"
-            ),
-        ]
-
+    futures = [
+        get_analytics_sorted_by(db, date, "one_day_avg_mf"),
+        get_analytics_sorted_by(db, date, "three_day_avg_mf"),
+        get_analytics_sorted_by(db, date, "volume"),
+        get_analytics_sorted_by(db, date, "three_day_avg_volume"),
+        get_analytics_sorted_by(db, date, "macd")
+    ]
     res = await asyncio.gather(*futures)
 
     return {

@@ -430,14 +430,8 @@ async def get_analytics_sorted_by(
         )
         items = await cursor.to_list(length=lim)
 
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            futures = [
-                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
-                for item in items
-            ]
-
-            return await asyncio.gather(*futures)
+        futures = [ extend_base_analytics(conn, item) for item in items ]
+        return await asyncio.gather(*futures)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
