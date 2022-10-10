@@ -4,7 +4,8 @@ Endpoints to access stock market analytics
 
 import time
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
+
+# from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
@@ -102,11 +103,10 @@ async def read_analytics_by_criteria(
     date: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
 ) -> dict:
     """
-    Endpoint to get analytics (both base and extra) for a single stock
+    Endpoint to get analytics (both base and extra) for top 20 stock by all the implemented criteria
 
     Args:
         date (str): analytics for which date in the format of YYYY-MM-DD
-        ticker (str): ticker representing the stock
         api_key (str): key to allow/disallow a request
 
     Raises:
@@ -128,7 +128,7 @@ async def read_analytics_by_criteria(
         get_analytics_sorted_by(db, date, "three_day_avg_mf"),
         get_analytics_sorted_by(db, date, "volume"),
         get_analytics_sorted_by(db, date, "three_day_avg_volume"),
-        get_analytics_sorted_by(db, date, "macd")
+        get_analytics_sorted_by(db, date, "macd"),
     ]
     res = await asyncio.gather(*futures)
 
@@ -138,6 +138,51 @@ async def read_analytics_by_criteria(
         "by_volume": res[2],
         "by_three_day_avg_volume": res[3],
         "by_macd": res[4],
+        "timing": time.time() - start,
+    }
+
+
+@analytics_router.get("/get_analytics_lists_by_criterion")
+async def get_analytics_lists_by_criterion(
+    date: str,
+    criterion: str,
+    api_key: str,
+    db: AsyncIOMotorClient = Depends(get_database),
+) -> dict:
+    """
+    Endpoint to get analytics (both base and extra) for top 20 stock by a certain criterion
+
+    Args:
+        date (str): analytics for which date in the format of YYYY-MM-DD
+        criterion (str): one of
+        "one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd"
+        api_key (str): key to allow/disallow a request
+
+    Raises:
+        HTTPException: Incorrect API key provided
+
+    Returns:
+        dict:
+            each field is a list of outputs for the following
+            functions compute_base_analytics and compute_extra_analytics for details
+    """
+    start = time.time()
+    is_valid_date(date)
+
+    if api_key != API_KEY:
+        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
+
+    if criterion not in [
+        "one_day_avg_mf",
+        "three_day_avg_mf",
+        "volume",
+        "three_day_avg_volume",
+        "macd",
+    ]:
+        raise HTTPException(status_code=400, detail="No such criterion implemented.")
+
+    return {
+        criterion: await get_analytics_sorted_by(db, date, criterion),
         "timing": time.time() - start,
     }
 
