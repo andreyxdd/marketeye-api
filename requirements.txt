@@ -21,3 +21,4 @@ scrapy-user-agents==0.1.1
 html5lib
 bs4
 fake_headers
+cachetools
