@@ -2,8 +2,8 @@
 Endpoints to access stock market analytics
 """
 
-import time
 import asyncio
+from cachetools import cached, TTLCache
 
 # from concurrent.futures import ThreadPoolExecutor
 
@@ -117,7 +117,6 @@ async def read_analytics_by_criteria(
             each field is a list of outputs for the following
             functions compute_base_analytics and compute_extra_analytics for details
     """
-    start = time.time()
     is_valid_date(date)
 
     if api_key != API_KEY:
@@ -138,10 +137,10 @@ async def read_analytics_by_criteria(
         "by_volume": res[2],
         "by_three_day_avg_volume": res[3],
         "by_macd": res[4],
-        "timing": time.time() - start,
     }
 
 
+@cached(cache=TTLCache(maxsize=100, ttl=60 * 60 * 24 * 30))  # 1 month
 @analytics_router.get("/get_analytics_lists_by_criterion")
 async def get_analytics_lists_by_criterion(
     date: str,
@@ -166,7 +165,6 @@ async def get_analytics_lists_by_criterion(
             each field is a list of outputs for the following
             functions compute_base_analytics and compute_extra_analytics for details
     """
-    start = time.time()
     is_valid_date(date)
 
     if api_key != API_KEY:
@@ -181,10 +179,7 @@ async def get_analytics_lists_by_criterion(
     ]:
         raise HTTPException(status_code=400, detail="No such criterion implemented.")
 
-    return {
-        criterion: await get_analytics_sorted_by(db, date, criterion),
-        "timing": time.time() - start,
-    }
+    return {criterion: await get_analytics_sorted_by(db, date, criterion)}
 
 
 @analytics_router.get("/get_dates")

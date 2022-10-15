@@ -83,7 +83,9 @@ def compute_base_analytics(df):
     return loads(concat(frames, join="inner", axis=1).fillna(0).iloc[-1].to_json())
 
 
-def compute_extra_analytics(df, n_trading_days: Optional[int] = 15):
+def compute_extra_analytics(
+    df, n_trading_days: Optional[int] = 15
+):  # pylint: disable=R0914
     """
     Function to assemble the json object with the extra analytical characteristics
     (which NOT supposed to be inserted into db) for a single stock.
@@ -158,6 +160,17 @@ def compute_extra_analytics(df, n_trading_days: Optional[int] = 15):
     if len(typical_price["typical"]) - 1 < n_trading_days:
         n_trading_days = len(typical_price["typical"]) - 1
 
+    # MACDs
+    macd_2_sessions_ago = DataFrame(
+        get_ema_n(df["close"], 13) - get_ema_n(df["close"], 27)
+    ).rename(columns={"close": "macd_2_sessions_ago"})
+    macd_5_sessions_ago = DataFrame(
+        get_ema_n(df["close"], 17) - get_ema_n(df["close"], 31)
+    ).rename(columns={"close": "macd_5_sessions_ago"})
+    macd_20_sessions_ago = DataFrame(
+        get_ema_n(df["close"], 32) - get_ema_n(df["close"], 46)
+    ).rename(columns={"close": "macd_20_sessions_ago"})
+
     return {
         # assembling new dataframe and converting to json only the
         # last day (last row) data and converting NaNs to zeros
@@ -171,6 +184,9 @@ def compute_extra_analytics(df, n_trading_days: Optional[int] = 15):
                     three_day_avg_volume_change,
                     one_day_close_change,
                     three_day_avg_close_change,
+                    macd_2_sessions_ago,
+                    macd_5_sessions_ago,
+                    macd_20_sessions_ago,
                 ],
                 join="inner",
                 axis=1,
@@ -218,7 +234,8 @@ def get_money_flow_ratio(typical_prices, volumes, n_days) -> float:
 
     # computing positive and negative money flow
     for i in range(n_days - 1):
-        current_typical_price = typical_prices.iloc[-(i + 1)]  # previous to the last
+        # previous to the last
+        current_typical_price = typical_prices.iloc[-(i + 1)]
         raw_mf = current_typical_price * volumes.iloc[-(i + 1)]
 
         if current_typical_price > typical_prices.iloc[-(i + 2)]:
