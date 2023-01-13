@@ -136,7 +136,7 @@ def get_ticker_base_analytics(
             paginate=to_paginate,
         )
 
-        #  Quandl database don't have enough EOD data for the given ticker (not enough days)
+        #  Quandl database doesn't have enough EOD data for the given ticker (not enough days)
         if quandl_df.shape[0] < actual_offset_n_days:
             # print(f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}")
             return {}

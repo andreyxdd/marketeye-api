@@ -46,5 +46,5 @@ It is recommended to initiate the linter tool in the code editor. For example, i
 
 This template project also utilizes the pre-commit hooks (see ```.pre-commit-config.yaml``` for details). Besides running ```pylint``` in all files in the directory and subdirectories, the pre-commit hooks upgrade packages with ```pyupgrade``` and check code for formating with ```black```. To use pre-commit hooks, before committing, run:
 ```
-$ pre-commit install
+pre-commit install
 ```
