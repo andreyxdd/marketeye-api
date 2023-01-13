@@ -353,54 +353,6 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
         ) from e
 
 
-async def get_analytics_by_five_precents_open_close_change(
-    conn: AsyncIOMotorClient, date: str, lim: Optional[int] = 20
-) -> "list[dict]":
-    """
-    Function to get top stocks (maximum 20) that overcame 5% change
-    between open-close price for the provided date
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date to serach for
-        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
-
-    Raises:
-        Exception: Method reports an error
-
-    Returns:
-        list[dict]:
-            list of dict. See compute_base_analytics and compute_extra_analytics for details
-    """
-    try:
-        epoch_date = get_epoch(date)
-        cursor = (
-            conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
-            .find(
-                {"date": epoch_date, "one_day_open_close_change": {"$gt": 0.05}},
-                {"_id": False},
-            )
-            .sort("one_day_open_close_change", -1)
-            .limit(lim)
-        )
-        items = await cursor.to_list(length=lim)
-
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            futures = [
-                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
-                for item in items
-            ]
-
-            return await asyncio.gather(*futures)
-    except Exception as e:
-        print("Error message:", e)
-        raise Exception(
-            "db/crud/analytics.py,"
-            + " def get_analytics_by_five_precents_open_close_change reported an error"
-        ) from e
-
-
 async def get_analytics_sorted_by(
     conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
 ) -> "list[dict]":
@@ -424,7 +376,10 @@ async def get_analytics_sorted_by(
         epoch_date = get_epoch(date)
         cursor = (
             conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
-            .find({"date": epoch_date}, {"_id": False})
+            .find(
+                {"date": epoch_date},
+                {"_id": False, "bounce": False, "close": False, "open": False},
+            )
             .sort(criterion, -1)
             .limit(lim)
         )
