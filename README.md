@@ -12,10 +12,10 @@ The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB h
 
 ## Codebase Structure
 
-- api: for implementing endpoints
-- core: general settings of the project, i.e. initiating environmental variables
-- db: for establishing a connection to MongoDB and implementing methods for CRUD operations
-- utils: general utility folder, e.g. useful methods to handle date-time objects and sending emails (via smtplib)
+- *api*: for implementing endpoints
+- *core*: general settings of the project, i.e. initiating environmental variables
+- *db*: for establishing a connection to MongoDB and implementing methods for CRUD operations
+- *utils*: general utility folder, e.g. useful methods to handle date-time objects and sending emails (via smtplib)
 - ```main.py```: script to initiate the server, open/close connection to db
 - .github/workflows: to run
   - the ```cronjob.py``` that fetches the EOD stock prices later to be used for calculations
