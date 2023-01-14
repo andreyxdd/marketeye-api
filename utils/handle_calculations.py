@@ -67,10 +67,6 @@ def compute_base_analytics(df):
         columns={"volume": "three_day_avg_volume"}
     )
 
-    # close/open prices difference and its aggregate
-    df["cp_op_diff"] = df["close"] - df["open"]
-    df["cp_op_diff_aggreagte"] = df.loc[::-1, "cp_op_diff"].cumsum()[::-1]
-
     # assembling the final dataframe
     frames = [
         df["ticker"],
@@ -89,7 +85,14 @@ def compute_base_analytics(df):
         # converting to json only the last day (-last row) data and converting NaNs to zeros
         **loads(concat(frames, join="inner", axis=1).fillna(0).iloc[-1].to_json()),
         # bounce array is only for the last 18 trading days (but excluding the requested day)
-        "bounce": df["cp_op_diff_aggreagte"].to_list()[-19:-1][::-1],
+        "bounce": [
+            value * 100
+            for value in one_day_open_close_change.loc[
+                ::-1, "one_day_open_close_change"
+            ]  # converting to python list
+            .cumsum()[::-1]  # cumulative sum of the difference for the given stock
+            .to_list()[-19:-1][::-1]  # only certain range
+        ],
     }
 
 
