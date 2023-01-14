@@ -1,4 +1,4 @@
-# MarketEye API
+# Market-Eye API
 
 MarketEye API provides methods for computing technical indicators of individual stocks (e.g. MACD, EMAs, MFI, etc.) as well as indicators describing the market as a whole (e.g. CVI, VIX, etc.). The EOD (end of the day) historical data is fetched from Nasdaq Data Link API. The only markets analyzed are NASDAQ and NYSE.
 
