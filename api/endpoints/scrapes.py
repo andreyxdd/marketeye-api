@@ -1,58 +1,43 @@
 """
-Endpoints to access stock ticker scrapes data
+Endpoints to access data processed with bounce algorithm
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Query, Depends
 from fastapi.responses import Response
 
-from core.settings import API_KEY
-from utils.handle_datetimes import is_valid_date
 from db.crud.scrapes import get_mentions
 
 from db.mongodb import AsyncIOMotorClient, get_database
+from utils.handle_validation import validate_api_key, validate_date_string
 
 scrapes_router = APIRouter()
 
 
-@scrapes_router.get("/")
-async def home():
+@scrapes_router.get("/", tags=["Scrapes"])
+async def scrapes():
     """
-    Initial analytics route
-
-    Returns:
-
-        Response: welcome sign
+    Initial scrapes route endpoint
     """
     return Response("Hello World! It's a Scrapes Router")
 
 
-@scrapes_router.get("/get_mentions")
+@scrapes_router.get("/get_mentions", tags=["Scrapes"])
 async def read_ticker_mentions(
-    date: str,
-    stockticker: str,
-    apikey: str,
-    database: AsyncIOMotorClient = Depends(get_database),
+    ticker: str = Query(
+        default=None,
+        description="Ticker representing the stock",
+    ),
+    date: str = Depends(validate_date_string),
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    db: AsyncIOMotorClient = Depends(get_database),
 ):
     """
-    Endpoint to get mentions of a stock ticker
-    on the popular media news websites
-
-    Args:
-        date (str): date in the format of YYYY-MM-DD
-        stockticker (str): the ticker representing the stock
-        apikey (str): key for the request
-
-    Raises:
-        HTTPException: An incorrect API key provided
+    Endpoint to get mentions of a stock ticker on some popular media news websites
 
     Returns:
         dict: see get_mentions for the details
     """
-    is_valid_date(date)
-
-    if apikey != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     return {
-        **await get_mentions(database, stockticker, date),
+        **await get_mentions(db, ticker, date),
     }

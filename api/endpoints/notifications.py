@@ -1,12 +1,12 @@
 """
 Endpoints to make email notifications
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from core.settings import API_KEY
 from utils.handle_emails import notify_developer
+from utils.handle_validation import validate_api_key
 
 notifications_router = APIRouter()
 
@@ -16,40 +16,32 @@ class Notification(BaseModel):  # pylint: disable=R0903
     Class representing notifications request body
     """
 
-    email_body: str
-    email_subject: str
+    email_body: str = Field(
+        default=None, description="The body of the email to be sent"
+    )
+    email_subject: str = Field(
+        default=None, description="The subject string of the email to be sent"
+    )
 
 
-@notifications_router.get("/")
-async def home():
+@notifications_router.get("/", tags=["Notifications"])
+async def notifications():
     """
-    Initial notifications route
-
-    Returns:
-
-        Response: welcome sign
+    Initial notifications route endpoint
     """
     return Response("Hello World! It's a Notifications Router")
 
 
-@notifications_router.post("/notify_developer")
-async def run_developer_notification(notification: Notification, api_key: str):
-    """[summary]
-
-    Args:
-        notification (Notification): Notifications body object
-        api_key (str): key to allow/disallow a request
-
-    Raises:
-        HTTPException: Incorrect API key provided
-        HTTPException: Notifications has not been sent due to internal error
-
-    Returns:
-        dict: {"detail": "message with status"}
+@notifications_router.post("/notify_developer", tags=["Notifications"])
+async def send_developer_notification(
+    notification: Notification,
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+):
     """
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
+    Endpoint to contact developer.
 
+    Returns: {"detail": "message with status"}
+    """
     try:
         notify_developer(
             body=notification.email_body, subject=notification.email_subject

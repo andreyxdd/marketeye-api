@@ -2,57 +2,35 @@
 Routes to test API
 """
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 
-from core.settings import API_KEY
 from utils.handle_datetimes import is_valid_date
-from db.mongodb import AsyncIOMotorClient, get_database
+from utils.handle_validation import validate_api_key
 
 tests_router = APIRouter()
 
 
-@tests_router.get("/")
-async def home():
+@tests_router.get("/", tags=["Tests"])
+async def test():
     """
-    Initial tests route
-
-    Returns:
-
-        Response: welcome sign
+    Initial tests route endpoint
     """
     return Response("Hello World! It's a Tests Router")
 
 
-@tests_router.get("/validate_date_string")
+@tests_router.get("/validate_date_string", tags=["Tests"])
 async def run_date_string_validation(
-    api_key: str,
-    db: AsyncIOMotorClient = Depends(get_database),
-    date_string: Optional[str] = "2021-12-12",
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    date_string: Optional[str] = Query(
+        default="2021-12-12",
+        description="Date string to validate the format",
+    ),
 ):
     """
     Endpoint to validate date string
 
-    Args:
-
-        api_key (str): key to allow/disallow a request
-
-        db (AsyncIOMotorClient, optional): database object. Defaults to Depends(get_database).
-
-        date_string (Optional[str], optional): date string to validate. Defaults to "2021-12-12".
-
-    Raises:
-
-        HTTPException: Incorrect API key provided
-
-    Returns:
-
-        dict: of type {"isValidDate": bollean, "isValidApiKey": bollean}
+    Returns: {"isValidDate": bollean, "isValidApiKey": bollean}
     """
-
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
-
-    print(db)
 
     return {"isValidDate": is_valid_date(date_string), "isValidApiKey": True}

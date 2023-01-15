@@ -5,13 +5,10 @@ Endpoints to access stock market analytics
 import asyncio
 from cachetools import cached, TTLCache
 
-# from concurrent.futures import ThreadPoolExecutor
-
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import Response
 
-from core.settings import API_KEY
-from utils.handle_datetimes import is_valid_date
+from utils.handle_validation import validate_api_key, validate_date_string
 from utils.handle_external_apis import (
     get_ticker_analytics,
     get_market_sp500,
@@ -28,40 +25,29 @@ from db.mongodb import AsyncIOMotorClient, get_database
 analytics_router = APIRouter()
 
 
-@analytics_router.get("/")
-async def home():
+@analytics_router.get("/", tags=["Analytics"])
+async def analytics():
     """
-    Initial analytics route
-
-    Returns:
-
-        Response: welcome sign
+    Initial analytics route endpoint
     """
-    return Response("Hello World! It's a Analytics Router")
+    return Response("Hello World! It's an Analytics Router")
 
 
-@analytics_router.get("/get_ticker_analytics")
+@analytics_router.get("/get_ticker_analytics", tags=["Analytics"])
 async def read_ticker_analytics(
-    date: str, ticker: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+    date: str = Depends(validate_date_string),
+    ticker: str = Query(
+        default=None,
+        description="Ticker representing the stock",
+    ),
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    db: AsyncIOMotorClient = Depends(get_database),
 ):
     """
     Endpoint to get analytics (both base and extra) for a single stock
 
-    Args:
-        date (str): analytics for which date in the format of YYYY-MM-DD
-        ticker (str): ticker representing the stock
-        api_key (str): key to allow/disallow a request
-
-    Raises:
-        HTTPException: Incorrect API key provided
-
-    Returns:
-        dict: see compute_base_analytics and compute_extra_analytics for details
+    Returns:  see _compute_base_analytics_ and _compute_extra_analytics_ for details
     """
-    is_valid_date(date)
-
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     return {
         **get_ticker_analytics(ticker, date, 45, 15),
@@ -69,27 +55,17 @@ async def read_ticker_analytics(
     }
 
 
-@analytics_router.get("/get_market_analytics")
+@analytics_router.get("/get_market_analytics", tags=["Analytics"])
 async def read_market_analytics(
-    date: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+    date: str = Depends(validate_date_string),
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    db: AsyncIOMotorClient = Depends(get_database),
 ):
     """
-    Endpoint to get analytics for market as a whole
+    Endpoint to get analytics (both base and extra) for a single stock
 
-    Args:
-        date (str): analytics for which date in the format of YYYY-MM-DD
-        api_key (str): key to allow/disallow a request
-
-    Raises:
-        HTTPException: Incorrect API key provided
-
-    Returns:
-        dict:
+    Returns:  see _get_market_sp500_, _get_market_vixs_, _get_normalazied_cvi_slope_ and for details
     """
-    is_valid_date(date)
-
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     return {
         "SP500": get_market_sp500(date),
@@ -98,29 +74,19 @@ async def read_market_analytics(
     }
 
 
-@analytics_router.get("/get_analytics_lists_by_criteria")
+@analytics_router.get("/get_analytics_lists_by_criteria", tags=["Analytics"])
 async def read_analytics_by_criteria(
-    date: str, api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+    date: str = Depends(validate_date_string),
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    db: AsyncIOMotorClient = Depends(get_database),
 ) -> dict:
     """
-    Endpoint to get analytics (both base and extra) for top 20 stock by all the implemented criteria
-
-    Args:
-        date (str): analytics for which date in the format of YYYY-MM-DD
-        api_key (str): key to allow/disallow a request
-
-    Raises:
-        HTTPException: Incorrect API key provided
+    Endpoint to get analytics (both base and extra) for a single stock
 
     Returns:
-        dict:
-            each field is a list of outputs for the following
-            functions compute_base_analytics and compute_extra_analytics for details
+        each field is a list of outputs for
+        the functions _compute_base_analytics_ and _compute_extra_analytics_
     """
-    is_valid_date(date)
-
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     futures = [
         get_analytics_sorted_by(db, date, "one_day_avg_mf"),
@@ -141,34 +107,24 @@ async def read_analytics_by_criteria(
 
 
 @cached(cache=TTLCache(maxsize=100, ttl=60 * 60 * 24 * 30))  # 1 month
-@analytics_router.get("/get_analytics_lists_by_criterion")
-async def get_analytics_lists_by_criterion(
-    date: str,
-    criterion: str,
-    api_key: str,
+@analytics_router.get("/get_analytics_lists_by_criterion", tags=["Analytics"])
+async def read_analytics_lists_by_criterion(
+    date: str = Depends(validate_date_string),
+    criterion: str = Query(
+        default=None,
+        description="""
+            Criterion by which the top 20 tickers are selected.
+            One of ["one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd"]
+        """,
+    ),
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
 ) -> dict:
     """
-    Endpoint to get analytics (both base and extra) for top 20 stock by a certain criterion
+    Endpoint to get analytics (both base and extra) for a single stock
 
-    Args:
-        date (str): analytics for which date in the format of YYYY-MM-DD
-        criterion (str): one of
-        "one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd"
-        api_key (str): key to allow/disallow a request
-
-    Raises:
-        HTTPException: Incorrect API key provided
-
-    Returns:
-        dict:
-            each field is a list of outputs for the following
-            functions compute_base_analytics and compute_extra_analytics for details
+    Returns: see output for the functions _compute_base_analytics_ and _compute_extra_analytics_
     """
-    is_valid_date(date)
-
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     if criterion not in [
         "one_day_avg_mf",
@@ -182,23 +138,15 @@ async def get_analytics_lists_by_criterion(
     return {criterion: await get_analytics_sorted_by(db, date, criterion)}
 
 
-@analytics_router.get("/get_dates")
+@analytics_router.get("/get_dates", tags=["Analytics"])
 async def read_dates(
-    api_key: str, db: AsyncIOMotorClient = Depends(get_database)
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    db: AsyncIOMotorClient = Depends(get_database),
 ) -> dict:
     """
-    Endpoint to get all the distinctive dates present in the analytics collection
+    Endpoint to get dates for which analytics data exists in the database
 
-    Args:
-        api_key (str): key to allow/disallow a request
-
-    Raises:
-        HTTPException: Incorrect API key provided
-
-    Returns:
-        dict: one field ("dates") correspongding to list of epoch dates
+    Returns: Correspongding to list of epoch dates ("dates")
     """
-    if api_key != API_KEY:
-        raise HTTPException(status_code=400, detail="Erreneous API key recieved.")
 
     return await get_dates(db)
