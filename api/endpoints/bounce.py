@@ -24,9 +24,8 @@ async def bounce():
 async def read_bounce_stocks(
     period: int = Query(
         default=None,
-        description="""
-            Number of past period to include in the analyze with bounce algorithm. This number should lie within the range from 1 to 18.
-        """,
+        description="""Number of past periods to include in the bounce analysis.
+        This number should lie within the range from 1 to 18.""",
     ),
     date: str = Depends(validate_date_string),
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613

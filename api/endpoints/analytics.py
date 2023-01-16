@@ -112,10 +112,8 @@ async def read_analytics_lists_by_criterion(
     date: str = Depends(validate_date_string),
     criterion: str = Query(
         default=None,
-        description="""
-            Criterion by which the top 20 tickers are selected.
-            One of ["one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd"]
-        """,
+        description="""Criterion by which the top 20 tickers are selected.
+        One of "one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd\"""",
     ),
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
