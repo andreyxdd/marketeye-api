@@ -133,7 +133,7 @@ async def read_analytics_lists_by_criterion(
         "three_day_avg_volume",
         "macd",
     ]:
-        raise HTTPException(status_code=400, detail="No such criterion implemented.")
+        raise HTTPException(status_code=422, detail="No such criterion implemented.")
 
     return {criterion: await get_analytics_sorted_by(db, date, criterion)}
 

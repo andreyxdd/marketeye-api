@@ -1,5 +1,5 @@
 """
-Utilities methods for API calls
+Utilities methods to validate API calls
 """
 
 from fastapi import Query

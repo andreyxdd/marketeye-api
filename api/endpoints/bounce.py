@@ -1,14 +1,11 @@
 """
-Endpoints to access stock market analytics
+Endpoints to access data processed with bounce algorithm
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 
-from db.crud.analytics import (
-    get_analytics_sorted_by,
-    get_dates,
-)
+from db.crud.bounce import get_bounce_dates, get_bounce_stocks
 from db.mongodb import AsyncIOMotorClient, get_database
 from utils.handle_validation import validate_api_key, validate_date_string
 
@@ -23,8 +20,14 @@ async def bounce():
     return Response("Hello World! It's an Bounce Router")
 
 
-@bounce_router.get("/get_analytics_lists_by_criterion", tags=["Bounce"])
-async def read_analytics_lists_by_criterion(
+@bounce_router.get("/get_bounce_stocks", tags=["Bounce"])
+async def read_bounce_stocks(
+    period: int = Query(
+        default=None,
+        description="""
+            Number of past period to include in the analyze with bounce algorithm. This number should lie within the range from 1 to 18.
+        """,
+    ),
     date: str = Depends(validate_date_string),
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
@@ -32,10 +35,13 @@ async def read_analytics_lists_by_criterion(
     """
     Endpoint to get analytics (both base and extra) for a single stock
 
-    Returns: See output for the functions _compute_base_analytics_ and _compute_extra_analytics_
+    Returns: see output for the _get_bounce_stocks_ function
     """
 
-    return {"one_day_avg_mf": await get_analytics_sorted_by(db, date, "one_day_avg_mf")}
+    if period not in range(1, 19):
+        raise HTTPException(status_code=422, detail="No such period implemented.")
+
+    return await get_bounce_stocks(db, date, period)
 
 
 @bounce_router.get("/get_dates", tags=["Bounce"])
@@ -49,4 +55,4 @@ async def read_dates(
     Returns: List of epoch dates ("dates")
     """
 
-    return await get_dates(db)
+    return await get_bounce_dates(db)
