@@ -1,5 +1,7 @@
 # Market-Eye API
 
+![Data Processing Cronjob](https://github.com/andreyxdd/marketeye-api/actions/workflows/cronjob.yml/badge.svg)
+
 Market-Eye API provides methods for computing technical indicators of individual stocks (e.g. MACD, EMAs, MFI, etc.) as well as indicators describing the market as a whole (e.g. CVI, VIX, etc.). The EOD (end of the day) historical data is fetched from Nasdaq Data Link API. The only markets analyzed are NASDAQ and NYSE.
 
 Furthermore, the API includes a scraping bot that collects the number of mentions of a given stock ticker. The scraping is done across some of the most popular news websites.
