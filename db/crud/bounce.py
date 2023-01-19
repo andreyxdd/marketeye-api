@@ -71,6 +71,17 @@ AGGREGATE_STAGES = {
         "$sort": {"cp_op_precentage_diff": -1},
     },
     "top-20": {"$limit": 20},
+    "select-fields": {
+        "$project": {
+            "_id": False,
+            "ticker": True,
+            "date": True,
+            "open": True,
+            "close": True,
+            "volume": True,
+            "cp_op_precentage_diff": True,
+        }
+    },
 }
 
 
@@ -90,7 +101,11 @@ async def get_bounce_dates(conn: AsyncIOMotorClient) -> list:
     """
     try:
         cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(
-            [AGGREGATE_STAGES["is-bounce"], {"$group": {"_id": "$date"}}]
+            [
+                AGGREGATE_STAGES["is-bounce"],
+                {"$group": {"_id": "$date"}},
+                {"$sort": {"_id": 1}},
+            ]
         )
 
         return [  # ed - epoch_date
@@ -136,6 +151,56 @@ async def get_bounce_stocks(
             *possible_stage,
             AGGREGATE_STAGES["sort-risers"],
             AGGREGATE_STAGES["top-20"],
+            AGGREGATE_STAGES["select-fields"],
+        ]
+        cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(pipeline)
+
+        return await cursor.to_list(length=20)
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/bounce.py, def get_bounce_stocks reported an error"
+        ) from e
+
+
+async def get_tracked_stocks(
+    conn: AsyncIOMotorClient, date: str, tickers: list[str]
+) -> list:
+    """
+    Method that returns stock that are required to be tracked as pre bounce analysis
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date string
+        tickers (list[str]): tickers to track
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        list: 20 stocks tickers with their
+        respective open/close prices and volumes
+    """
+
+    try:
+        epoch_date = get_epoch(date)
+
+        pipeline = [
+            {"$match": {"date": epoch_date}},
+            {"$match": {"ticker": {"$in": tickers}}},
+            {
+                "$project": {
+                    "_id": False,
+                    "ticker": True,
+                    "date": True,
+                    "open": True,
+                    "close": True,
+                    "volume": True,
+                    "cp_op_precentage_diff": {
+                        "$multiply": ["$one_day_open_close_change", 100]
+                    },
+                }
+            },
         ]
         cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(pipeline)
 
