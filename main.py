@@ -3,12 +3,15 @@ MarketEye API v1
 """
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import Response
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response, FileResponse
 from core.settings import DEFAULT_ROUTE_STR
 from api import router as endpoint_router
 from db.mongodb import close, connect
 
 app = FastAPI(
+    docs_url=None,
     title="Market-Eye API",
     version="1.3.1",
     # pylint: disable=C0301
@@ -22,6 +25,7 @@ app = FastAPI(
         "url": "https://www.gnu.org/licenses/gpl-3.0.en.html",
     },
 )
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 tags_metadata = [
     {
@@ -69,6 +73,22 @@ async def on_app_shutdown():
 async def market_eye_api():
     """Initial endpoint"""
     return Response("Market-Eye API v1.3.1")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Adding favicon"""
+    return FileResponse("/assets/icon.ico")
+
+
+@app.get("/docs", include_in_schema=False)
+async def swagger_ui_html():
+    """Adding favicon to swagger ui docs endpoint"""
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="Market-Eye API",
+        swagger_favicon_url="/assets/icon.ico",
+    )
 
 
 if __name__ == "__main__":
