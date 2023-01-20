@@ -199,11 +199,14 @@ async def get_tracked_stocks(
                     "cp_op_precentage_diff": {
                         "$multiply": ["$one_day_open_close_change", 100]
                     },
+                    "preserveOrder": {
+                        "$indexOfArray": [tickers, "$ticker"],
+                    },
                 }
             },
+            {"$sort": {"preserveOrder": 1}},
         ]
         cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(pipeline)
-
         return await cursor.to_list(length=20)
     except Exception as e:
         print("Error message:", e)

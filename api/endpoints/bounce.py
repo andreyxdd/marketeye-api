@@ -56,6 +56,8 @@ async def read_tracked_stocks(
     db: AsyncIOMotorClient = Depends(get_database),
 ) -> dict:
     """
+    Endpoint to get close/opening prices, thier difference in precentages, and volume
+    of the stocks in the provided list and on the given trading day.
 
     Returns: see output for the _get_bounce_stocks_ function
     """
