@@ -12,6 +12,8 @@ from utils.handle_emails import notify_developer
 try:
     response = requests.get(os.getenv("PING_URL"))
     print(f"pinger.py responded with: {response}")
+    if response.status_code > 200:
+        raise Exception("Erroneous status code received")
 except Exception as e:  # pylint: disable=W0703
     print(f"pinger.py reported an error: {e}")
     notify_developer(
