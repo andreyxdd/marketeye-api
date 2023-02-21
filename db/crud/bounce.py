@@ -1,6 +1,7 @@
 """
 Methods to handle CRUD operation with 'analytics' collection in the db
 """
+from asyncstdlib import lru_cache
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
 from utils.handle_datetimes import get_date_string, get_epoch
@@ -85,6 +86,7 @@ AGGREGATE_STAGES = {
 }
 
 
+@lru_cache
 async def get_bounce_dates(conn: AsyncIOMotorClient) -> list:
     """
     Function to get all the distinct date from the analytics
@@ -120,9 +122,8 @@ async def get_bounce_dates(conn: AsyncIOMotorClient) -> list:
         ) from e
 
 
-async def get_bounce_stocks(
-    conn: AsyncIOMotorClient, date: str, period: isinstance
-) -> list:
+@lru_cache
+async def get_bounce_stocks(conn: AsyncIOMotorClient, date: str, period: int) -> list:
     """
     Method that implements the bounce algorithm on close-open prices difference
 
@@ -163,6 +164,7 @@ async def get_bounce_stocks(
         ) from e
 
 
+@lru_cache
 async def get_tracked_stocks(
     conn: AsyncIOMotorClient, date: str, tickers: list[str]
 ) -> list:
@@ -211,5 +213,5 @@ async def get_tracked_stocks(
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "db/crud/bounce.py, def get_bounce_stocks reported an error"
+            "db/crud/bounce.py, def get_tracked_stocks reported an error"
         ) from e

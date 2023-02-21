@@ -39,3 +39,19 @@ def validate_date_string(
         ) from error
 
     return date
+
+
+def validate_bounce_period(
+    period: int = Query(
+        default=None,
+        description="""Number of past periods to include in the bounce analysis.
+        This number should lie within the range from 1 to 18.""",
+    ),
+):
+    """
+    Method to validate the bounce period (number of days)
+    """
+    if period not in range(1, 19):
+        raise HTTPException(status_code=422, detail="No such period implemented.")
+
+    return period
