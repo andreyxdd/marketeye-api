@@ -81,26 +81,28 @@ async def read_frequencies(
     Returns: List of strings representing the period when the ticker occoured in
     the top 20, e.g., "T-2, T-4, T-6"
     """
+    bounce_stoks_matrix = []
+    curr_period = period
+    for curr_period in range(1, period):
+        arr = await get_bounce_stocks(db, date, curr_period)
+        bounce_stoks_matrix.append(arr)
+
     tickers = tickers.split(",")
     frequencies = [""] * len(tickers)
-    for idx, ticker in enumerate(tickers):
-        curr_period = period
-        while curr_period > 1:
-            # searching from the highest period to the lowest
-            curr_period = curr_period - 1
-
-            # function is cached so it's alright to iterate
-            arr = await get_bounce_stocks(db, date, curr_period)
-            for item in arr:
+    for idx_ticker, ticker in enumerate(tickers):
+        for idx_period, bounce_data in enumerate(bounce_stoks_matrix):
+            for item in bounce_data:
                 if ticker == item["ticker"]:
-                    frequencies[idx] = frequencies[idx] + f"T-{curr_period}, "
+                    frequencies[idx_ticker] = (
+                        frequencies[idx_ticker] + f"T-{idx_period+1}, "
+                    )
                     # ticker can appear only once, no need to continue looping
                     break
 
         # if there is ticker frequency
-        if frequencies[idx]:
+        if frequencies[idx_ticker]:
             # removing last two chars from the string
-            frequencies[idx] = frequencies[idx][:-2]
+            frequencies[idx_ticker] = frequencies[idx_ticker][:-2]
 
     return frequencies
 
