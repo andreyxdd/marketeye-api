@@ -3,7 +3,7 @@ Endpoints to access stock market analytics
 """
 
 import asyncio
-from cachetools import cached, TTLCache
+from asyncstdlib import lru_cache
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import Response
@@ -33,6 +33,7 @@ async def analytics():
     return Response("Hello World! It's an Analytics Router")
 
 
+@lru_cache()
 @analytics_router.get("/get_ticker_analytics", tags=["Analytics"])
 async def read_ticker_analytics(
     date: str = Depends(validate_date_string),
@@ -55,6 +56,7 @@ async def read_ticker_analytics(
     }
 
 
+@lru_cache()
 @analytics_router.get("/get_market_analytics", tags=["Analytics"])
 async def read_market_analytics(
     date: str = Depends(validate_date_string),
@@ -74,6 +76,7 @@ async def read_market_analytics(
     }
 
 
+@lru_cache()
 @analytics_router.get("/get_analytics_lists_by_criteria", tags=["Analytics"])
 async def read_analytics_by_criteria(
     date: str = Depends(validate_date_string),
@@ -106,7 +109,7 @@ async def read_analytics_by_criteria(
     }
 
 
-@cached(cache=TTLCache(maxsize=100, ttl=60 * 60 * 24 * 30))  # 1 month
+@lru_cache()
 @analytics_router.get("/get_analytics_lists_by_criterion", tags=["Analytics"])
 async def read_analytics_lists_by_criterion(
     date: str = Depends(validate_date_string),
@@ -136,6 +139,7 @@ async def read_analytics_lists_by_criterion(
     return {criterion: await get_analytics_sorted_by(db, date, criterion)}
 
 
+@lru_cache()
 @analytics_router.get("/get_dates", tags=["Analytics"])
 async def read_dates(
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
