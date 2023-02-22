@@ -165,16 +165,14 @@ async def get_bounce_stocks(conn: AsyncIOMotorClient, date: str, period: int) ->
 
 
 @lru_cache
-async def get_tracked_stocks(
-    conn: AsyncIOMotorClient, date: str, tickers: list[str]
-) -> list:
+async def get_tracked_stocks(conn: AsyncIOMotorClient, date: str, tickers: str) -> list:
     """
     Method that returns stock that are required to be tracked as pre bounce analysis
 
     Args:
         conn (AsyncIOMotorClient): db-connection string
         date (str): date string
-        tickers (list[str]): tickers to track
+        tickers (str): string of comma separated stock tickers
 
     Raises:
         Exception: Method reports an error
@@ -185,6 +183,7 @@ async def get_tracked_stocks(
     """
 
     try:
+        tickers = tickers.split(",")  # convert to array of strings
         epoch_date = get_epoch(date)
 
         pipeline = [

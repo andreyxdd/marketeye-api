@@ -58,8 +58,7 @@ async def read_tracked_stocks(
 
     Returns: see output for the _get_bounce_stocks_ function
     """
-
-    return await get_tracked_stocks(db, date, tickers.split(","))
+    return await get_tracked_stocks(db, date, tickers)
 
 
 @bounce_router.get("/get_frequencies", tags=["Bounce"])
