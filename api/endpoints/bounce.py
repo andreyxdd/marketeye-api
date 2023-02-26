@@ -3,6 +3,7 @@ Endpoints to access data processed with bounce algorithm
 """
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
+from asyncstdlib import lru_cache
 
 from db.crud.bounce import get_bounce_dates, get_bounce_stocks, get_tracked_stocks
 from db.mongodb import AsyncIOMotorClient, get_database
@@ -15,6 +16,7 @@ from utils.handle_validation import (
 bounce_router = APIRouter()
 
 
+@lru_cache()
 @bounce_router.get("/", tags=["Bounce"])
 async def bounce():
     """
@@ -23,6 +25,7 @@ async def bounce():
     return Response("Hello World! It's an Bounce Router")
 
 
+@lru_cache()
 @bounce_router.get("/get_bounce_stocks", tags=["Bounce"])
 async def read_bounce_stocks(
     period: int = Depends(validate_bounce_period),
@@ -41,6 +44,7 @@ async def read_bounce_stocks(
     return await get_bounce_stocks(db, date, period)
 
 
+@lru_cache()
 @bounce_router.get("/get_tracked_stocks", tags=["Bounce"])
 async def read_tracked_stocks(
     date: str = Depends(validate_date_string),
@@ -61,6 +65,7 @@ async def read_tracked_stocks(
     return await get_tracked_stocks(db, date, tickers)
 
 
+@lru_cache()
 @bounce_router.get("/get_frequencies", tags=["Bounce"])
 async def read_frequencies(
     period: int = Depends(validate_bounce_period),
@@ -106,6 +111,7 @@ async def read_frequencies(
     return frequencies
 
 
+@lru_cache()
 @bounce_router.get("/get_dates", tags=["Bounce"])
 async def read_dates(
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
