@@ -22,3 +22,4 @@ html5lib
 bs4
 fake_headers
 asyncstdlib
+redis
