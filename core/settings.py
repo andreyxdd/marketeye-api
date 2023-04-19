@@ -17,6 +17,9 @@ MONGO_URI = (
     + f"{MONGO_DB_NAME}?retryWrites=true&w=majority"
 )
 
+# Redis configurations
+REDIS_URI = os.getenv("REDIS_URI")
+
 # API key to access endpoints
 API_KEY = os.getenv("API_KEY")
 

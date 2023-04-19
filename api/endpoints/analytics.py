@@ -21,6 +21,7 @@ from db.crud.analytics import (
 )
 from db.crud.scrapes import get_mentions
 from db.mongodb import AsyncIOMotorClient, get_database
+from db.redis import cacheStore
 
 analytics_router = APIRouter()
 
@@ -33,7 +34,6 @@ async def analytics():
     return Response("Hello World! It's an Analytics Router")
 
 
-@lru_cache()
 @analytics_router.get("/get_ticker_analytics", tags=["Analytics"])
 async def read_ticker_analytics(
     date: str = Depends(validate_date_string),
@@ -50,10 +50,15 @@ async def read_ticker_analytics(
     Returns:  see _compute_base_analytics_ and _compute_extra_analytics_ for details
     """
 
-    return {
-        **get_ticker_analytics(ticker, date, 45, 15),
-        **await get_mentions(db, ticker, date),
-    }
+    data = cacheStore.get(f"${ticker}-${date}")
+
+    if not data:
+        data = {
+            **get_ticker_analytics(ticker, date, 45, 15),
+            **await get_mentions(db, ticker, date),
+        }
+
+    return data
 
 
 @lru_cache()
