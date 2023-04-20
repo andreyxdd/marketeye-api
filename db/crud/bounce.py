@@ -1,9 +1,9 @@
 """
 Methods to handle CRUD operation with 'analytics' collection in the db
 """
-from asyncstdlib import lru_cache
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
+from db.redis import use_cache_async
 from utils.handle_datetimes import get_date_string, get_epoch
 
 MONGO_COLLECTION_NAME = "analytics"
@@ -86,7 +86,6 @@ AGGREGATE_STAGES = {
 }
 
 
-@lru_cache
 async def get_bounce_dates(conn: AsyncIOMotorClient) -> list:
     """
     Function to get all the distinct date from the analytics
@@ -122,7 +121,7 @@ async def get_bounce_dates(conn: AsyncIOMotorClient) -> list:
         ) from e
 
 
-@lru_cache
+@use_cache_async(ignore_first_arg=True)
 async def get_bounce_stocks(conn: AsyncIOMotorClient, date: str, period: int) -> list:
     """
     Method that implements the bounce algorithm on close-open prices difference
@@ -164,7 +163,7 @@ async def get_bounce_stocks(conn: AsyncIOMotorClient, date: str, period: int) ->
         ) from e
 
 
-@lru_cache
+@use_cache_async(ignore_first_arg=True)
 async def get_tracked_stocks(conn: AsyncIOMotorClient, date: str, tickers: str) -> list:
     """
     Method that returns stock that are required to be tracked as pre bounce analysis

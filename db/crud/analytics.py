@@ -5,11 +5,11 @@ import asyncio
 from time import sleep
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from asyncstdlib import lru_cache
 
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from db.mongodb import AsyncIOMotorClient
 from db.crud.scrapes import get_mentions
+from db.redis import use_cache_async
 from utils.handle_datetimes import get_date_string, get_epoch
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
@@ -21,7 +21,7 @@ from utils.handle_external_apis import (
 MONGO_COLLECTION_NAME = "analytics"
 
 
-@lru_cache()
+@use_cache_async(ignore_first_arg=True)
 async def get_analytics_by_open_close_change(
     conn: AsyncIOMotorClient,
     n_trading_days: int,
@@ -69,7 +69,7 @@ async def get_analytics_by_open_close_change(
         ) from e
 
 
-@lru_cache()
+@use_cache_async(ignore_first_arg=True)
 async def get_normalazied_cvi_slope(
     conn: AsyncIOMotorClient, date: str, n_trading_days: Optional[int] = 50
 ) -> float:
@@ -144,6 +144,7 @@ async def get_normalazied_cvi_slope(
         ) from e
 
 
+@use_cache_async(ignore_first_arg=True)
 async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str) -> str:
     """
     Function to compute analytics for the given EOD data for the tickers
@@ -262,7 +263,6 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         )
 
 
-@lru_cache()
 async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]":
     """
     Function that returns a list of all the tickers that
@@ -291,7 +291,6 @@ async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> "list[st
         ) from e
 
 
-@lru_cache()
 async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]":
     """
     Function that returns a list of tickers that are present in the
@@ -358,7 +357,7 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
         ) from e
 
 
-@lru_cache()
+@use_cache_async(ignore_first_arg=True)
 async def get_analytics_sorted_by(
     conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
 ) -> "list[dict]":
@@ -406,7 +405,6 @@ async def get_analytics_sorted_by(
         ) from e
 
 
-@lru_cache()
 async def get_dates(conn: AsyncIOMotorClient) -> list:
     """
     Function to get all the distinct date from the analytics collection

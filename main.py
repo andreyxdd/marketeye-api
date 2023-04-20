@@ -13,7 +13,7 @@ from db.mongodb import close, connect
 app = FastAPI(
     docs_url=None,
     title="Market-Eye API",
-    version="1.3.1",
+    version="1.4.1",
     # pylint: disable=C0301
     description="**Market-Eye API** provides methods for computing technical indicators of individual stocks (_e.g. MACD, EMAs, MFI, etc._) as well as indicators describing the market as a whole (_e.g. CVI, VIX, etc._). The EOD (end of the day) historical data is fetched from Nasdaq Data Link API. The only markets analyzed are _NASDAQ_ and _NYSE_. The API also includes a scraping bot that collects the number of mentions of a given stock ticker. The scraping is done across some of the most popular news websites. Finally, the API provides methods for sorting all the stock data and scraping results (for the given date) based on several implemented criteria.",
     contact={
@@ -72,7 +72,7 @@ async def on_app_shutdown():
 @app.get("/", tags=["Home"])
 async def market_eye_api():
     """Initial endpoint"""
-    return Response("Market-Eye API v1.3.1")
+    return Response("Market-Eye API v1.4.1")
 
 
 @app.get("/favicon.ico", include_in_schema=False)

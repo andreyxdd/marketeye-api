@@ -3,7 +3,6 @@ Endpoints to access stock market analytics
 """
 
 import asyncio
-from asyncstdlib import lru_cache
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import Response
@@ -21,7 +20,6 @@ from db.crud.analytics import (
 )
 from db.crud.scrapes import get_mentions
 from db.mongodb import AsyncIOMotorClient, get_database
-from db.redis import cacheStore
 
 analytics_router = APIRouter()
 
@@ -50,18 +48,12 @@ async def read_ticker_analytics(
     Returns:  see _compute_base_analytics_ and _compute_extra_analytics_ for details
     """
 
-    data = cacheStore.get(f"${ticker}-${date}")
-
-    if not data:
-        data = {
-            **get_ticker_analytics(ticker, date, 45, 15),
-            **await get_mentions(db, ticker, date),
-        }
-
-    return data
+    return {
+        **get_ticker_analytics(ticker, date, 45, 15),
+        **await get_mentions(db, ticker, date),
+    }
 
 
-@lru_cache()
 @analytics_router.get("/get_market_analytics", tags=["Analytics"])
 async def read_market_analytics(
     date: str = Depends(validate_date_string),
@@ -81,7 +73,6 @@ async def read_market_analytics(
     }
 
 
-@lru_cache()
 @analytics_router.get("/get_analytics_lists_by_criteria", tags=["Analytics"])
 async def read_analytics_by_criteria(
     date: str = Depends(validate_date_string),
@@ -114,7 +105,6 @@ async def read_analytics_by_criteria(
     }
 
 
-@lru_cache()
 @analytics_router.get("/get_analytics_lists_by_criterion", tags=["Analytics"])
 async def read_analytics_lists_by_criterion(
     date: str = Depends(validate_date_string),
@@ -144,7 +134,6 @@ async def read_analytics_lists_by_criterion(
     return {criterion: await get_analytics_sorted_by(db, date, criterion)}
 
 
-@lru_cache()
 @analytics_router.get("/get_dates", tags=["Analytics"])
 async def read_dates(
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
