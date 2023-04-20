@@ -144,7 +144,7 @@ async def get_normalazied_cvi_slope(
         ) from e
 
 
-@use_cache_async(ignore_first_arg=True)
+# @use_cache_async(ignore_first_arg=True)
 async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str) -> str:
     """
     Function to compute analytics for the given EOD data for the tickers

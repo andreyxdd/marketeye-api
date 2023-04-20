@@ -82,7 +82,7 @@ async def cronjob():
         print("Error message:", e)
         notify_developer(
             body=f"Analytics cronjob reported an error: {curr_date} ({get_epoch(curr_date)})"
-            + f" with rror message:\n\n {e}",
+            + f" with error message:\n\n {e}",
             subject="Cronjob Report",
         )
 

@@ -32,6 +32,7 @@ jobs:
       QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
       USER_AGENT: ${{ secrets.USER_AGENT }}
       DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
+      REDIS_URI: ${{ secrets.REDIS_URI }}
 
     steps:
       - name: Checkout repository content
