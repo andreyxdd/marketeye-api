@@ -257,7 +257,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             ) from e
 
         print(
-            "db/crud/analytics.py, def computeAndInsertNewAnalytics:"
+            "db/crud/analytics.py, def compute_base_analytics_and_insert:"
             + f" Mongodb {type(e).__name__} occured during insert_many() operation."
             + "Still, new base analytics data has been inserted."
         )

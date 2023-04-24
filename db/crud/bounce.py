@@ -1,5 +1,6 @@
 """
 Methods to handle CRUD operation with 'analytics' collection in the db
+with regard to 'bounce' algorithm
 """
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
