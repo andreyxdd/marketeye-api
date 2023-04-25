@@ -21,7 +21,6 @@ from utils.handle_external_apis import (
 MONGO_COLLECTION_NAME = "analytics"
 
 
-@use_cache_async(ignore_first_arg=True)
 async def get_analytics_by_open_close_change(
     conn: AsyncIOMotorClient,
     n_trading_days: int,
@@ -69,7 +68,6 @@ async def get_analytics_by_open_close_change(
         ) from e
 
 
-@use_cache_async(ignore_first_arg=True)
 async def get_normalazied_cvi_slope(
     conn: AsyncIOMotorClient, date: str, n_trading_days: Optional[int] = 50
 ) -> float:
@@ -144,7 +142,6 @@ async def get_normalazied_cvi_slope(
         ) from e
 
 
-# @use_cache_async(ignore_first_arg=True)
 async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str) -> str:
     """
     Function to compute analytics for the given EOD data for the tickers
@@ -320,7 +317,9 @@ async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]
         ) from e
 
 
-async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
+async def remove_base_analytics(
+    conn: AsyncIOMotorClient, date: str, collection_name: str = MONGO_COLLECTION_NAME
+):
     """
     Function to remove all the stocks base analytics data for the provided date.
     Make sure that provided date is for the 'America/New_York' timezone
@@ -334,7 +333,7 @@ async def remove_base_analytics(conn: AsyncIOMotorClient, date: str):
     """
     try:
         epoch_date = get_epoch(date)
-        deleted_docs = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].delete_many(
+        deleted_docs = await conn[MONGO_DB_NAME][collection_name].delete_many(
             {"date": epoch_date}
         )
         deleted_docs_count = deleted_docs.deleted_count

@@ -7,7 +7,10 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import Response
 
-from utils.handle_validation import validate_api_key, validate_date_string
+from utils.handle_validation import (
+    validate_api_key,
+    validate_date_string,
+)
 from utils.handle_external_apis import (
     get_ticker_analytics,
     get_market_sp500,
@@ -18,7 +21,9 @@ from db.crud.analytics import (
     get_analytics_sorted_by,
     get_dates,
 )
+
 from db.crud.scrapes import get_mentions
+from db.crud.tracking import CRITERIA, get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient, get_database
 
 analytics_router = APIRouter()
@@ -122,13 +127,7 @@ async def read_analytics_lists_by_criterion(
     Returns: see output for the functions _compute_base_analytics_ and _compute_extra_analytics_
     """
 
-    if criterion not in [
-        "one_day_avg_mf",
-        "three_day_avg_mf",
-        "volume",
-        "three_day_avg_volume",
-        "macd",
-    ]:
+    if criterion not in CRITERIA:
         raise HTTPException(status_code=422, detail="No such criterion implemented.")
 
     return {criterion: await get_analytics_sorted_by(db, date, criterion)}
@@ -146,3 +145,38 @@ async def read_dates(
     """
 
     return await get_dates(db)
+
+
+@analytics_router.get("/get_frequencies", tags=["Analytics"])
+async def read_frequencies(
+    date: str = Depends(validate_date_string),
+    criterion: str = Query(
+        default=None,
+        description="""Criterion by which the top 20 tickers are selected.
+        One of "one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd\"""",
+    ),
+    tickers: str = Query(
+        default=None,
+        description="""Stock tickers to count their frequency.
+        Pass list as a string separating tickers by a comma without any spaces.""",
+    ),
+    api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
+    db: AsyncIOMotorClient = Depends(get_database),
+) -> dict:
+    """
+    Endpoint to count how often each ticker in the provided array has appeard in
+    the top 20 during the given period for the given analytics criterion
+
+    Returns: List of strings representing the period when the ticker occoured in
+    the top 20, e.g., "T-2, T-4, T-6"
+    """
+
+    tickers = tickers.split(",")
+    frequencies = [""] * len(tickers)
+    for idx, ticker in enumerate(tickers):
+        frequencies[idx] = await get_analytics_frequencies(db, date, criterion, ticker)
+        if frequencies[idx]:
+            # removing last two chars from the string
+            frequencies[idx] = frequencies[idx][:-2]
+
+    return frequencies

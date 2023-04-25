@@ -5,7 +5,6 @@ import asyncio
 
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
-from db.redis import use_cache_async
 from utils.handle_datetimes import get_epoch, get_past_date
 
 MONGO_COLLECTION_NAME = "scrapes"
@@ -47,7 +46,6 @@ async def remove_scrapes(conn: AsyncIOMotorClient, date: str):
         ) from exp
 
 
-@use_cache_async(ignore_first_arg=True)
 async def get_mentions(conn: AsyncIOMotorClient, ticker: str, date: str) -> list:
     """
     Function to get mentions counts from the 'scrapes' collection

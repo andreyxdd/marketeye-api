@@ -5,7 +5,7 @@ with regard to stock tracking procedure
 from typing import Optional
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
-from utils.handle_datetimes import get_epoch
+from utils.handle_datetimes import get_epoch, get_past_date
 
 MONGO_ANALYTICS_COLLECTION = "analytics"
 MONGO_TRACKING_COLLECTION = "tracking"
@@ -40,11 +40,18 @@ async def put_top_tickers_by_criterion(
         )
         tickers = [item["ticker"] for item in await cursor.to_list(length=lim)]
 
-        await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].update_one(
-            {"date": epoch_date, "criterion": criterion},
-            {"$set": {"tickers": tickers, "date": epoch_date, "criterion": criterion}},
-            upsert=True,
-        )
+        if tickers:
+            await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].update_one(
+                {"date": epoch_date, "criterion": criterion},
+                {
+                    "$set": {
+                        "tickers": tickers,
+                        "date": epoch_date,
+                        "criterion": criterion,
+                    }
+                },
+                upsert=True,
+            )
     except Exception as e:  # pylint: disable=W0703
         raise Exception(
             "db/crud/tracking.py, def put_top_tickers_by_criterion: reported an error"
@@ -66,6 +73,55 @@ async def put_top_tickers(conn: AsyncIOMotorClient, date: str):
             + "tickers were retrieved and put for tracking"
         )
     except Exception as e:  # pylint: disable=W0703
+        print("Error message:", e)
         raise Exception(
             "db/crud/tracking.py, def put_top_tickers: reported an error"
+        ) from e
+
+
+async def get_analytics_frequencies(
+    conn: AsyncIOMotorClient,
+    date: str,
+    criterion: str,
+    ticker: str,
+    period: Optional[int] = 20,
+):
+    """
+    Method that returns a string representing the appearance frequency of a stock
+    during the period for the givne selection criterion.
+
+    Args:
+        conn (AsyncIOMotorClient): db-connection string
+        date (str): date string
+        criterion (str): criterion by which to sort analytics
+        ticker (str): ticker string of a stock
+        period (Optional[int], optional): number of stocks to return. Defaults to 20
+
+    Raises:
+        Exception: Method reports an error
+
+    Returns:
+        frequencies_str: string of freqeuncies
+    """
+    try:
+        past_date = get_past_date(period, date)
+        epoch_date = get_epoch(past_date)
+        pipeline = [
+            {"$match": {"criterion": criterion}},
+            {"$match": {"date": {"$gt": epoch_date}}},
+            {"$sort": {"date": -1}},
+        ]
+        cursor = conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].aggregate(pipeline)
+        result = await cursor.to_list(length=period)
+
+        frequencies_str = ""
+        for idx, item in enumerate(result):
+            if ticker in item["tickers"]:
+                frequencies_str += f"T-{idx+1}, "
+
+        return frequencies_str
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "db/crud/tracking.py, def get_analytics_frequencies reported an error"
         ) from e

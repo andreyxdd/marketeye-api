@@ -7,6 +7,7 @@ Raises:
 """
 
 from time import time
+from db.crud.tracking import put_top_tickers
 from db.mongodb import connect, get_database, close
 from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
 from db.crud.scrapes import remove_scrapes
@@ -38,15 +39,17 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     await connect()
     conn = await get_database()
 
-    msg = await compute_base_analytics_and_insert(conn, date_to_insert)
+    msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
+    msg_track = await put_top_tickers(conn, date_to_insert)
 
     await remove_base_analytics(conn, date_to_remove)
+    await remove_base_analytics(conn, date_to_remove, "tracking")
     await remove_scrapes(conn, date_to_remove)
 
     # disconneting mongo db
     await close()
 
-    return msg
+    return msg_compute + "\n" + msg_track
 
 
 async def cronjob():

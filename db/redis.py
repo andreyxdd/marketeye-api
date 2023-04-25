@@ -18,8 +18,7 @@ redisClient = redis.Redis(
     ssl=True,
     ssl_cert_reqs=None,
 )
-
-EXPIRATION_TIME = timedelta(days=100)
+EXPIRATION_TIME = timedelta(days=30)
 
 
 def use_cache(ignore_first_arg=False):
