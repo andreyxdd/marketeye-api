@@ -2,12 +2,15 @@
 Methods to access external endpoints and manage responses
 """
 from typing import Optional
-from pandas import json_normalize
+from time import sleep
+from pandas import date_range, json_normalize
 from requests import get
 import quandl
 from fake_headers import Headers
 from db.redis import use_cache
+from utils.handle_validation import validate_date_string
 from utils.handle_datetimes import (
+    get_epoch,
     get_past_date,
     get_market_insider_url_string,
 )
@@ -23,6 +26,7 @@ from core.settings import (
     MI_SP500_DATASET,
     MI_VIX_CODE,
     MI_VIX_DATASET,
+    YAHOO_BASE_FCF_URL,
 )
 
 quandl.ApiConfig.api_key = QUANDL_API_KEY
@@ -342,3 +346,66 @@ def get_quandl_tickers(date: str):
         raise Exception(
             "utils/handle_external_apis.py, def get_quandl_tickers reported an error"
         ) from e
+
+
+@use_cache()
+def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
+    """
+    Function to get a free cash flow of the given stock ticker
+    and for the given quater (represented by a date string)
+
+    Args:
+        ticker (str): ticker for which the FCF is needed
+        date_quater (str): quaterly date
+
+    Raises:
+        Exception: in case of failure to acces the yahoo endpoint
+
+    Returns:
+        str: string represntation of the free cash flow for the given ticker and quaterly date
+    """
+    epoch_date_value = int(get_epoch(date_quater) / 1000)
+    request = (
+        f"{YAHOO_BASE_FCF_URL}/"
+        + f"{ticker}?"
+        + "type=CannualFreeCashFlow%2CtrailingFreeCashFlow%2CquarterlyFreeCashFlow&"
+        + f"&period1=493590046&period2={epoch_date_value}"
+    )
+
+    response = get(request, headers=Headers(headers=True).generate())
+
+    if response.status_code != 200:
+        raise Exception(
+            "Requests to the external data source for the market analytics failed"
+            + f"with the code {response.status_code} (quaterly free cash flow)."
+            + f"\nRequest string is: {request}"
+        )
+
+    return response.json()["timeseries"]["result"][0]["quarterlyFreeCashFlow"][-1][
+        "reportedValue"
+    ]["fmt"]
+
+
+async def cache_quaterly_free_cash_flow(
+    tickers: list[str], date: str, rate_limit: int = 2
+):
+    """
+    Utility function to cache (in Redis) a result of
+    the call to def get_quaterly_free_cash_flow
+
+    Args:
+        tickers (list[str]): list of tickers fo which the FCF needs to be cached
+        date (str): reqeusted date
+        rate_limit (int, optional):
+            number of seconds to wait before calling get_quaterly_free_cash_flow.
+            Defaults to 2.
+    """
+    start_date = get_past_date(366, date)
+    quater_dates = date_range(start_date, date, freq="Q")
+
+    last_quater_limit_date = quater_dates[-1].strftime("%Y-%m-%d")
+    validate_date_string(last_quater_limit_date)
+
+    for ticker in tickers:
+        sleep(rate_limit)
+        get_quaterly_free_cash_flow(ticker, last_quater_limit_date)

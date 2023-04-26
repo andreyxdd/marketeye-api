@@ -49,7 +49,7 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     # disconneting mongo db
     await close()
 
-    return msg_compute + "\n" + msg_track
+    return msg_compute + "\n\n" + msg_track
 
 
 async def cronjob():

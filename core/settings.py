@@ -41,6 +41,7 @@ MI_SP500_CODE = os.getenv("MI_SP500_CODE", "998434")
 MI_SP500_DATASET = os.getenv("MI_SP500_DATASET", "SNC")
 MI_VIX_CODE = os.getenv("MI_VIX_CODE", "1689105")
 MI_VIX_DATASET = os.getenv("MI_VIX_DATASET", "MDE")
+YAHOO_BASE_FCF_URL = os.getenv("YAHOO_BASE_FCF_URL")
 
 # Default headers objects to make requests to external APIs
 DEFAULT_HEADERS = {

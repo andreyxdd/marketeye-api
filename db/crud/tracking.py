@@ -6,6 +6,7 @@ from typing import Optional
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
 from utils.handle_datetimes import get_epoch, get_past_date
+from utils.handle_external_apis import cache_quaterly_free_cash_flow
 
 MONGO_ANALYTICS_COLLECTION = "analytics"
 MONGO_TRACKING_COLLECTION = "tracking"
@@ -52,6 +53,8 @@ async def put_top_tickers_by_criterion(
                 },
                 upsert=True,
             )
+
+        return tickers
     except Exception as e:  # pylint: disable=W0703
         raise Exception(
             "db/crud/tracking.py, def put_top_tickers_by_criterion: reported an error"
@@ -61,13 +64,17 @@ async def put_top_tickers_by_criterion(
 async def put_top_tickers(conn: AsyncIOMotorClient, date: str):
     """
     Method to upsert the ticker tracking documents with different selection criteria
+    into main MongoDB and cache some other related data into Redis
 
     Raises:
       Exception: Method reported an error
     """
     try:
         for criterion in CRITERIA:
-            await put_top_tickers_by_criterion(conn, date, criterion)
+            tickers = await put_top_tickers_by_criterion(conn, date, criterion)
+
+            # caching (in advance) some data to reduce number of reqeust to external API
+            cache_quaterly_free_cash_flow(tickers, date)
         return (
             "db/crud/tracking.py, def put_top_tickers:"
             + "tickers were retrieved and put for tracking"
