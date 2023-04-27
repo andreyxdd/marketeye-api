@@ -425,9 +425,7 @@ def get_quaterly_free_cash_flow(  # pylint: disable=R0911
     return result["fmt"]
 
 
-async def cache_quaterly_free_cash_flow(
-    tickers: list[str], date: str, rate_limit: int = 2
-):
+def cache_quaterly_free_cash_flow(tickers: list[str], date: str, rate_limit: int = 2):
     """
     Utility function to cache (in Redis) a result of
     the call to def get_quaterly_free_cash_flow

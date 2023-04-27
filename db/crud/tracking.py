@@ -91,7 +91,7 @@ async def get_analytics_frequencies(
     date: str,
     criterion: str,
     ticker: str,
-    period: Optional[int] = 20,
+    period: Optional[int] = 25,
 ):
     """
     Method that returns a string representing the appearance frequency of a stock
@@ -112,10 +112,18 @@ async def get_analytics_frequencies(
     """
     try:
         past_date = get_past_date(period, date)
-        epoch_date = get_epoch(past_date)
+        epoch_past_date = get_epoch(past_date)
+        epoch_date = get_epoch(date)
         pipeline = [
             {"$match": {"criterion": criterion}},
-            {"$match": {"date": {"$gt": epoch_date}}},
+            {
+                "$match": {
+                    "date": {
+                        "$gt": epoch_past_date,
+                        "$lt": epoch_date,
+                    }
+                }
+            },
             {"$sort": {"date": -1}},
         ]
         cursor = conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].aggregate(pipeline)

@@ -45,6 +45,13 @@ async def read_ticker_analytics(
         default=None,
         description="Ticker representing the stock",
     ),
+    criterion: str = Query(
+        default=None,
+        description="""
+        Criterion by which the top 20 tickers are selected (used for frequency estimation).
+        One of "one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd\"
+        """,
+    ),
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
 ):
@@ -53,10 +60,13 @@ async def read_ticker_analytics(
 
     Returns:  see _compute_base_analytics_ and _compute_extra_analytics_ for details
     """
+    last_quater_limit_date = get_last_quater_date(date)
 
     return {
         **get_ticker_analytics(ticker, date, 45, 15),
         **await get_mentions(db, ticker, date),
+        "fcf": get_quaterly_free_cash_flow(ticker, last_quater_limit_date),
+        "frequencies": await get_analytics_frequencies(db, date, criterion, ticker),
     }
 
 
