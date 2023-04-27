@@ -7,13 +7,15 @@ from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
+from db.crud.tracking import get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient
 from db.crud.scrapes import get_mentions
 from db.redis import use_cache_async
-from utils.handle_datetimes import get_date_string, get_epoch
+from utils.handle_datetimes import get_date_string, get_epoch, get_last_quater_date
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
     get_quandl_tickers,
+    get_quaterly_free_cash_flow,
     get_ticker_base_analytics,
     get_ticker_extra_analytics,
 )
@@ -392,7 +394,9 @@ async def get_analytics_sorted_by(
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:
             futures = [
-                await loop.run_in_executor(executor, extend_base_analytics, conn, item)
+                await loop.run_in_executor(
+                    executor, extend_base_analytics, conn, item, criterion
+                )
                 for item in items
             ]
 
@@ -428,7 +432,9 @@ async def get_dates(conn: AsyncIOMotorClient) -> list:
         raise Exception("db/crud/analytics.py, def get_dates reported an error") from e
 
 
-async def extend_base_analytics(conn: AsyncIOMotorClient, base_analytics: dict):
+async def extend_base_analytics(
+    conn: AsyncIOMotorClient, base_analytics: dict, criterion: str
+):
     """
     Function that extends the provided base_analytics object (see
     output schema for the compute_base_analytics) with extra_analytics
@@ -449,11 +455,16 @@ async def extend_base_analytics(conn: AsyncIOMotorClient, base_analytics: dict):
     try:
         ticker = base_analytics["ticker"]
         date = get_date_string(base_analytics["date"])
+        quater_date = get_last_quater_date(date)
 
         return {
             **base_analytics,
             **get_ticker_extra_analytics(ticker, date),
             **await get_mentions(conn, ticker, date),
+            "fcf": get_quaterly_free_cash_flow(ticker, quater_date),
+            "frequencies": await get_analytics_frequencies(
+                conn, date, criterion, ticker
+            ),
         }
     except Exception as e:
         print("Error message:", e)

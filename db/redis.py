@@ -18,7 +18,8 @@ redisClient = redis.Redis(
     ssl=True,
     ssl_cert_reqs=None,
 )
-EXPIRATION_TIME = timedelta(days=30)
+# redisClient.flushdb()
+EXPIRATION_TIME = timedelta(days=14)
 
 
 def use_cache(ignore_first_arg=False):

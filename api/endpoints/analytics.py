@@ -6,8 +6,7 @@ import asyncio
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import Response
-from pandas import date_range
-from utils.handle_datetimes import get_past_date
+from utils.handle_datetimes import get_last_quater_date
 from utils.handle_validation import (
     validate_api_key,
     validate_date_string,
@@ -177,9 +176,6 @@ async def read_frequencies(
     frequencies = [""] * len(tickers)
     for idx, ticker in enumerate(tickers):
         frequencies[idx] = await get_analytics_frequencies(db, date, criterion, ticker)
-        if frequencies[idx]:
-            # removing last two chars from the string
-            frequencies[idx] = frequencies[idx][:-2]
 
     return frequencies
 
@@ -196,11 +192,6 @@ async def read_free_cash_flow(
     """
     Enpoint to get free cash flow quaterly value for the given ticker and date (within a quater)
     """
-
-    start_date = get_past_date(366, date)
-    quater_dates = date_range(start_date, date, freq="Q")
-
-    last_quater_limit_date = quater_dates[-1].strftime("%Y-%m-%d")
-    validate_date_string(last_quater_limit_date)
+    last_quater_limit_date = get_last_quater_date(date)
 
     return get_quaterly_free_cash_flow(ticker, last_quater_limit_date)

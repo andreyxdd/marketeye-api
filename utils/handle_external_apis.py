@@ -349,7 +349,9 @@ def get_quandl_tickers(date: str):
 
 
 @use_cache()
-def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
+def get_quaterly_free_cash_flow(  # pylint: disable=R0911
+    ticker: str, date_quater: str
+) -> str:
     """
     Function to get a free cash flow of the given stock ticker
     and for the given quater (represented by a date string)
@@ -381,9 +383,46 @@ def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
             + f"\nRequest string is: {request}"
         )
 
-    return response.json()["timeseries"]["result"][0]["quarterlyFreeCashFlow"][-1][
-        "reportedValue"
-    ]["fmt"]
+    result = response.json()
+
+    if "timeseries" not in result:
+        return None
+
+    result = result["timeseries"]
+    if "result" not in result:
+        return None
+
+    result = result["result"]
+    if not isinstance(result, list):
+        return None
+
+    if not result:
+        return None
+
+    for data in result:
+        if data["meta"]["type"][0] == "quarterlyFreeCashFlow":
+            result = data
+            break
+
+    if "quarterlyFreeCashFlow" not in result:
+        return None
+
+    result = result["quarterlyFreeCashFlow"]
+    if not isinstance(result, list):
+        return None
+
+    if not result:
+        return None
+
+    result = result[-1]
+    if "reportedValue" not in result:
+        return None
+
+    result = result["reportedValue"]
+    if "fmt" not in result:
+        return None
+
+    return result["fmt"]
 
 
 async def cache_quaterly_free_cash_flow(

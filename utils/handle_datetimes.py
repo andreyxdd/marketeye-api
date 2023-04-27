@@ -6,6 +6,7 @@
 
 from typing import Union, Optional
 from datetime import datetime, timedelta
+from pandas import date_range
 import pytz
 
 
@@ -215,3 +216,22 @@ def get_market_insider_url_string(date_past: str, date_future: str) -> str:
     )
 
     return f"{past_string}_{future_string}"
+
+
+def get_last_quater_date(date: str):
+    """
+    Method to get the date representing the last date of the previous quater
+
+    Args:
+        date (str): date string
+
+    Returns:
+        str: last date (as string) of the previous quater
+    """
+    start_date = get_past_date(366, date)
+    quater_dates = date_range(start_date, date, freq="Q")
+
+    last_quater_limit_date = quater_dates[-1].strftime("%Y-%m-%d")
+    is_valid_date(last_quater_limit_date)
+
+    return last_quater_limit_date

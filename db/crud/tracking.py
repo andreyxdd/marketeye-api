@@ -126,7 +126,7 @@ async def get_analytics_frequencies(
             if ticker in item["tickers"]:
                 frequencies_str += f"T-{idx+1}, "
 
-        return frequencies_str
+        return frequencies_str[:-2]
     except Exception as e:
         print("Error message:", e)
         raise Exception(
