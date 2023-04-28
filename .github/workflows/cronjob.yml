@@ -33,6 +33,7 @@ jobs:
       USER_AGENT: ${{ secrets.USER_AGENT }}
       DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
       REDIS_URI: ${{ secrets.REDIS_URI }}
+      YAHOO_BASE_FCF_URL: ${{YAHOO_BASE_FCF_URL}}
 
     steps:
       - name: Checkout repository content
