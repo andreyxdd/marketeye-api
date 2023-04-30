@@ -2,30 +2,16 @@
 MarketEye API v1
 """
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 from core.settings import DEFAULT_ROUTE_STR
 from api import router as endpoint_router
 from db.mongodb import close, connect
 
-app = FastAPI(
-    docs_url=None,
-    title="Market-Eye API",
-    version="1.4.1",
-    # pylint: disable=C0301
-    description="**Market-Eye API** provides methods for computing technical indicators of individual stocks (_e.g. MACD, EMAs, MFI, etc._) as well as indicators describing the market as a whole (_e.g. CVI, VIX, etc._). The EOD (end of the day) historical data is fetched from Nasdaq Data Link API. The only markets analyzed are _NASDAQ_ and _NYSE_. The API also includes a scraping bot that collects the number of mentions of a given stock ticker. The scraping is done across some of the most popular news websites. Finally, the API provides methods for sorting all the stock data and scraping results (for the given date) based on several implemented criteria.",
-    contact={
-        "name": "Andrei Volkov",
-        "email": "volkov@ualberta.ca",
-    },
-    license_info={
-        "name": "GPL-3.0",
-        "url": "https://www.gnu.org/licenses/gpl-3.0.en.html",
-    },
-)
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+VERSION = "1.5.0"
 
 tags_metadata = [
     {
@@ -41,7 +27,7 @@ tags_metadata = [
         "description": "Endpoints to read web-scraping results.",
     },
     {
-        "name": "Notifiations",
+        "name": "Notifications",
         "description": "Endpoints to report issues.",
     },
     {
@@ -54,6 +40,24 @@ tags_metadata = [
     },
 ]
 
+app = FastAPI(
+    docs_url=None,
+    title="Market-Eye API",
+    version=VERSION,
+    # pylint: disable=C0301
+    description="**Market-Eye API** provides methods for computing technical indicators of individual stocks (_e.g. MACD, EMAs, MFI, etc._) as well as indicators describing the market as a whole (_e.g. CVI, VIX, etc._). The EOD (end of the day) historical data is fetched from Nasdaq Data Link API. The only markets analyzed are _NASDAQ_ and _NYSE_. The API also includes a scraping bot that collects the number of mentions of a given stock ticker. The scraping is done across some of the most popular news websites. Finally, the API provides methods for sorting all the stock data and scraping results (for the given date) based on several implemented criteria.",
+    contact={
+        "name": "Andrei Volkov",
+        "email": "volkov@ualberta.ca",
+    },
+    license_info={
+        "name": "GPL-3.0",
+        "url": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+    },
+    openapi_tags=tags_metadata,
+)
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+templates = Jinja2Templates(directory="templates")
 app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 
 
@@ -69,10 +73,16 @@ async def on_app_shutdown():
     await close()
 
 
-@app.get("/", tags=["Home"])
-async def market_eye_api():
+@app.get("/", tags=["Home"], response_class=HTMLResponse)
+async def market_eye_api(request: Request):
     """Initial endpoint"""
-    return Response("Market-Eye API v1.4.1")
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "version": VERSION,
+        },
+    )
 
 
 @app.get("/favicon.ico", include_in_schema=False)
