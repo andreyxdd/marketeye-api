@@ -6,6 +6,8 @@ Raises:
     Exception: If asyncio is not imported properly use trollius
 """
 
+import sys
+
 from time import time
 from db.crud.tracking import put_top_tickers
 from db.mongodb import connect, get_database, close
@@ -17,6 +19,7 @@ from utils.handle_datetimes import (
     get_past_date,
     get_epoch,
 )
+from utils.handle_validation import validate_date_string
 
 try:
     import asyncio
@@ -68,6 +71,10 @@ async def cronjob():
 
     try:
         curr_date = get_today_utc_date_in_timezone("America/New_York")
+        if len(sys.argv) > 1:
+            curr_date = sys.argv[1]
+            validate_date_string(curr_date)
+
         past_date = get_past_date(91, curr_date)
         msg = await run_crud_ops(curr_date, past_date)
 
