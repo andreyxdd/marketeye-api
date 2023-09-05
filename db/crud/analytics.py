@@ -171,7 +171,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         #################################
 
         # Quandl API has a limit: 5000 calls per 10 minutes
-        # if the list of tickers is more than 5000 it is divided accrodingly
+        # if the list of tickers is more than 5000, it is divided accrodingly
         partitions = []
         if n_tickers >= QUANDL_RATE_LIMIT:
             while len(tickers_to_insert) >= QUANDL_RATE_LIMIT:
@@ -232,14 +232,15 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             )
             print(msg[-1])
 
-            response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
-                analytics_to_insert, ordered=False
-            )
-            msg.append(
-                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + f" Tickers analytics were inserted via {response}"
-            )
-            print(msg[-1])
+            if len(analytics_to_insert) > 0:
+                response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
+                    analytics_to_insert, ordered=False
+                )
+                msg.append(
+                    "db/crud/analytics.py, def compute_base_analytics_and_insert:"
+                    + f" Tickers analytics were inserted via {response}"
+                )
+                print(msg[-1])
         else:
             msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
@@ -306,8 +307,9 @@ async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]
         list[str]: list of strings (missing tickers)
     """
     try:
-        # tickers-;ist from quandl
+        # tickers list from quandl
         quandl_tickers = get_quandl_tickers(date)
+
         # tickers list from analytics collection in mongodb
         db_tickers = await get_analytics_tickers(conn, date)
         # array substraction - result is an array

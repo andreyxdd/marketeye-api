@@ -70,22 +70,27 @@ async def cronjob():
     start_time = time()
 
     try:
-        curr_date = get_today_utc_date_in_timezone("America/New_York")
+        target_dates = [get_today_utc_date_in_timezone("America/New_York")]
         if len(sys.argv) > 1:
-            curr_date = sys.argv[1]
+            sys.argv.pop(0)
+            target_dates = sys.argv
+
+        print("Cronjob target dates are;")
+        print(target_dates)
+
+        for curr_date in target_dates:
             validate_date_string(curr_date)
+            past_date = get_past_date(91, curr_date)
+            msg = await run_crud_ops(curr_date, past_date)
 
-        past_date = get_past_date(91, curr_date)
-        msg = await run_crud_ops(curr_date, past_date)
-
-        notify_developer(
-            body="Today analytics cronjob has completed successfully."
-            + " Check MongoDB to see if today base analytics data"
-            + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
-            + "\n\n----------------------- Logs ---------------------------\n\n"
-            + f"{msg}"
-            + "\n\n--------------------------------------------------------"
-        )
+            notify_developer(
+                body="The analytics cronjob has completed successfully."
+                + " Check MongoDB to see if today base analytics data"
+                + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
+                + "\n\n----------------------- Logs ---------------------------\n\n"
+                + f"{msg}"
+                + "\n\n--------------------------------------------------------"
+            )
 
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
