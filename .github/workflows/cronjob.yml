@@ -57,5 +57,11 @@ jobs:
       - name: Installing webdriver-manager
         run: pip install webdriver-manager
 
+      - name: Installing Heroku CLI
+        run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+
+      - name: Calling Heroku
+        run: heroku --version
+
       - name: Update stocks 'analytics' collection
         run: python cronjob.py ${{ inputs.target_date }}
