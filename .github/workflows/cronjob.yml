@@ -7,7 +7,7 @@ on:
     inputs:
       target_date:
         description: 'Target date, for whcih the calculations should be done. The required format is YYYY-MM-DD'
-        required: true
+        required: false
         type: string
 
 jobs:
