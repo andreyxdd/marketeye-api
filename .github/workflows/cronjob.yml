@@ -57,11 +57,10 @@ jobs:
       - name: Installing webdriver-manager
         run: pip install webdriver-manager
 
-      - name: Installing Heroku CLI
-        run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
-
-      - name: Calling Heroku
-        run: heroku --version
+      - name: Reading Redis Credentials from Heroku CLI
+        env: 
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku config:get REDIS_URL -a marketeye-api
 
       - name: Update stocks 'analytics' collection
         run: python cronjob.py ${{ inputs.target_date }}
