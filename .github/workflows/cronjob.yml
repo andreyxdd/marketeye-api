@@ -37,7 +37,6 @@ jobs:
       QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
       USER_AGENT: ${{ secrets.USER_AGENT }}
       DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
-      REDIS_URI: ${{ secrets.REDIS_URI }}
       YAHOO_BASE_FCF_URL: ${{ secrets.YAHOO_BASE_FCF_URL }}
 
     steps:
@@ -58,13 +57,9 @@ jobs:
         run: pip install webdriver-manager
 
       - name: Reading Redis Credentials from Heroku CLI
-        id: heroku_redis_step
         env: 
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: echo "::set-output name=REDI_URI::$(heroku config:get REDIS_URL -a marketeye-api)"
-
-      - name: Echoing redis credentials
-        run: echo ${{ steps.heroku_redis_step.outputs.REDI_URI }}
+        run: echo "{REDIS_URI}={heroku config:get REDIS_URL -a marketeye-api}" >> $GITHUB_OUTPUT
 
       - name: Update stocks 'analytics' collection
         run: python cronjob.py ${{ inputs.target_date }}
