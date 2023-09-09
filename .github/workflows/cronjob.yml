@@ -58,9 +58,13 @@ jobs:
         run: pip install webdriver-manager
 
       - name: Reading Redis Credentials from Heroku CLI
+        id: heroku_redis_step
         env: 
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku config:get REDIS_URL -a marketeye-api
+
+      - name: Echoing redis credentials
+        run: echo {{ steps.heroku_redis_step.outputs.* }}
 
       - name: Update stocks 'analytics' collection
         run: python cronjob.py ${{ inputs.target_date }}
