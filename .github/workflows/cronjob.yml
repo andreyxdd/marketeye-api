@@ -59,9 +59,7 @@ jobs:
       - name: Reading Redis Credentials from Heroku CLI
         env: 
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: echo "HEROKU_REDIS_URI=$(heroku config:get REDIS_URL -a marketeye-api)" >> $GITHUB_ENV
+        run: echo "REDIS_URI=$(heroku config:get REDIS_URL -a marketeye-api)" >> $GITHUB_ENV
 
       - name: Update stocks 'analytics' collection
         run: python cronjob.py ${{ inputs.target_date }}
-        env:
-          REDIS_URI: ${{ env.HEROKU_REDIS_URI }}
