@@ -20,7 +20,7 @@ on:
       additional_dev_receiver_email:
         description: "Another email to send the completion status of the cronjob"
         required: false
-        default: "andrei.v@ton.org"
+        default: "sun.anzhe@yahoo.com"
 
 jobs:
   job:
