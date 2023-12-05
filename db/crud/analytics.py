@@ -215,14 +215,18 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             # getting base analytics for the list of
             # tickers in the current partition
-            with ThreadPoolExecutor() as executor:
-                future_list = [
-                    executor.submit(get_ticker_base_analytics, ticker, date)
-                    for ticker in partition
-                ]
+            # with ThreadPoolExecutor() as executor:
+            #     future_list = [
+            #         executor.submit(get_ticker_base_analytics, ticker, date)
+            #         for ticker in partition
+            #     ]
 
-                for future in as_completed(future_list):
-                    analytics_to_insert.append(future.result())
+            #     for future in as_completed(future_list):
+            #         analytics_to_insert.append(future.result())
+
+            for ticker in partition:
+                ticker_base_analytics = get_ticker_base_analytics(ticker, date)
+                analytics_to_insert.append(ticker_base_analytics)
 
             analytics_to_insert = list(
                 filter(None, analytics_to_insert)
