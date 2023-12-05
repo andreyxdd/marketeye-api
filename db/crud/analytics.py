@@ -196,31 +196,33 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             )
             print(msg[-1])
 
-            for partition in partitions:
+            # for partition in partitions:
 
-                # set timeout for 10 minutes to prevent exceeding rate limit of API calls
-                if n_tickers > QUANDL_RATE_LIMIT:
-                    print(
-                        "\n--------------------------------------------------------------------"
-                    )
-                    print(
-                        " Sleeping for 10 minutes to prevent exceeding Quandl API rate limit"
-                    )
-                    print(
-                        "--------------------------------------------------------------------\n"
-                    )
-                    sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
+            partition = partitions[0]
+            print("here is a partition")
+            # set timeout for 10 minutes to prevent exceeding rate limit of API calls
+            # if n_tickers > QUANDL_RATE_LIMIT:
+            #     print(
+            #         "\n--------------------------------------------------------------------"
+            #     )
+            #     print(
+            #         " Sleeping for 10 minutes to prevent exceeding Quandl API rate limit"
+            #     )
+            #     print(
+            #         "--------------------------------------------------------------------\n"
+            #     )
+            #     sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
 
-                # getting base analytics for the list of
-                # tickers in the current partition
-                with ThreadPoolExecutor() as executor:
-                    future_list = [
-                        executor.submit(get_ticker_base_analytics, ticker, date)
-                        for ticker in partition
-                    ]
+            # getting base analytics for the list of
+            # tickers in the current partition
+            with ThreadPoolExecutor() as executor:
+                future_list = [
+                    executor.submit(get_ticker_base_analytics, ticker, date)
+                    for ticker in partition
+                ]
 
-                    for future in as_completed(future_list):
-                        analytics_to_insert.append(future.result())
+                for future in as_completed(future_list):
+                    analytics_to_insert.append(future.result())
 
             analytics_to_insert = list(
                 filter(None, analytics_to_insert)
