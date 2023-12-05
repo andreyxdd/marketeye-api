@@ -29,7 +29,7 @@ def notify_developer(
             message. Defaults to "Test Notification".
     """
     if recievers is None:
-        recievers = [DEV_RECIEVER_EMAIL, DEV_SENDER_EMAIL]
+        recievers = [DEV_RECIEVER_EMAIL, DEV_SENDER_EMAIL, ADDITIONAL_DEV_RECIEVER_EMAIL]
     elif recievers is str:
         recievers = [recievers, DEV_RECIEVER_EMAIL, ADDITIONAL_DEV_RECIEVER_EMAIL]
 
