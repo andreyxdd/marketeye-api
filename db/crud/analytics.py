@@ -171,7 +171,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         #################################
 
         # Quandl API has a limit: 5000 calls per 10 minutes
-        # if the list of tickers is more than 5000, it is divided accrodingly
+        # if the list of tickers is more than QUANDL_RATE_LIMIT, it is divided accrodingly
         partitions = []
         if n_tickers >= QUANDL_RATE_LIMIT:
             while len(tickers_to_insert) >= QUANDL_RATE_LIMIT:
@@ -196,37 +196,38 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             )
             print(msg[-1])
 
-            # for partition in partitions:
+            partition_count = 0
+            for partition in partitions:
+                # set timeout for N minutes to prevent exceeding rate limit of API calls
+                if n_tickers > QUANDL_RATE_LIMIT and partition > 1:
+                    print(
+                        "\n--------------------------------------------------------------------"
+                    )
+                    print(
+                        f" Sleeping for {QUANDL_SLEEP_MINUTES} minutes to prevent exceeding Quandl API rate limit"
+                    )
+                    print(
+                        "--------------------------------------------------------------------\n"
+                    )
+                    sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
 
-            partition = partitions[0]
-            print("here is a partition")
-            # set timeout for 10 minutes to prevent exceeding rate limit of API calls
-            # if n_tickers > QUANDL_RATE_LIMIT:
-            #     print(
-            #         "\n--------------------------------------------------------------------"
-            #     )
-            #     print(
-            #         " Sleeping for 10 minutes to prevent exceeding Quandl API rate limit"
-            #     )
-            #     print(
-            #         "--------------------------------------------------------------------\n"
-            #     )
-            #     sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
+                # getting base analytics for the list of
+                # tickers in the current partition
+                # with ThreadPoolExecutor() as executor:
+                #     future_list = [
+                #         executor.submit(get_ticker_base_analytics, ticker, date)
+                #         for ticker in partition
+                #     ]
 
-            # getting base analytics for the list of
-            # tickers in the current partition
-            # with ThreadPoolExecutor() as executor:
-            #     future_list = [
-            #         executor.submit(get_ticker_base_analytics, ticker, date)
-            #         for ticker in partition
-            #     ]
+                #     for future in as_completed(future_list):
+                #         analytics_to_insert.append(future.result())
 
-            #     for future in as_completed(future_list):
-            #         analytics_to_insert.append(future.result())
+                for ticker in partition:
+                    ticker_base_analytics = get_ticker_base_analytics(ticker, date)
+                    analytics_to_insert.append(ticker_base_analytics)
 
-            for ticker in partition:
-                ticker_base_analytics = get_ticker_base_analytics(ticker, date)
-                analytics_to_insert.append(ticker_base_analytics)
+                partition_count += 1
+                print(f"Partition #{partition_count} is completed")
 
             analytics_to_insert = list(
                 filter(None, analytics_to_insert)
