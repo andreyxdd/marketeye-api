@@ -84,9 +84,8 @@ async def cronjob():
             msg = await run_crud_ops(curr_date, past_date)
 
             notify_developer(
-                body="The analytics cronjob has completed successfully."
-                + " Check MongoDB to see if today base analytics data"
-                + f", {curr_date} ({get_epoch(curr_date)}), was inserted."
+                body="The analytics cronjob has completed successfully: "
+                + f"{curr_date} (epoch: {get_epoch(curr_date)})"
                 + "\n\n----------------------- Logs ---------------------------\n\n"
                 + f"{msg}"
                 + "\n\n--------------------------------------------------------"

@@ -77,7 +77,7 @@ async def put_top_tickers(conn: AsyncIOMotorClient, date: str):
             cache_quaterly_free_cash_flow(tickers, date)
         return (
             "db/crud/tracking.py, def put_top_tickers:"
-            + "tickers were retrieved and put for tracking"
+            + " tickers were retrieved and set up for tracking"
         )
     except Exception as e:  # pylint: disable=W0703
         print("Error message:", e)
