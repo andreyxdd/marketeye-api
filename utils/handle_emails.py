@@ -9,6 +9,7 @@ from core.settings import (
     DEV_SENDER_SERVICE_PASSWORD,
     DEV_SENDER_SERVICE,
     DEV_RECIEVER_EMAIL,
+    ADDITIONAL_DEV_RECIEVER_EMAIL,
     DEV_SENDER_SERVICE_PORT,
 )
 
@@ -30,17 +31,18 @@ def notify_developer(
     if recievers is None:
         recievers = [DEV_RECIEVER_EMAIL, DEV_SENDER_EMAIL]
     elif recievers is str:
-        recievers = [recievers, DEV_RECIEVER_EMAIL]
+        recievers = [recievers, DEV_RECIEVER_EMAIL, ADDITIONAL_DEV_RECIEVER_EMAIL]
 
     server = smtplib.SMTP_SSL(DEV_SENDER_SERVICE, DEV_SENDER_SERVICE_PORT)
     server.login(DEV_SENDER_EMAIL, DEV_SENDER_SERVICE_PASSWORD)
 
     for reciever in recievers:
-        msg = (
-            f"From: {DEV_SENDER_EMAIL}\r\nTo: {reciever}\r\n"
-            + f"Content-Type: text/plain; charset='utf-8'\r\nSubject: {subject}\r\n\r\n"
-            + body
-        )
-        server.sendmail(DEV_SENDER_EMAIL, reciever, msg.encode("utf8"))
+        if reciever:
+            msg = (
+                f"From: {DEV_SENDER_EMAIL}\r\nTo: {reciever}\r\n"
+                + f"Content-Type: text/plain; charset='utf-8'\r\nSubject: {subject}\r\n\r\n"
+                + body
+            )
+            server.sendmail(DEV_SENDER_EMAIL, reciever, msg.encode("utf8"))
 
     server.quit()
