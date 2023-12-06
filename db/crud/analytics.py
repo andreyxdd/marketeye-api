@@ -6,7 +6,7 @@ from time import sleep
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from core.settings import MONGO_DB_NAME, QUANDL_QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
+from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from db.crud.tracking import get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient
 from db.crud.scrapes import get_mentions
