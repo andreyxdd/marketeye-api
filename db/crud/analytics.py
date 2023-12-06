@@ -6,7 +6,7 @@ from time import sleep
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
+from core.settings import MONGO_DB_NAME, QUANDL_QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from db.crud.tracking import get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient
 from db.crud.scrapes import get_mentions
@@ -165,20 +165,19 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
     try:
         tickers_to_insert = await get_missing_tickers(conn, date)
         n_tickers = len(tickers_to_insert)
-        rate_limit = int(QUANDL_RATE_LIMIT)
 
         #################################
         ### CAREFUL! HARDCODING BELOW ###
         #################################
 
         # Quandl API has a limit: 5000 calls per 10 minutes
-        # if the list of tickers is more than QUANDL_RATE_LIMIT, it is divided accrodingly
+        # if the list of tickers is more than QUANDL_RATE_LIMIT, it is divided accordingly
         partitions = []
-        if n_tickers >= rate_limit:
-            while len(tickers_to_insert) >= rate_limit:
-                partial_tickers_to_insert = tickers_to_insert[:rate_limit]
+        if n_tickers >= QUANDL_RATE_LIMIT:
+            while len(tickers_to_insert) >= QUANDL_RATE_LIMIT:
+                partial_tickers_to_insert = tickers_to_insert[:QUANDL_RATE_LIMIT]
                 tickers_to_insert = tickers_to_insert[
-                    rate_limit:
+                    QUANDL_RATE_LIMIT:
                 ]  # changes length
                 partitions.append(partial_tickers_to_insert)
             partitions.append(tickers_to_insert)  # adding left overs
@@ -200,7 +199,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             partition_count = 0
             for partition in partitions:
                 # set timeout for N minutes to prevent exceeding rate limit of API calls
-                if n_tickers > rate_limit and partition > 1:
+                if n_tickers > QUANDL_RATE_LIMIT and partition_count > 1:
                     print(
                         "\n--------------------------------------------------------------------"
                     )
@@ -210,7 +209,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
                     print(
                         "--------------------------------------------------------------------\n"
                     )
-                    sleep(int(QUANDL_SLEEP_MINUTES) * 60 + 0.5)
+                    sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
 
                 # getting base analytics for the list of
                 # tickers in the current partition
