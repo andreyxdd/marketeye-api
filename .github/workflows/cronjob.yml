@@ -12,11 +12,11 @@ on:
       quandl_rate_limit:
         description: "Strat sleeping after analyzing this number of tickers requested from Quandl"
         required: false
-        default: "4500"
+        default: "4900.0"
       quandl_sleep_time:
         description: "Sleep this long (in minutes) after analyzing this number of tickers requested from Quandl"
         required: false
-        default: "10"
+        default: "10.0"
       additional_dev_receiver_email:
         description: "Another email to send the completion status of the cronjob"
         required: false
