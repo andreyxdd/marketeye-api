@@ -9,14 +9,6 @@ on:
         description: "Target date, for whcih the calculations should be done. The required format is YYYY-MM-DD"
         required: false
         type: string
-      quandl_rate_limit:
-        description: "Strat sleeping after analyzing this number of tickers requested from Quandl"
-        required: false
-        default: "4900.0"
-      quandl_sleep_time:
-        description: "Sleep this long (in minutes) after analyzing this number of tickers requested from Quandl"
-        required: false
-        default: "10.0"
       additional_dev_receiver_email:
         description: "Another email to send the completion status of the cronjob"
         required: false
@@ -46,8 +38,8 @@ jobs:
       MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
       PING_URL: ${{ secrets.PING_URL }}
       QUANDL_API_KEY: ${{ secrets.QUANDL_API_KEY }}
-      QUANDL_RATE_LIMIT: ${{ inputs.quandl_rate_limit }}
-      QUANDL_SLEEP_MINUTES: ${{ inputs.quandl_sleep_time }}
+      QUANDL_RATE_LIMIT: ${{ secrets.QUANDL_RATE_LIMIT }}
+      QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
       USER_AGENT: ${{ secrets.USER_AGENT }}
       DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
       YAHOO_BASE_FCF_URL: ${{ secrets.YAHOO_BASE_FCF_URL }}
