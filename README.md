@@ -12,7 +12,7 @@ Finally, the API provides methods for sorting all the stock data and scraping re
 
 The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB handles data storage. Learn a bit more on the [documentation page](https://marketeye-api.herokuapp.com/docs).
 
-## Codebase Structure
+## Code Directories
 
 - *api*: for implementing endpoints
 - *core*: general settings of the project, i.e. initiating environmental variables
