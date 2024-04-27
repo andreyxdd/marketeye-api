@@ -2,7 +2,10 @@ name: cronjob
 
 on:
   schedule:
-    - cron: "10 22 * * *" # every day at 10:10 pm (UTC)
+    - cron: "00 19 * * *" # every day at 07:00 pm (UTC)
+    - cron: "30 20 * * *" # every day at 08:30 pm (UTC)
+    - cron: "00 22 * * *" # every day at 10:00 pm (UTC)
+    - cron: "30 23 * * *" # every day at 11:30 pm (UTC)
   workflow_dispatch:
     inputs:
       target_date:
@@ -13,6 +16,10 @@ on:
         description: "Another email to send the completion status of the cronjob"
         required: false
         default: "sun.anzhe@yahoo.com"
+
+concurrency:
+  group: read_markets
+  cancel-in-progress: true
 
 jobs:
   job:

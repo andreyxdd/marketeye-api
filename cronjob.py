@@ -69,13 +69,16 @@ async def cronjob():
     print("Running analytics cronjob ...\n")
     start_time = time()
 
+    today_utc = get_today_utc_date_in_timezone("America/New_York")
+    yesterday_utc = get_past_date(1, today_utc)
+
     try:
-        target_dates = [get_today_utc_date_in_timezone("America/New_York")]
+        target_dates = [yesterday_utc, today_utc]
         if len(sys.argv) > 1:
             sys.argv.pop(0)
             target_dates = sys.argv
 
-        print("Cronjob target dates are;")
+        print("Cronjob target dates are:")
         print(target_dates)
 
         for curr_date in target_dates:
