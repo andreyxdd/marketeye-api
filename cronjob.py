@@ -86,13 +86,13 @@ async def cronjob():
             past_date = get_past_date(91, curr_date)
             msg = await run_crud_ops(curr_date, past_date)
 
-            notify_developer(
-                body="The analytics cronjob has completed successfully: "
-                + f"{curr_date} (epoch: {get_epoch(curr_date)})"
-                + "\n\n----------------------- Logs ---------------------------\n\n"
-                + f"{msg}"
-                + "\n\n--------------------------------------------------------"
-            )
+            # notify_developer(
+            #     body="The analytics cronjob has completed successfully: "
+            #     + f"{curr_date} (epoch: {get_epoch(curr_date)})"
+            #     + "\n\n----------------------- Logs ---------------------------\n\n"
+            #     + f"{msg}"
+            #     + "\n\n--------------------------------------------------------"
+            # )
 
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
