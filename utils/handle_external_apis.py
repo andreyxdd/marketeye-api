@@ -141,6 +141,7 @@ def get_ticker_base_analytics(
             },
             date={"gte": offset_date, "lte": date},
             paginate=to_paginate,
+            api_key=QUANDL_API_KEY,
         )
 
         #  Quandl database doesn't have enough EOD data for the given ticker (not enough days)
