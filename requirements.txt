@@ -24,3 +24,4 @@ fake_headers
 asyncstdlib
 redis
 Jinja2
+nasdaq-data-link

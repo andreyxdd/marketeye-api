@@ -5,7 +5,7 @@ from typing import Optional
 from time import sleep
 from pandas import date_range, json_normalize
 from requests import get
-import quandl
+import nasdaqdatalink
 from fake_headers import Headers
 from db.redis import use_cache
 from utils.handle_validation import validate_date_string
@@ -29,7 +29,7 @@ from core.settings import (
     YAHOO_BASE_FCF_URL,
 )
 
-quandl.ApiConfig.api_key = QUANDL_API_KEY
+nasdaqdatalink.ApiConfig.api_key = QUANDL_API_KEY
 
 
 @use_cache()
@@ -69,7 +69,7 @@ def get_ticker_analytics(
 
         offset_date = get_past_date(offset_n_days, date)
 
-        quandl_df = quandl.get_table(
+        quandl_df = nasdaqdatalink.get_table(
             "QUOTEMEDIA/PRICES",
             ticker=ticker,
             qopts={
@@ -133,7 +133,7 @@ def get_ticker_base_analytics(
     try:
         offset_date = get_past_date(offset_n_days, date)
 
-        quandl_df = quandl.get_table(
+        quandl_df = nasdaqdatalink.get_table(
             "QUOTEMEDIA/PRICES",
             ticker=ticker,
             qopts={
@@ -193,7 +193,7 @@ def get_ticker_extra_analytics(
     try:
         offset_date = get_past_date(offset_n_days, date)
 
-        quandl_df = quandl.get_table(
+        quandl_df = nasdaqdatalink.get_table(
             "QUOTEMEDIA/PRICES",
             ticker=ticker,
             qopts={
@@ -340,7 +340,7 @@ def get_quandl_tickers(date: str):
         list: list of strings (tickers' names)
     """
     try:
-        response = quandl.get_table("QUOTEMEDIA/PRICES", date=date, paginate=True)
+        response = nasdaqdatalink.get_table("QUOTEMEDIA/PRICES", date=date, paginate=True)
         return response["ticker"].values.tolist()
     except Exception as e:
         print("Error message:", e)
