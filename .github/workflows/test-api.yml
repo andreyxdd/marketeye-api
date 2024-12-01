@@ -1,0 +1,29 @@
+name: test api
+
+on:
+  schedule:
+    # at 23:00 (UTC or 19:00 NY) on every day-of-week - from Monday through Friday
+    - cron: "0 23 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  ping-job:
+    runs-on: ubuntu-20.04
+    environment: marketeye-api
+    steps:
+      - name: Checkout repository content
+        uses: actions/checkout@v3 # Checkout the repository content to github runner.
+
+      - name: Setup Python Version
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9.9
+
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip requests typing pandas
+
+      - name: Execute Python script
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          PING_URL: ${{ secrets.PING_URL }}
+        run: python test-api.py
