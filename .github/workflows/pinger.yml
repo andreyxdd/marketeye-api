@@ -2,15 +2,13 @@ name: pinger
 
 on:
   schedule:
-  - cron: "*/20 * * * *"
+    - cron: "*/20 * * * *"
   workflow_dispatch:
 
 jobs:
   ping-job:
     runs-on: ubuntu-20.04
-    
     environment: marketeye-api
-
     steps:
       - name: Checkout repository content
         uses: actions/checkout@v3 # Checkout the repository content to github runner.
@@ -24,24 +22,6 @@ jobs:
         run: python -m pip install --upgrade pip requests typing
 
       - name: Execute Python script
-        env: 
-            API_KEY: ${{ secrets.API_KEY }}
-            DEV_RECIEVER_EMAIL: ${{ secrets.DEV_RECIEVER_EMAIL }}
-            DEV_SENDER_EMAIL: ${{ secrets.DEV_SENDER_EMAIL }}
-            DEV_SENDER_SERVICE: ${{ secrets.DEV_SENDER_SERVICE }}
-            DEV_SENDER_SERVICE_PASSWORD: ${{ secrets.DEV_SENDER_SERVICE_PASSWORD }}
-            DEV_SENDER_SERVICE_PORT: ${{ secrets.DEV_SENDER_SERVICE_PORT }}
-            MI_BASE_URL: ${{ secrets.MI_BASE_URL }}
-            MI_SP500_CODE: ${{ secrets.MI_SP500_CODE }}
-            MI_SP500_DATASET: ${{ secrets.MI_SP500_DATASET }}
-            MI_VIX_CODE: ${{ secrets.MI_VIX_CODE }}
-            MI_VIX_DATASET: ${{ secrets.MI_VIX_DATASET }}
-            MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
-            MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-            MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
-            PING_URL: ${{ secrets.PING_URL }}
-            QUANDL_API_KEY: ${{ secrets.QUANDL_API_KEY }}
-            QUANDL_RATE_LIMIT: ${{ secrets.QUANDL_RATE_LIMIT }}
-            QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
-            USER_AGENT: ${{ secrets.USER_AGENT }}
+        env:
+          PING_URL: ${{ secrets.PING_URL }}
         run: python pinger.py
