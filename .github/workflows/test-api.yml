@@ -3,7 +3,7 @@ name: test api
 on:
   schedule:
     # at 23:00 (UTC or 19:00 NY) on every day-of-week - from Monday through Friday
-    - cron: "0 23 * * 1-5"
+    - cron: "0 2 * * 1-5"
   workflow_dispatch:
 
 jobs:
