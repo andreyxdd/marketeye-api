@@ -18,12 +18,11 @@ try:
     last_date = jsonResponse[-1]["date_string"]
     today_utc = get_today_utc_date_in_timezone("America/New_York")
     if last_date != today_utc:
-      raise Exception(f"The latest date {last_date} from the api is incorrect. Today is {today_utc}")
+      raise Exception(f"The latest date {last_date} from the API is incorrect. Today is {today_utc}")
 except Exception as e:  # pylint: disable=W0703
-    print(f"pinger.py reported an error: {e}")
+    print(f"test-api.py reported an error: {e}")
     notify_developer(
         body=(
-            f"Pinger reported an error at {datetime.utcnow()} UTC time."
-            + f" Something went wrong: \n {e}"
+            f"Test API job reported an error at {datetime.utcnow()} UTC time: \n {e}"
         )
     )
