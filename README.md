@@ -51,3 +51,4 @@ This template project also utilizes the pre-commit hooks (see ```.pre-commit-con
 pre-commit install
 ```
 
+
