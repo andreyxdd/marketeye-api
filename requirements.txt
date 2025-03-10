@@ -25,3 +25,4 @@ asyncstdlib
 redis
 Jinja2
 nasdaq-data-link
+setuptools==58.2.0
