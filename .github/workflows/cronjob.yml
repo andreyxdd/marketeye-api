@@ -66,8 +66,8 @@ jobs:
         with:
           path: "requirements.txt"
 
-      - name: Installing webdriver-manager
-        run: pip install webdriver-manager
+      - name: Installing webdriver-manager and scipy
+        run: pip install webdriver-manager scipy
 
       - name: Reading Redis Credentials from Heroku CLI
         env:
