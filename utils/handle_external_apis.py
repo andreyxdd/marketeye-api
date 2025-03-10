@@ -1,7 +1,7 @@
 """
 Methods to access external endpoints and manage responses
 """
-from typing import Optional
+from typing import Optional, List
 from time import sleep
 from pandas import date_range, json_normalize
 from requests import get
@@ -426,7 +426,7 @@ def get_quaterly_free_cash_flow(  # pylint: disable=R0911
     return result["fmt"]
 
 
-def cache_quaterly_free_cash_flow(tickers: list[str], date: str, rate_limit: int = 2):
+def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int = 2):
     """
     Utility function to cache (in Redis) a result of
     the call to def get_quaterly_free_cash_flow

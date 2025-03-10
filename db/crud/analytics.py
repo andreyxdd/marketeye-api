@@ -3,7 +3,7 @@ Methods to handle CRUD operation with 'analytics' collection in the db
 """
 import asyncio
 from time import sleep
-from typing import Optional
+from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
@@ -28,7 +28,7 @@ async def get_analytics_by_open_close_change(
     n_trading_days: int,
     epoch_date: int,
     query: Optional[str] = "$gt",
-) -> "list[dict]":
+) -> List[dict]:
     """
     Function to get list of objects as {"_id": (epochDate), "count": (number)} where
     the number of advancing (query="$gt") or declining (query="$lt") is counted.
@@ -270,7 +270,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         )
 
 
-async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]":
+async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
     """
     Function that returns a list of all the tickers that
     are present in the analytics mongodb collection for the given date
@@ -298,7 +298,7 @@ async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> "list[st
         ) from e
 
 
-async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> "list[str]":
+async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
     """
     Function that returns a list of tickers that are present in the
     Quandl API response but are missing in the MongoDB analytics collection
@@ -370,7 +370,7 @@ async def remove_base_analytics(
 @use_cache_async(ignore_first_arg=True)
 async def get_analytics_sorted_by(
     conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
-) -> "list[dict]":
+) -> List[dict]:
     """
     Function to get top 20 stocks by the given criterion
 

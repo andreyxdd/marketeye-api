@@ -2,7 +2,7 @@
  Methods to handle notifications via email
 """
 import smtplib
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from core.settings import (
     DEV_SENDER_EMAIL,
@@ -15,7 +15,7 @@ from core.settings import (
 
 
 def notify_developer(
-    recievers: Optional[Union["list[str]", str]] = None,
+    recievers: Optional[Union[List[str], str]] = None,
     body: Optional[str] = "Test Notification",
     subject: Optional[str] = "Developer Notification",
 ):

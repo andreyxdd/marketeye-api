@@ -4,7 +4,7 @@
  Thus, all the methods return the dates relative to UTC.
 """
 
-from typing import Union, Optional
+from typing import Union, Optional, List
 from datetime import datetime, timedelta
 from pandas import date_range
 import pytz
@@ -28,7 +28,7 @@ def get_array_of_past_dates(
     n_days: int,
     base_date: Optional[Union[datetime, str]] = None,
     timezone: Optional[str] = "America/New_York",
-) -> "list[str]":
+) -> List[str]:
     """
     Function to construct an array of date-strings
 

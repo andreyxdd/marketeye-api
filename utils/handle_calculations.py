@@ -2,7 +2,7 @@
 Methods to calculate individual stock and market-as-a-whole indicators
 based on the histroical EOD data
 """
-from typing import Optional
+from typing import Optional, List
 from json import loads
 from pandas import DataFrame, concat
 from numpy import where, exp
@@ -274,7 +274,7 @@ def get_money_flow_index(typical_prices, volumes, n_days) -> float:
     return 100 - 100 / (1 + get_money_flow_ratio(typical_prices, volumes, n_days))
 
 
-def get_slope_normalized(array_x: "list[float]", array_y: "list[float]") -> float:
+def get_slope_normalized(array_x: List[float], array_y: List[float]) -> float:
     """
     Function to appxoimate the slope for the dependant arrays X and Y
     normalzied in the range from 0.0 to 1.0
