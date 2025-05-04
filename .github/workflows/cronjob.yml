@@ -2,14 +2,14 @@ name: cronjob
 
 on:
   schedule:
-    - cron: "00 19 * * *" # every day at 07:00 pm (UTC)
-    - cron: "30 20 * * *" # every day at 08:30 pm (UTC)
-    - cron: "00 22 * * *" # every day at 10:00 pm (UTC)
-    - cron: "30 23 * * *" # every day at 11:30 pm (UTC)
+    - cron: "00 19 * * *"
+    - cron: "30 20 * * *"
+    - cron: "00 22 * * *"
+    - cron: "30 23 * * *"
   workflow_dispatch:
     inputs:
       target_date:
-        description: "Target date, for whcih the calculations should be done. The required format is YYYY-MM-DD"
+        description: "Target date, for which the calculations should be done. The required format is YYYY-MM-DD"
         required: false
         type: string
       additional_dev_receiver_email:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   job:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     environment: marketeye-api
 
@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout repository content
-        uses: actions/checkout@v2 # Checkout the repository content to github runner.
+        uses: actions/checkout@v2
 
       - name: Setup Python Version
         uses: actions/setup-python@v5
