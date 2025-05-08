@@ -19,6 +19,7 @@ from utils.handle_datetimes import (
     get_past_date,
     get_epoch,
 )
+from utils.handle_external_apis import get_ticker_analytics, get_ticker_base_analytics
 from utils.handle_validation import validate_date_string
 
 try:
@@ -39,20 +40,23 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     """
 
     # connecting mongo db and getting its connection string
-    await connect()
-    conn = await get_database()
+    # await connect()
+    # conn = await get_database()
 
-    msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
-    msg_track = await put_top_tickers(conn, date_to_insert)
+    # msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
 
-    await remove_base_analytics(conn, date_to_remove)
-    await remove_base_analytics(conn, date_to_remove, "tracking")
-    await remove_scrapes(conn, date_to_remove)
+    # await remove_base_analytics(conn, date_to_remove)
+    # await remove_base_analytics(conn, date_to_remove, "tracking")
+    # await remove_scrapes(conn, date_to_remove)
 
-    # disconneting mongo db
-    await close()
+    # msg_track = await put_top_tickers(conn, date_to_insert)
 
-    return msg_compute + "\n\n" + msg_track
+    # # disconneting mongo db
+    # await close()
+
+    # return msg_compute + "\n\n" + msg_track
+    get_ticker_base_analytics("ABC", "2025-05-02", 45, 15, True)
+    return "done"
 
 
 async def cronjob():

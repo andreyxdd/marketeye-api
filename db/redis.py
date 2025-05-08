@@ -18,6 +18,8 @@ redisClient = redis.Redis(
     ssl=True,
     ssl_cert_reqs=None,
 )
+print(f"REDIS VERSION {redis.__version__}")
+print(f"REDIS URI {REDIS_URI}")
 # redisClient.flushdb()
 EXPIRATION_TIME = timedelta(days=14)
 
