@@ -15,8 +15,8 @@ redisClient = redis.Redis(
     host=url.hostname,
     port=url.port,
     password=url.password,
-    ssl=True,
-    ssl_cert_reqs=None,
+    ssl=(url.scheme == "rediss"),
+    ssl_cert_reqs='required'
 )
 print(f"REDIS VERSION {redis.__version__}")
 print(f"REDIS URI {REDIS_URI}")
