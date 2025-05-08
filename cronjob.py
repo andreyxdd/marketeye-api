@@ -40,23 +40,23 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     """
 
     # connecting mongo db and getting its connection string
-    # await connect()
-    # conn = await get_database()
+    await connect()
+    conn = await get_database()
 
-    # msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
+    msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
 
-    # await remove_base_analytics(conn, date_to_remove)
-    # await remove_base_analytics(conn, date_to_remove, "tracking")
-    # await remove_scrapes(conn, date_to_remove)
+    await remove_base_analytics(conn, date_to_remove)
+    await remove_base_analytics(conn, date_to_remove, "tracking")
+    await remove_scrapes(conn, date_to_remove)
 
-    # msg_track = await put_top_tickers(conn, date_to_insert)
+    msg_track = await put_top_tickers(conn, date_to_insert)
 
-    # # disconneting mongo db
-    # await close()
+    # disconneting mongo db
+    await close()
 
-    # return msg_compute + "\n\n" + msg_track
-    get_ticker_base_analytics("ABC", "2025-05-02", 45, 15, True)
-    return "done"
+    return msg_compute + "\n\n" + msg_track
+    # get_ticker_base_analytics("ABC", "2025-05-02", 45, 15, True)
+    # return "done"
 
 
 async def cronjob():
