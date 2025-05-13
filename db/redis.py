@@ -14,11 +14,10 @@ url = urlparse(REDIS_URI)
 redisClient = redis.Redis(
     host=url.hostname,
     port=url.port,
+    decode_responses=True,
+    username="default",
     password=url.password,
-    ssl=(url.scheme == "rediss"),
-    ssl_cert_reqs='required'
 )
-print(f"REDIS VERSION {redis.__version__}")
 print(f"REDIS URI {REDIS_URI}")
 # redisClient.flushdb()
 EXPIRATION_TIME = timedelta(days=14)

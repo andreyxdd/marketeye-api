@@ -18,7 +18,7 @@ MONGO_URI = (
 )
 
 # Redis configurations
-REDIS_URI = os.getenv("REDIS_URI")
+REDIS_URI = os.getenv("REDISCLOUD_URL")
 
 # API key to access endpoints
 API_KEY = os.getenv("API_KEY")
