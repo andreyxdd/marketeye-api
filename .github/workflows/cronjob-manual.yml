@@ -56,10 +56,16 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Install Python dependencies
-        uses: py-actions/py-dependency-install@v2
+      - name: Set up cache for Python dependencies
+        uses: actions/cache@v4
         with:
-          path: "requirements.txt"
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
 
       - name: Installing webdriver-manager and scipy
         run: pip install webdriver-manager scipy
