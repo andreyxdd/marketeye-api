@@ -50,6 +50,7 @@ jobs:
       USER_AGENT: ${{ secrets.USER_AGENT }}
       DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
       YAHOO_BASE_FCF_URL: ${{ secrets.YAHOO_BASE_FCF_URL }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
 
     steps:
       - name: Checkout repository content

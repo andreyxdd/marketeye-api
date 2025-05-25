@@ -18,7 +18,7 @@ redisClient = redis.Redis(
     username="default",
     password=url.password,
 )
-print(f"REDIS URI {REDIS_URI}")
+print(f"Connecting to Redis...")
 # redisClient.flushdb()
 EXPIRATION_TIME = timedelta(days=14)
 
@@ -46,8 +46,11 @@ def use_cache(ignore_first_arg=False):
                 redisClient.set(key, value_json)
                 redisClient.expire(key, EXPIRATION_TIME)
             else:
-                # Skip the function entirely and use the cached value instead.
-                value_json = result.decode("utf-8")
+                # If redisClient is already returning a string (decode_responses=True), skip decode
+                if isinstance(result, bytes):
+                    value_json = result.decode("utf-8")
+                else:
+                    value_json = result
                 value = json.loads(value_json)
 
             return value

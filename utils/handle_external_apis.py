@@ -1,6 +1,9 @@
 """
 Methods to access external endpoints and manage responses
 """
+import time
+import requests
+import pandas as pd
 from typing import Optional, List
 from time import sleep
 from pandas import date_range, json_normalize
@@ -20,6 +23,7 @@ from utils.handle_calculations import (
     get_ema_n,
 )
 from core.settings import (
+    POLYGON_API_KEY,
     QUANDL_API_KEY,
     MI_BASE_URL,
     MI_SP500_CODE,
@@ -66,27 +70,39 @@ def get_ticker_analytics(
         dict: combination of returned values from compute_base_analytics and compute_extra_analytics
     """
     try:
+        end_date = pd.to_datetime(date)
+        start_date = end_date - pd.Timedelta(days=offset_n_days)
 
-        offset_date = get_past_date(offset_n_days, date)
-
-        quandl_df = nasdaqdatalink.get_table(
-            "QUOTEMEDIA/PRICES",
-            ticker=ticker,
-            qopts={
-                "columns": ["ticker", "date", "open", "high", "low", "close", "volume"]
-            },
-            date={"gte": offset_date, "lte": date},
+        url = (
+            f"https://api.polygon.io/v2/aggs/ticker/{ticker.upper()}/range/1/day/"
+            f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
+            f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
         )
 
-        if test_offset and quandl_df.shape[0] < actual_offset_n_days:
-            print(
-                f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}"
-            )
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        results = data.get("results", [])
+        if not results or len(results) < actual_offset_n_days:
+            print(f"utils/handle_external_apis.py, get_ticker_analytics: not enough EOD records ({len(results)}) for ticker {ticker}")
             return {}
 
+        df = pd.DataFrame(results)
+        df["date"] = pd.to_datetime(df["t"], unit='ms').dt.strftime('%Y-%m-%d')
+        df = df.rename(columns={
+            "o": "open",
+            "h": "high",
+            "l": "low",
+            "c": "close",
+            "v": "volume"
+        })
+        df = df[["date", "open", "high", "low", "close", "volume"]]
+        df["ticker"] = ticker.upper()
+
         return {
-            **compute_base_analytics(quandl_df),
-            **compute_extra_analytics(quandl_df),
+            **compute_base_analytics(df),
+            **compute_extra_analytics(df),
         }
     except Exception as e:
         print("Error message:", e)
@@ -131,31 +147,42 @@ def get_ticker_base_analytics(
         dict: see returned values from compute_base_analytics
     """
     try:
-        offset_date = get_past_date(offset_n_days, date)
+        end_date = pd.to_datetime(date)
+        start_date = end_date - pd.Timedelta(days=offset_n_days)
 
-        quandl_df = nasdaqdatalink.get_table(
-            "QUOTEMEDIA/PRICES",
-            ticker=ticker,
-            qopts={
-                "columns": ["ticker", "date", "open", "high", "low", "close", "volume"]
-            },
-            date={"gte": offset_date, "lte": date},
-            paginate=to_paginate,
-            api_key=QUANDL_API_KEY,
+        url = (
+            f"https://api.polygon.io/v2/aggs/ticker/{ticker.upper()}/range/1/day/"
+            f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
+            f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
         )
 
-        #  Quandl database doesn't have enough EOD data for the given ticker (not enough days)
-        if quandl_df.shape[0] < actual_offset_n_days:
-            # print(f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}")
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        results = data.get("results", [])
+        if not results or len(results) < actual_offset_n_days:
+            print(f"utils/handle_external_apis.py, get_ticker_base_analytics: not enough EOD records ({len(results)}) for ticker {ticker}")
             return {}
 
-        return compute_base_analytics(quandl_df)
+        df = pd.DataFrame(results)
+        df["date"] = pd.to_datetime(df["t"], unit='ms').dt.strftime('%Y-%m-%d')
+        df = df.rename(columns={
+            "o": "open",
+            "h": "high",
+            "l": "low",
+            "c": "close",
+            "v": "volume"
+        })
+        df = df[["date", "open", "high", "low", "close", "volume"]]
+        df["ticker"] = ticker.upper()
+
+        return compute_base_analytics(df)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "utils/handle_external_apis.py, get_ticker_base_analytics reported an error"
+            f"utils/handle_external_apis.py, get_ticker_base_analytics reported an error for ticker {ticker} and date {date}"
         ) from e
-
 
 @use_cache()
 def get_ticker_extra_analytics(
@@ -191,24 +218,37 @@ def get_ticker_extra_analytics(
         dict: see output for compute_extra_analytics
     """
     try:
-        offset_date = get_past_date(offset_n_days, date)
+        end_date = pd.to_datetime(date)
+        start_date = end_date - pd.Timedelta(days=offset_n_days)
 
-        quandl_df = nasdaqdatalink.get_table(
-            "QUOTEMEDIA/PRICES",
-            ticker=ticker,
-            qopts={
-                "columns": ["ticker", "date", "open", "high", "low", "close", "volume"]
-            },
-            date={"gte": offset_date, "lte": date},
+        url = (
+            f"https://api.polygon.io/v2/aggs/ticker/{ticker.upper()}/range/1/day/"
+            f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
+            f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
         )
 
-        if test_offset and quandl_df.shape[0] < actual_offset_n_days:
-            print(
-                f"Not enough EOD records ({quandl_df.shape[0]}) for the given ticker {ticker}"
-            )
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        results = data.get("results", [])
+        if not results or len(results) < actual_offset_n_days:
+            print(f"utils/handle_external_apis.py, get_ticker_extra_analytics: not enough EOD records ({len(results)}) for ticker {ticker}")
             return {}
 
-        return compute_extra_analytics(quandl_df)
+        df = pd.DataFrame(results)
+        df["date"] = pd.to_datetime(df["t"], unit='ms').dt.strftime('%Y-%m-%d')
+        df = df.rename(columns={
+            "o": "open",
+            "h": "high",
+            "l": "low",
+            "c": "close",
+            "v": "volume"
+        })
+        df = df[["date", "open", "high", "low", "close", "volume"]]
+        df["ticker"] = ticker.upper()
+
+        return compute_extra_analytics(df)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -325,6 +365,48 @@ def get_market_vixs(
             "utils/handle_external_apis.py, def get_market_vixs reported an error"
         ) from e
 
+def get_polygon_tickers(date: str) -> list:
+    """
+    Function to get the list of all currently available tickers from Polygon.io
+
+    Args:
+        date (str): date, for which to search
+
+    Raises:
+        Exception: Method reported an error
+
+    Returns:
+        list: List of strings (tickers' symbols)
+    """
+    try:
+        url = f"https://api.polygon.io/v3/reference/tickers?market=stocks&active=true&apiKey={POLYGON_API_KEY}&limit=1000&date={date}"
+        tickers = []
+        backoff = 1  # initial backoff in seconds
+
+        while url:
+            response = requests.get(url)
+            if response.status_code == 429:
+                print(f"utils/handle_external_apis.py, def get_polygon_tickers: Rate limit hit. Sleeping for {backoff} seconds...")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 60)  # exponential backoff capped at 60 seconds
+                continue
+            response.raise_for_status()
+
+            data = response.json()
+            tickers.extend([item['ticker'] for item in data.get("results", [])])
+
+            url = data.get("next_url")
+            if url:
+                url += f"&apiKey={POLYGON_API_KEY}"
+            backoff = 1  # reset backoff after successful request
+
+        return tickers
+
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "utils/handle_external_apis.py, def get_polygon_tickers reported an error"
+        ) from e
 
 def get_quandl_tickers(date: str):
     """

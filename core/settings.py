@@ -36,6 +36,9 @@ QUANDL_API_KEY = os.getenv("QUANDL_API_KEY")
 QUANDL_RATE_LIMIT = int(os.getenv("QUANDL_RATE_LIMIT", 4900))
 QUANDL_SLEEP_MINUTES = int(os.getenv("QUANDL_SLEEP_MINUTES", 10))
 
+# Polygon API key
+POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
+
 # URL setting to get market analytics using external datasets
 MI_BASE_URL = os.getenv("MI_BASE_URL")
 MI_SP500_CODE = os.getenv("MI_SP500_CODE", "998434")

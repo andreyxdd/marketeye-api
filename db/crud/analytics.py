@@ -14,7 +14,7 @@ from db.redis import use_cache_async
 from utils.handle_datetimes import get_date_string, get_epoch, get_last_quater_date
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
-    get_quandl_tickers,
+    get_polygon_tickers,
     get_quaterly_free_cash_flow,
     get_ticker_base_analytics,
     get_ticker_extra_analytics,
@@ -166,28 +166,6 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         tickers_to_insert = await get_missing_tickers(conn, date)
         n_tickers = len(tickers_to_insert)
 
-        #################################
-        ### CAREFUL! HARDCODING BELOW ###
-        #################################
-
-        # Quandl API has a limit: 5000 calls per 10 minutes
-        # if the list of tickers is more than QUANDL_RATE_LIMIT, it is divided accordingly
-        partitions = []
-        if n_tickers >= QUANDL_RATE_LIMIT:
-            while len(tickers_to_insert) >= QUANDL_RATE_LIMIT:
-                partial_tickers_to_insert = tickers_to_insert[:QUANDL_RATE_LIMIT]
-                tickers_to_insert = tickers_to_insert[
-                    QUANDL_RATE_LIMIT:
-                ]  # changes length
-                partitions.append(partial_tickers_to_insert)
-            partitions.append(tickers_to_insert)  # adding left overs
-        else:
-            partitions.append(tickers_to_insert)
-
-        #################################
-        #################################
-        #################################
-
         if tickers_to_insert:
 
             msg.append(
@@ -196,43 +174,13 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             )
             print(msg[-1])
 
-            partition_count = 0
-            for partition in partitions:
-                # set timeout for N minutes to prevent exceeding rate limit of API calls
-                if n_tickers > QUANDL_RATE_LIMIT and partition_count > 1:
-                    print(
-                        "\n--------------------------------------------------------------------"
-                    )
-                    print(
-                        f" Sleeping for {QUANDL_SLEEP_MINUTES} minutes to prevent exceeding Quandl API rate limit"
-                    )
-                    print(
-                        "--------------------------------------------------------------------\n"
-                    )
-                    sleep(QUANDL_SLEEP_MINUTES * 60 + 0.5)
-
-                # getting base analytics for the list of
-                # tickers in the current partition
-                # with ThreadPoolExecutor() as executor:
-                #     future_list = [
-                #         executor.submit(get_ticker_base_analytics, ticker, date)
-                #         for ticker in partition
-                #     ]
-
-                #     for future in as_completed(future_list):
-                #         analytics_to_insert.append(future.result())
-
-                for ticker in partition:
-                    ticker_base_analytics = get_ticker_base_analytics(ticker, date)
-                    analytics_to_insert.append(ticker_base_analytics)
-
-                partition_count += 1
-                print(f"Partition #{partition_count} is completed")
+            for ticker in tickers_to_insert:
+                ticker_base_analytics = get_ticker_base_analytics(ticker, date)
+                analytics_to_insert.append(ticker_base_analytics)
 
             analytics_to_insert = list(
                 filter(None, analytics_to_insert)
             )  # removing empty objects
-
             msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
                 + f" Tickers analytics were computed: total of {len(analytics_to_insert)}"
@@ -315,12 +263,12 @@ async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
     """
     try:
         # tickers list from quandl
-        quandl_tickers = get_quandl_tickers(date)
+        tickers = get_polygon_tickers(date)
 
         # tickers list from analytics collection in mongodb
         db_tickers = await get_analytics_tickers(conn, date)
         # array substraction - result is an array
-        return list(set(quandl_tickers) - set(db_tickers))
+        return list(set(tickers) - set(db_tickers))
     except Exception as e:
         print("Error message:", e)
         raise Exception(

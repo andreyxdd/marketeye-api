@@ -32,7 +32,7 @@ async def connect():
         maxPoolSize=MONGO_MAX_CONNECTIONS,
         minPoolSize=MONGO_MIN_CONNECTIONS,
     )
-    print(f"Connected to mongo at {MONGO_URI}")
+    print(f"Connected to MongoDB")
 
 
 async def close():
