@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from core.settings import DEFAULT_ROUTE_STR
 from api import router as endpoint_router
 from db.mongodb import connect as connect_mongo, close as close_mongo
-from db.redis import connect as connect_redis
+from db.redis import RedisCache
 
 VERSION = "1.5.0"
 
@@ -66,7 +66,8 @@ app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 async def on_app_start():
     """Anything that needs to be done while app starts"""
     await connect_mongo()
-    await connect_redis()
+    cache = RedisCache()
+    cache.connect()
 
 
 @app.on_event("shutdown")

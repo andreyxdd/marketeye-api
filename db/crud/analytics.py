@@ -3,7 +3,7 @@ Methods to handle CRUD operation with 'analytics' collection in the db
 """
 import asyncio
 from typing import Optional, List
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
 from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from db.crud.tracking import get_analytics_frequencies

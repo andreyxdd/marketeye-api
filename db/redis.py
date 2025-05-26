@@ -19,6 +19,7 @@ class RedisCache:
 
     def connect(self):
         """Connect to the Redis server."""
+        print("Connecting to Redis...")
         url = urlparse(self.redis_uri)
         self.client = redis.Redis(
             host=url.hostname,
@@ -27,6 +28,13 @@ class RedisCache:
             password=url.password or None,
             decode_responses=True,
         )
+        print("Connected to Redis")
+
+    def flushdb(self):
+        """Flush Redis DB."""
+        print("Flushing Redis DB...")
+        self.client.flushdb()
+        print("Flushed Redis")
 
     def _build_key(self, func_name, args):
         """Create a hash key from function name and arguments."""
