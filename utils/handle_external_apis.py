@@ -36,7 +36,7 @@ from core.settings import (
 nasdaqdatalink.ApiConfig.api_key = QUANDL_API_KEY
 
 
-# @use_cache()
+@use_cache()
 def get_ticker_analytics(
     ticker: str,
     date: str,
@@ -111,7 +111,7 @@ def get_ticker_analytics(
         ) from e
 
 
-# @use_cache()
+@use_cache()
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
@@ -166,8 +166,9 @@ def get_ticker_base_analytics(
             return {}
 
         df = pd.DataFrame(results)
-        df["date"] = pd.to_datetime(df["t"], unit='ms').dt.strftime('%Y-%m-%d')
+        df["t"] = pd.to_datetime(df["t"], unit='ms', utc=True)
         df = df.rename(columns={
+            "t": "date",
             "o": "open",
             "h": "high",
             "l": "low",
@@ -184,7 +185,7 @@ def get_ticker_base_analytics(
             f"utils/handle_external_apis.py, get_ticker_base_analytics reported an error for ticker {ticker} and date {date}"
         ) from e
 
-# @use_cache()
+@use_cache()
 def get_ticker_extra_analytics(
     ticker: str,
     date: str,
@@ -256,7 +257,7 @@ def get_ticker_extra_analytics(
         ) from e
 
 
-# @use_cache()
+@use_cache()
 def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
     """
     Function to obtain market S&P 500 for the provided date
@@ -299,7 +300,7 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
         ) from e
 
 
-# @use_cache()
+@use_cache()
 def get_market_vixs(
     date: str,
     offset_n_days: Optional[int] = 85,
@@ -431,7 +432,7 @@ def get_quandl_tickers(date: str):
         ) from e
 
 
-# @use_cache()
+@use_cache()
 def get_quaterly_free_cash_flow(  # pylint: disable=R0911
     ticker: str, date_quater: str
 ) -> str:
