@@ -7,7 +7,7 @@ on:
         description: "Target date, for which the calculations should be done. The required format is YYYY-MM-DD"
         required: false
         type: string
-        default: "2025-05-02"
+        default: "2025-05-09"
       additional_dev_receiver_email:
         description: "Another email to send the completion status of the cronjob"
         required: false
@@ -67,8 +67,8 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Installing webdriver-manager and scipy
-        run: pip install webdriver-manager scipy
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Reading Redis Credentials from Heroku CLI
         env:

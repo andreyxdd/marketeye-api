@@ -9,7 +9,8 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from core.settings import DEFAULT_ROUTE_STR
 from api import router as endpoint_router
-from db.mongodb import close, connect
+from db.mongodb import connect as connect_mongo, close as close_mongo
+from db.redis import connect as connect_redis
 
 VERSION = "1.5.0"
 
@@ -64,13 +65,14 @@ app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 @app.on_event("startup")
 async def on_app_start():
     """Anything that needs to be done while app starts"""
-    await connect()
+    await connect_mongo()
+    await connect_redis()
 
 
 @app.on_event("shutdown")
 async def on_app_shutdown():
     """Anything that needs to be done while app shutdown"""
-    await close()
+    await close_mongo()
 
 
 @app.get("/", tags=["Home"], response_class=HTMLResponse)

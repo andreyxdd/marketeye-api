@@ -72,9 +72,6 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Installing webdriver-manager and scipy
-        run: pip install webdriver-manager scipy
-
       - name: Reading Redis Credentials from Heroku CLI
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

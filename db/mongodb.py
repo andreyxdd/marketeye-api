@@ -27,12 +27,13 @@ async def get_database() -> AsyncIOMotorClient:
 
 async def connect():
     """Connect to MongoDB"""
+    print("Connecting to MongoDB...")
     db.client = AsyncIOMotorClient(
         str(MONGO_URI),
         maxPoolSize=MONGO_MAX_CONNECTIONS,
         minPoolSize=MONGO_MIN_CONNECTIONS,
     )
-    print(f"Connected to MongoDB")
+    print("Connected to MongoDB")
 
 
 async def close():

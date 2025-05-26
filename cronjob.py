@@ -10,7 +10,8 @@ import sys
 
 from time import time
 from db.crud.tracking import put_top_tickers
-from db.mongodb import connect, get_database, close
+from db.mongodb import connect as connect_mongo, get_database as get_mongo_database, close as close_mongo
+from db.redis import connect as connect_redis
 from db.crud.analytics import compute_base_analytics_and_insert, remove_base_analytics
 from db.crud.scrapes import remove_scrapes
 from utils.handle_emails import notify_developer
@@ -40,9 +41,10 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     """
 
     # connecting mongo db and getting its connection string
-    await connect()
-    conn = await get_database()
+    await connect_mongo()
+    conn = await get_mongo_database()
 
+    await connect_redis()
     msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
 
     await remove_base_analytics(conn, date_to_remove)
@@ -52,10 +54,10 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     msg_track = await put_top_tickers(conn, date_to_insert)
 
     # disconneting mongo db
-    await close()
+    await close_mongo()
 
     return msg_compute + "\n\n" + msg_track
-    # get_ticker_base_analytics("AAPL", "2023-08-15", 45, 15, True)
+    # get_ticker_base_analytics("AAPL", "2025-04-09", 45, 15, True)
     # return "done"
 
 
