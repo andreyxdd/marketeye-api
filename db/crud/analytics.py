@@ -177,6 +177,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             print(msg[-1])
 
             for ticker in tickers_to_insert:
+                print(f"[DEBUG] compute_base_analytics_and_insert {ticker}")
                 ticker_base_analytics = get_ticker_base_analytics(ticker, date)
                 analytics_to_insert.append(ticker_base_analytics)
 

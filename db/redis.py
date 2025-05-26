@@ -12,9 +12,10 @@ from core.settings import REDIS_URI
 
 DEFAULT_EXPIRATION = timedelta(days=14)
 class RedisCache:
-    def __init__(self, redis_uri: str = REDIS_URI, expiration: timedelta = DEFAULT_EXPIRATION):
-        self.redis_uri = redis_uri
-        self.expiration = expiration
+    def __init__(self, redis_uri: str = None, expiration: timedelta = None):
+        from core.settings import REDIS_URI
+        self.redis_uri = redis_uri or REDIS_URI
+        self.expiration = expiration or DEFAULT_EXPIRATION
         self.client = None
 
     def connect(self):
@@ -51,10 +52,6 @@ class RedisCache:
                 if self.client is None:
                     raise RuntimeError("Redis client is not connected. Call connect() first.")
 
-                print(f"[DEBUG] client: {self.client}")
-                print(f"[DEBUG] expiration: {self.expiration}")
-                print(f"[DEBUG] expiration seconds: {self.expiration.total_seconds() if self.expiration else None}")
-
                 key_args = args[1:] if ignore_first_arg else args
                 key = self._build_key(func.__name__, key_args)
 
@@ -64,6 +61,7 @@ class RedisCache:
 
                 value = func(*args, **kwargs)
                 self.client.set(key, json.dumps(value))
+
                 self.client.expire(key, int(self.expiration.total_seconds()))
                 return value
 
