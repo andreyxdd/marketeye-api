@@ -41,41 +41,51 @@ async def connect():
     if db.client is None:
         raise Exception("Failed to connect to Redis")
 
-    print("Connected to Redis")
+    print(f"Connected to Redis: {type(db.client)}")
 
 async def flushdb():
     """Flush all data in the Redis"""
-    db.client.flushalldb()
+    db.client.flushdb()
 
 def use_cache(ignore_first_arg=False):
     """
     Decorator that caches the results of the function call.
     """
 
+    print(f'here 1 {type(db.client)}')
     def decorator(func):
+        print(f'here 2 {type(db.client)}')
         @wraps(func)
         def wrapper(*args, **kwargs):
+            print('here 3')
             # Generate the cache key from the function's arguments.
             key_parts = [func.__name__] + list(args)
             if ignore_first_arg:
                 key_parts.pop(1)
 
+            print('here 4')
             key = "-".join([str(k) for k in key_parts])
+            print(f'here 5 {type(db.client)}')
+            print(f'key {key}')
             result = db.client.get(key)
+            print('here 6')
 
             if result is None:
+                print('here 7')
                 # Run the function and cache the result for next time.
                 value = func(*args, **kwargs)
                 value_json = json.dumps(value)
                 db.client.set(key, value_json)
                 db.client.expire(key, EXPIRATION_TIME)
             else:
+                print('here 8')
                 # If redisClient is already returning a string (decode_responses=True), skip decode
                 value_json = result
                 if isinstance(result, bytes):
                     value_json = result.decode("utf-8")
                 value = json.loads(value_json)
 
+            print('here 9')
             return value
 
         return wrapper
