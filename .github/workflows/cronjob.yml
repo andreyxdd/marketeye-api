@@ -15,7 +15,6 @@ on:
       additional_dev_receiver_email:
         description: "Another email to send the completion status of the cronjob"
         required: false
-        default: "sun.anzhe@yahoo.com"
 
 concurrency:
   group: read_markets
@@ -51,6 +50,8 @@ jobs:
       DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
       YAHOO_BASE_FCF_URL: ${{ secrets.YAHOO_BASE_FCF_URL }}
       POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      REDIS_URI: ${{ secrets.REDIS_URI }}
+      REDISCLOUD_URL: ${{ secrets.REDIS_URI }}
 
     steps:
       - name: Checkout repository content
@@ -71,11 +72,6 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-
-      - name: Reading Redis Credentials from Heroku CLI
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: echo "REDIS_URI=$(heroku config:get REDISCLOUD_URL -a marketeye-api)" >> $GITHUB_ENV
 
       - name: Update stocks 'analytics' collection
         run: python cronjob.py ${{ inputs.target_date }}
