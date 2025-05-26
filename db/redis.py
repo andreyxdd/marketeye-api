@@ -43,6 +43,10 @@ class RedisCache:
                 if self.client is None:
                     raise RuntimeError("Redis client is not connected. Call connect() first.")
 
+                print(f"[DEBUG] client: {self.client}")
+                print(f"[DEBUG] expiration: {self.expiration}")
+                print(f"[DEBUG] expiration seconds: {self.expiration.total_seconds() if self.expiration else None}")
+
                 key_args = args[1:] if ignore_first_arg else args
                 key = self._build_key(func.__name__, key_args)
 
