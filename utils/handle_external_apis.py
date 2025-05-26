@@ -149,7 +149,6 @@ def get_ticker_base_analytics(
         dict: see returned values from compute_base_analytics
     """
     try:
-        print(f"[DEBUG] get_ticker_base_analytics {ticker}")
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
 
