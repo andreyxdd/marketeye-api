@@ -7,7 +7,7 @@ on:
         description: "Target date, for which the calculations should be done. The required format is YYYY-MM-DD"
         required: false
         type: string
-        default: "2025-05-09"
+        default: "2025-05-01"
       additional_dev_receiver_email:
         description: "Another email to send the completion status of the cronjob"
         required: false

@@ -2,7 +2,6 @@
 Methods to handle CRUD operation with 'analytics' collection in the db
 """
 import asyncio
-from time import sleep
 from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -10,7 +9,7 @@ from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
 from db.crud.tracking import get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient
 from db.crud.scrapes import get_mentions
-from db.redis import use_cache_async
+from db.redis import RedisCache
 from utils.handle_datetimes import get_date_string, get_epoch, get_last_quater_date
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
@@ -21,6 +20,9 @@ from utils.handle_external_apis import (
 )
 
 MONGO_COLLECTION_NAME = "analytics"
+
+cache = RedisCache()
+cache.connect()
 
 
 async def get_analytics_by_open_close_change(
@@ -315,7 +317,7 @@ async def remove_base_analytics(
         ) from e
 
 
-@use_cache_async(ignore_first_arg=True)
+@cache.use_cache_async(ignore_first_arg=True)
 async def get_analytics_sorted_by(
     conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
 ) -> List[dict]:
