@@ -2,6 +2,9 @@
 Project Settings file
 """
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DEFAULT_ROUTE_STR = "/api"
 

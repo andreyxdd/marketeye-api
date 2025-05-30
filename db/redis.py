@@ -29,7 +29,7 @@ class RedisCache:
             password=url.password or None,
             decode_responses=True,
         )
-        print("Connected to Redis")
+        print(f"Connected to Redis on port {url.port}")
 
     def flushdb(self):
         """Flush Redis DB."""
