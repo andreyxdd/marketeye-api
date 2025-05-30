@@ -1,6 +1,7 @@
 """
 Methods to access external endpoints and manage responses
 """
+import random
 import time
 import requests
 import pandas as pd
@@ -8,6 +9,7 @@ from typing import Optional, List
 from time import sleep
 from pandas import date_range, json_normalize
 from requests import get
+from requests.exceptions import RequestException
 import nasdaqdatalink
 from fake_headers import Headers
 from db.redis import RedisCache
@@ -434,10 +436,11 @@ def get_quandl_tickers(date: str):
         ) from e
 
 
+MAX_RETRIES = 5
+RETRY_BACKOFF = (5, 20)  # random sleep between 1–3 seconds
+
 @cache.use_cache()
-def get_quaterly_free_cash_flow(  # pylint: disable=R0911
-    ticker: str, date_quater: str
-) -> str:
+def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
     """
     Function to get a free cash flow of the given stock ticker
     and for the given quater (represented by a date string)
@@ -447,68 +450,68 @@ def get_quaterly_free_cash_flow(  # pylint: disable=R0911
         date_quater (str): quaterly date
 
     Raises:
-        Exception: in case of failure to acces the yahoo endpoint
+        Exception: in case of failure to access the yahoo endpoint
 
     Returns:
-        str: string represntation of the free cash flow for the given ticker and quaterly date
+        str: string representation of the free cash flow for the given ticker and quarterly date
     """
     epoch_date_value = int(get_epoch(date_quater) / 1000)
-    request = (
-        f"{YAHOO_BASE_FCF_URL}/"
-        + f"{ticker}?"
-        + "type=CannualFreeCashFlow%2CtrailingFreeCashFlow%2CquarterlyFreeCashFlow&"
-        + f"&period1=493590046&period2={epoch_date_value}"
+    request_url = (
+        f"{YAHOO_BASE_FCF_URL}/{ticker}?"
+        "type=CannualFreeCashFlow%2CtrailingFreeCashFlow%2CquarterlyFreeCashFlow&"
+        f"period1=493590046&period2={epoch_date_value}"
     )
 
-    response = get(request, headers=Headers(headers=True).generate())
+    headers = Headers(headers=True).generate()
 
-    if response.status_code != 200:
-        raise Exception(
-            "Requests to the external data source for the market analytics failed"
-            + f"with the code {response.status_code} (quaterly free cash flow)."
-            + f"\nRequest string is: {request}"
-        )
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(request_url, headers=headers)
+
+            if response.status_code == 200:
+                break
+            elif response.status_code == 429:
+                # Rate limited – inspect headers
+                print("Received 429 Too Many Requests.")
+                # print("Response headers:")
+                # for key, value in response.headers.items():
+                #     print(f"{key}: {value}")
+
+                retry_after = response.headers.get("Retry-After")
+                if retry_after:
+                    wait_time = float(retry_after)
+                    print(f"Retry-After header found. Waiting {wait_time} seconds...")
+                else:
+                    wait_time = random.uniform(*RETRY_BACKOFF)
+                    print(f"No Retry-After header. Using random wait: {wait_time:.2f} seconds...")
+
+                time.sleep(wait_time)
+                continue
+            else:
+                raise Exception(
+                    f"Failed with status code {response.status_code}.\nRequest: {request_url}"
+                )
+        except RequestException as e:
+            raise Exception(f"HTTP request failed: {e}")
+
+    else:
+        raise Exception("Max retries exceeded due to repeated 429 errors.")
 
     result = response.json()
 
-    if "timeseries" not in result:
+    timeseries = result.get("timeseries", {}).get("result", [])
+    if not isinstance(timeseries, list) or not timeseries:
         return None
 
-    result = result["timeseries"]
-    if "result" not in result:
-        return None
+    for data in timeseries:
+        if data.get("meta", {}).get("type", [None])[0] == "quarterlyFreeCashFlow":
+            fcf_entries = data.get("quarterlyFreeCashFlow", [])
+            if not isinstance(fcf_entries, list) or not fcf_entries:
+                return None
+            last_entry = fcf_entries[-1]
+            return last_entry.get("reportedValue", {}).get("fmt", None)
 
-    result = result["result"]
-    if not isinstance(result, list):
-        return None
-
-    if not result:
-        return None
-
-    for data in result:
-        if data["meta"]["type"][0] == "quarterlyFreeCashFlow":
-            result = data
-            break
-
-    if "quarterlyFreeCashFlow" not in result:
-        return None
-
-    result = result["quarterlyFreeCashFlow"]
-    if not isinstance(result, list):
-        return None
-
-    if not result:
-        return None
-
-    result = result[-1]
-    if "reportedValue" not in result:
-        return None
-
-    result = result["reportedValue"]
-    if "fmt" not in result:
-        return None
-
-    return result["fmt"]
+    return None
 
 
 def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int = 2):
