@@ -207,7 +207,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
         return "\n\n".join(msg)
     except Exception as e:  # pylint: disable=W0703
-        print("Error message:", e)
+        print("def compute_base_analytics_and_insert reported an error:", {type(e).__name__})
         if type(e).__name__ != "BulkWriteError":
             raise Exception(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert: reported an error"
@@ -216,8 +216,9 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
         print(
             "db/crud/analytics.py, def compute_base_analytics_and_insert:"
             + f" Mongodb {type(e).__name__} occured during insert_many() operation."
-            + "Still, new base analytics data has been inserted."
+            + " Still, new base analytics data has been inserted."
         )
+        return "\n\n".join(msg)
 
 
 async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
