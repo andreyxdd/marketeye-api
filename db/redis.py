@@ -8,7 +8,6 @@ import hashlib
 from functools import wraps
 from datetime import timedelta
 from urllib.parse import urlparse
-from core.settings import REDIS_URI
 
 DEFAULT_EXPIRATION = timedelta(days=14)
 class RedisCache:

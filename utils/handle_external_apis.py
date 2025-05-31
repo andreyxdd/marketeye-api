@@ -436,8 +436,8 @@ def get_quandl_tickers(date: str):
         ) from e
 
 
-MAX_RETRIES = 5
-RETRY_BACKOFF = (5, 20)  # random sleep between 1–3 seconds
+MAX_RETRIES = 6
+RETRY_BACKOFF = (10, 20)  # random sleep between 1–3 seconds
 
 @cache.use_cache()
 def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
@@ -480,22 +480,22 @@ def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
                 retry_after = response.headers.get("Retry-After")
                 if retry_after:
                     wait_time = float(retry_after)
-                    print(f"Retry-After header found. Waiting {wait_time} seconds...")
+                    print(f"def get_quaterly_free_cash_flow: retry-After header found. Waiting {wait_time} seconds...")
                 else:
                     wait_time = random.uniform(*RETRY_BACKOFF)
-                    print(f"No Retry-After header. Using random wait: {wait_time:.2f} seconds...")
+                    print(f"def get_quaterly_free_cash_flow: no Retry-After header. Using random wait: {wait_time:.2f} seconds...")
 
                 time.sleep(wait_time)
                 continue
             else:
                 raise Exception(
-                    f"Failed with status code {response.status_code}.\nRequest: {request_url}"
+                    f"def get_quaterly_free_cash_flow: failed with status code {response.status_code}.\nRequest: {request_url}"
                 )
         except RequestException as e:
-            raise Exception(f"HTTP request failed: {e}")
+            raise Exception(f"def get_quaterly_free_cash_flow: HTTP request failed: {e}")
 
     else:
-        raise Exception("Max retries exceeded due to repeated 429 errors.")
+        raise Exception("def get_quaterly_free_cash_flow: max retries exceeded due to repeated 429 errors.")
 
     result = response.json()
 

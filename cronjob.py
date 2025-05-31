@@ -47,6 +47,7 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str) -> str:
     await connect_mongo()
     conn = await get_mongo_database()
 
+    msg_compute = ""
     msg_compute = await compute_base_analytics_and_insert(conn, date_to_insert)
 
     await remove_base_analytics(conn, date_to_remove)
