@@ -26,3 +26,4 @@ redis
 Jinja2
 nasdaq-data-link
 setuptools==58.2.0
+python-dotenv==1.1.0
