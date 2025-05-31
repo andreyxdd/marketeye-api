@@ -19,7 +19,7 @@ jobs:
           python-version: 3.8
 
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip requests typing
+        run: python -m pip install --upgrade pip requests typing python-dotenv
 
       - name: Execute Python script
         env:
