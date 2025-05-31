@@ -310,3 +310,13 @@ def get_slope_normalized(array_x: List[float], array_y: List[float]) -> float:
     lin_reg_result = linregress(normalized_df["x"], normalized_df["y"])
 
     return 1 / (1 + exp(-lin_reg_result.slope))  # computing fraction
+
+def format_number_short(n: float) -> str:
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.2f}B"
+    elif n >= 1_000_000:
+        return f"{n / 1_000_000:.2f}M"
+    elif n >= 1_000:
+        return f"{n / 1_000:.2f}K"
+    else:
+        return str(n)

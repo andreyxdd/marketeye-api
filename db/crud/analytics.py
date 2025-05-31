@@ -5,7 +5,7 @@ import asyncio
 from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor
 
-from core.settings import MONGO_DB_NAME, QUANDL_RATE_LIMIT, QUANDL_SLEEP_MINUTES
+from core.settings import MONGO_DB_NAME
 from db.crud.tracking import get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient
 from db.crud.scrapes import get_mentions
@@ -14,7 +14,7 @@ from utils.handle_datetimes import get_date_string, get_epoch, get_last_quater_d
 from utils.handle_calculations import get_slope_normalized
 from utils.handle_external_apis import (
     get_polygon_tickers,
-    get_quaterly_free_cash_flow,
+    get_quarterly_free_cash_flow_polygon,
     get_ticker_base_analytics,
     get_ticker_extra_analytics,
 )
@@ -421,7 +421,7 @@ async def extend_base_analytics(
             **base_analytics,
             **get_ticker_extra_analytics(ticker, date),
             **await get_mentions(conn, ticker, date),
-            "fcf": get_quaterly_free_cash_flow(ticker, quater_date),
+            "fcf": get_quarterly_free_cash_flow_polygon(ticker, quater_date),
             "frequencies": await get_analytics_frequencies(
                 conn, date, criterion, ticker
             ),

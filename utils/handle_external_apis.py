@@ -22,6 +22,7 @@ from utils.handle_datetimes import (
 from utils.handle_calculations import (
     compute_base_analytics,
     compute_extra_analytics,
+    format_number_short,
     get_ema_n,
 )
 from core.settings import (
@@ -437,7 +438,7 @@ def get_quandl_tickers(date: str):
 
 
 MAX_RETRIES = 6
-RETRY_BACKOFF = (10, 20)  # random sleep between 1–3 seconds
+RETRY_BACKOFF = (15, 30)  # random sleep between 15–30 seconds
 
 @cache.use_cache()
 def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
@@ -513,8 +514,34 @@ def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
 
     return None
 
+def get_quarterly_free_cash_flow_polygon(ticker: str, date_quarter: str) -> str:
+    url = "https://api.polygon.io/vX/reference/financials"
+    params = {
+        "ticker": ticker,
+        "period_of_report_date.lte": date_quarter,
+        "timeframe": "quarterly",
+        "order": "desc",
+        "limit": 1,
+        "sort": "filing_date",
+        "apiKey": POLYGON_API_KEY
+    }
 
-def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int = 2):
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
+
+    try:
+        results = data["results"]
+        if not results:
+            return "N/A"
+
+        cash_flow = results[0]["financials"]["cash_flow_statement"]
+        fcf = cash_flow["net_cash_flow_from_operating_activities"]["value"]
+        return format_number_short(fcf)
+    except (KeyError, IndexError, TypeError):
+        return "N/A"
+
+def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int = 10):
     """
     Utility function to cache (in Redis) a result of
     the call to def get_quaterly_free_cash_flow

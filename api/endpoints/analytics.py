@@ -12,7 +12,7 @@ from utils.handle_validation import (
     validate_date_string,
 )
 from utils.handle_external_apis import (
-    get_quaterly_free_cash_flow,
+    get_quarterly_free_cash_flow_polygon,
     get_ticker_analytics,
     get_market_sp500,
     get_market_vixs,
@@ -65,7 +65,7 @@ async def read_ticker_analytics(
     return {
         **get_ticker_analytics(ticker, date, 45, 15),
         **await get_mentions(db, ticker, date),
-        "fcf": get_quaterly_free_cash_flow(ticker, last_quater_limit_date),
+        "fcf": get_quarterly_free_cash_flow_polygon(ticker, last_quater_limit_date),
         "frequencies": await get_analytics_frequencies(db, date, criterion, ticker),
     }
 
@@ -204,4 +204,4 @@ async def read_free_cash_flow(
     """
     last_quater_limit_date = get_last_quater_date(date)
 
-    return get_quaterly_free_cash_flow(ticker, last_quater_limit_date)
+    return get_quarterly_free_cash_flow_polygon(ticker, last_quater_limit_date)

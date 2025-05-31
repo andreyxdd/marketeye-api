@@ -72,9 +72,6 @@ async def put_top_tickers(conn: AsyncIOMotorClient, date: str):
     try:
         for criterion in CRITERIA:
             tickers = await put_top_tickers_by_criterion(conn, date, criterion)
-
-            # caching (in advance) some data to reduce number of reqeust to external API
-            cache_quaterly_free_cash_flow(tickers, date)
         return (
             "db/crud/tracking.py, def put_top_tickers:"
             + " tickers were retrieved and set up for tracking"
