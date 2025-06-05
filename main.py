@@ -103,7 +103,7 @@ async def swagger_ui_html():
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
         title="Market-Eye API",
-        swagger_favicon_url="/assets/icon.ico",
+        swagger_favicon_url="/assets/img/favicon.ico",
     )
 
 
