@@ -116,7 +116,7 @@ def get_ticker_analytics(
         ) from e
 
 
-@cache.use_cache()
+# @cache.use_cache()
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
