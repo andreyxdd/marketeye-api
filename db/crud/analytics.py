@@ -172,7 +172,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + f" The total number of tickers to analyze is {n_tickers}"
+                + f" The total number of tickers to analyze for {date} is {n_tickers}"
             )
             print(msg[-1])
 
@@ -183,10 +183,12 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
             analytics_to_insert = list(
                 filter(None, analytics_to_insert)
             )  # removing empty objects
-            msg.append(
-                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + f" Tickers analytics were computed: total of {len(analytics_to_insert)}"
-            )
+            msgResult = f"db/crud/analytics.py, def compute_base_analytics_and_insert: Tickers analytics were computed: total of {len(analytics_to_insert)}"
+            if analytics_to_insert[0]:
+                analytics_date = analytics_to_insert[0]["date"]
+                ticker = analytics_to_insert[0]["ticker"]
+                msgResult += f" for {date} (epoch - {analytics_date}, date string {get_date_string(analytics_date)}, ticker {ticker})"
+            msg.append(msgResult)
             print(msg[-1])
 
             if len(analytics_to_insert) > 0:
