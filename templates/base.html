@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Market-Eye API provides methods for computing technical indicators of individual stocks (e.g. MACD, EMAs, MFI, etc.) as well as indicators describing the market as a whole (e.g. CVI, VIX, etc.). The EOD historical data is fetched from Nasdaq Data Link API."/>
+    <meta name="keywords" content="market-eye, marketeye-api, stock market, api, macd, ema, eod, nyse, nasdaq"/>
+    <meta name="robots" content="index, archive" />
+    <link rel="canonical" href="https://marketeye-api.herokuapp.com/docs" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('assets', path='img/favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('assets', path='img/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('assets', path='img/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('assets', path='site.webmanifest') }}">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('assets', path='css/styles.css') }}">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <meta name="theme-color" content="#1a73e8">
+    {% endblock %}
+    <title>{% block title %}Market-Eye API{% endblock %}</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">Market-Eye API</a>
+            <div class="nav-links">
+                <a href="https://marketeye-api.herokuapp.com/docs" class="nav-link">Documentation</a>
+                <a href="https://github.com/andreyxdd/marketeye-api" class="nav-link">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 Market-Eye API. Licensed under GPL-3.0</p>
+                <div class="footer-links">
+                    <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">License</a>
+                    <a href="mailto:volkov@ualberta.ca">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('assets', path='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
