@@ -87,8 +87,9 @@ def compute_base_analytics(df):
     res = loads(concat(frames, join="inner", axis=1).fillna(0).iloc[-1].to_json())
 
     # ensure the date has the correct format
-    date_str = get_date_string(res["date"])
-    res["date"] = get_epoch(date_str)
+    if not isinstance(res["date"], str):
+        date_str = get_date_string(res["date"])
+        res["date"] = get_epoch(date_str)
 
     return {
         **res,

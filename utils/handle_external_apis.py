@@ -120,8 +120,8 @@ def get_ticker_analytics(
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
-    offset_n_days: Optional[int] = 45,
-    actual_offset_n_days: Optional[int] = 15,
+    offset_n_days: Optional[int] = 85,
+    actual_offset_n_days: Optional[int] = 50,
     to_paginate: Optional[bool] = True,
 ) -> dict:
     """
@@ -190,7 +190,7 @@ def get_ticker_base_analytics(
             f"utils/handle_external_apis.py, get_ticker_base_analytics reported an error for ticker {ticker} and date {date}"
         ) from e
 
-@cache.use_cache()
+# @cache.use_cache()
 def get_ticker_extra_analytics(
     ticker: str,
     date: str,
