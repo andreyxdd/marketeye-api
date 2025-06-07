@@ -172,7 +172,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             msg.append(
                 "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + f" The total number of tickers to analyze for {date} is {n_tickers}"
+                + f" The total number of tickers to analyze for {date} (epoch {get_epoch(date)}) is {n_tickers}"
             )
             print(msg[-1])
 
