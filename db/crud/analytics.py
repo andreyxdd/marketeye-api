@@ -178,6 +178,13 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             for ticker in tickers_to_insert:
                 ticker_base_analytics = get_ticker_base_analytics(ticker, date)
+                date_str = get_date_string(ticker_base_analytics["date"])
+                if date_str is not date:
+                    ticker = ticker_base_analytics["ticker"]
+                    epoch = ticker_base_analytics["date"]
+                    msg.append("db/crud/analytics.py, def compute_base_analytics_and_insert:" + f" The ticker base analytics for ticker {ticker} contains erroneous date {date_str} (epoch {epoch}) while the date-to-insert is {date}")
+                    print(msg[-1])
+                    continue
                 analytics_to_insert.append(ticker_base_analytics)
 
             analytics_to_insert = list(
