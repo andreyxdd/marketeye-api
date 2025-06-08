@@ -178,6 +178,8 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
 
             for ticker in tickers_to_insert:
                 ticker_base_analytics = get_ticker_base_analytics(ticker, date)
+                if not ticker_base_analytics:
+                    continue
                 date_str = get_date_string(ticker_base_analytics["date"])
                 if date_str is not date:
                     ticker = ticker_base_analytics["ticker"]
@@ -187,9 +189,6 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
                     continue
                 analytics_to_insert.append(ticker_base_analytics)
 
-            analytics_to_insert = list(
-                filter(None, analytics_to_insert)
-            )  # removing empty objects
             msgResult = f"db/crud/analytics.py, def compute_base_analytics_and_insert: Tickers analytics were computed: total of {len(analytics_to_insert)}"
             if analytics_to_insert[0]:
                 analytics_date = analytics_to_insert[0]["date"]
