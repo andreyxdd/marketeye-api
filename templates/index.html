@@ -1,28 +1,50 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Market-Eye API: EOD Stock Markets Analysis</title>
-    <meta
-      name="description"
-      content="Market-Eye API provides methods for computing technical indicators of individual stocks (e.g. MACD, EMAs, MFI, etc.) as well as indicators describing the market as a whole (e.g. CVI, VIX, etc.). The EOD historical data is fetched from Nasdaq Data Link API."
-    />
-    <meta
-      name="keywords"
-      content="market-eye, marketeye-api, stock market, api, macd, ema, eod, nyse, nasdaq"
-    />
-    <meta name="robots" content="index, archive" />
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="{{ url_for('assets', path='/icon.ico') }}"
-    />
-    <link rel="canonical" href="https://marketeye-api.herokuapp.com/docs" />
-  </head>
-  <body>
-    <h1>Market-Eye API</h1>
-    <h2>See Docuemntation v{{ version }}</h2>
-    <div>
-      <a href="https://marketeye-api.herokuapp.com/docs">Docs</a>
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <h1>Market-Eye API</h1>
+        <p class="hero-subtitle">Advanced Stock Market Technical Analysis API</p>
+        <div class="hero-buttons">
+            <a href="https://marketeye-api.herokuapp.com/docs" class="btn btn-primary">View Documentation</a>
+            <a href="https://github.com/andreyxdd/marketeye-api" class="btn btn-secondary">GitHub Repository</a>
+        </div>
     </div>
-  </body>
-</html>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2>Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-chart-line"></i>
+                <h3>Technical Indicators</h3>
+                <p>Compute MACD, EMAs, MFI, and other technical indicators for individual stocks</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-globe"></i>
+                <h3>Market Analysis</h3>
+                <p>Access market-wide indicators like CVI and VIX for NASDAQ and NYSE</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-robot"></i>
+                <h3>Web Scraping</h3>
+                <p>Track stock mentions across popular news websites using our scraping bot</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-database"></i>
+                <h3>EOD Data</h3>
+                <p>Access end-of-day historical data from Nasdaq Data Link API</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="container">
+        <h2>Ready to Get Started?</h2>
+        <p>Version {{ version }} is now available</p>
+        <a href="https://marketeye-api.herokuapp.com/docs" class="btn btn-primary">Explore the API</a>
+    </div>
+</section>
+{% endblock %}
