@@ -158,7 +158,7 @@ def get_ticker_base_analytics(
         url = (
             f"https://api.polygon.io/v2/aggs/ticker/{ticker.upper()}/range/1/day/"
             f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
-            f"?adjusted=true&sort=desc&limit=50000&apiKey=72jmDpkw2fWdiZ7hRjqUYAUxxpxdp3BK"
+            f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
         )
 
         response = requests.get(url)
