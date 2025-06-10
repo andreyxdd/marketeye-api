@@ -190,7 +190,7 @@ async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str)
                 analytics_to_insert.append(ticker_base_analytics)
 
             msgResult = f"db/crud/analytics.py, def compute_base_analytics_and_insert: Tickers analytics were computed: total of {len(analytics_to_insert)}"
-            if analytics_to_insert[0]:
+            if len(analytics_to_insert) > 0 and analytics_to_insert[0]:
                 analytics_date = analytics_to_insert[0]["date"]
                 ticker = analytics_to_insert[0]["ticker"]
                 msgResult += f" for {date} (epoch - {analytics_date}, date string {get_date_string(analytics_date)}, ticker {ticker})"
