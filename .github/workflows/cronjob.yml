@@ -3,9 +3,8 @@ name: cronjob
 on:
   schedule:
     - cron: "00 19 * * *"
-    - cron: "30 20 * * *"
-    - cron: "00 22 * * *"
-    - cron: "30 23 * * *"
+    - cron: "00 21 * * *"
+    - cron: "00 23 * * *"
   workflow_dispatch:
     inputs:
       target_date:
