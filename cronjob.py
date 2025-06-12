@@ -79,10 +79,9 @@ async def cronjob():
     start_time = time()
 
     today_utc = get_today_utc_date_in_timezone("America/New_York")
-    yesterday_utc = get_past_date(1, today_utc)
 
     try:
-        target_dates = [yesterday_utc, today_utc]
+        target_dates = [today_utc]
         if len(sys.argv) > 1:
             sys.argv.pop(0)
             target_dates = sys.argv
