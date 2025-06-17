@@ -1,10 +1,12 @@
 """
 Methods to access external endpoints and manage responses
 """
+from datetime import datetime
 import random
 import time
 import requests
 import pandas as pd
+import yfinance as yf
 from typing import Optional, List
 from time import sleep
 from pandas import date_range, json_normalize
@@ -15,6 +17,7 @@ from fake_headers import Headers
 from db.redis import RedisCache
 from utils.handle_validation import validate_date_string
 from utils.handle_datetimes import (
+    get_date_string,
     get_epoch,
     get_past_date,
     get_market_insider_url_string,
@@ -104,6 +107,7 @@ def get_ticker_analytics(
         })
         df = df[["date", "open", "high", "low", "close", "volume"]]
         df["ticker"] = ticker.upper()
+        df = handle_late_last_date(df, ticker, date)
 
         return {
             **compute_base_analytics(df),
@@ -182,6 +186,7 @@ def get_ticker_base_analytics(
         })
         df = df[["date", "open", "high", "low", "close", "volume"]]
         df["ticker"] = ticker.upper()
+        df = handle_late_last_date(df, ticker, date)
 
         return compute_base_analytics(df)
     except Exception as e:
@@ -253,6 +258,7 @@ def get_ticker_extra_analytics(
         })
         df = df[["date", "open", "high", "low", "close", "volume"]]
         df["ticker"] = ticker.upper()
+        df = handle_late_last_date(df, ticker, date)
 
         return compute_extra_analytics(df)
     except Exception as e:
@@ -562,3 +568,29 @@ def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int
     for ticker in tickers:
         sleep(rate_limit)
         get_quaterly_free_cash_flow(ticker, last_quater_limit_date)
+
+def handle_late_last_date(df, ticker: str, date: str):
+    """
+    In case, primary df doesn't have the correct date in the first row, read the data from 
+    yfinance for the latest date and concatenate it as a first row in the primary df
+    """
+    dt = datetime.fromisoformat(str(df.iloc[0]["date"]))
+    df_last_date = dt.strftime('%Y-%m-%d')
+    if df_last_date != date:
+        t = yf.Ticker(ticker)
+        data = t.history(period='1d')
+        data.index = pd.to_datetime(data.index)
+        new_row = pd.DataFrame({
+            'date': [data.index[0].tz_convert('UTC')],  # Convert timezone to UTC to match primary df
+            'open': data['Open'].iloc[0],
+            'high': data['High'].iloc[0],
+            'low': data['Low'].iloc[0],
+            'close': data['Close'].iloc[0],
+            'volume': data['Volume'].iloc[0],
+            'ticker': ticker
+        })
+        new_row = new_row[df.columns]
+        df = pd.concat([new_row, df], ignore_index=True)
+        df['date'] = pd.to_datetime(df['date'])
+
+    return df
