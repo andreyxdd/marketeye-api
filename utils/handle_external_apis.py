@@ -120,7 +120,7 @@ def get_ticker_analytics(
         ) from e
 
 
-@cache.use_cache()
+# @cache.use_cache()
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
@@ -195,7 +195,7 @@ def get_ticker_base_analytics(
             f"utils/handle_external_apis.py, get_ticker_base_analytics reported an error for ticker {ticker} and date {date}"
         ) from e
 
-@cache.use_cache()
+# @cache.use_cache()
 def get_ticker_extra_analytics(
     ticker: str,
     date: str,
@@ -574,23 +574,27 @@ def handle_late_last_date(df, ticker: str, date: str):
     In case, primary df doesn't have the correct date in the first row, read the data from 
     yfinance for the latest date and concatenate it as a first row in the primary df
     """
-    dt = datetime.fromisoformat(str(df.iloc[0]["date"]))
-    df_last_date = dt.strftime('%Y-%m-%d')
-    if df_last_date != date:
-        t = yf.Ticker(ticker)
-        data = t.history(period='1d')
-        data.index = pd.to_datetime(data.index)
-        new_row = pd.DataFrame({
-            'date': [data.index[0].tz_convert('UTC')],  # Convert timezone to UTC to match primary df
-            'open': data['Open'].iloc[0],
-            'high': data['High'].iloc[0],
-            'low': data['Low'].iloc[0],
-            'close': data['Close'].iloc[0],
-            'volume': data['Volume'].iloc[0],
-            'ticker': ticker
-        })
-        new_row = new_row[df.columns]
-        df = pd.concat([new_row, df], ignore_index=True)
-        df['date'] = pd.to_datetime(df['date'])
+    try:
+        dt = datetime.fromisoformat(str(df.iloc[0]["date"]))
+        df_last_date = dt.strftime('%Y-%m-%d')
+        if df_last_date != date:
+            t = yf.Ticker(ticker)
+            data = t.history(period='1d')
+            data.index = pd.to_datetime(data.index)
+            new_row = pd.DataFrame({
+                'date': [data.index[0].tz_convert('UTC')],  # Convert timezone to UTC to match primary df
+                'open': data['Open'].iloc[0],
+                'high': data['High'].iloc[0],
+                'low': data['Low'].iloc[0],
+                'close': data['Close'].iloc[0],
+                'volume': data['Volume'].iloc[0],
+                'ticker': ticker
+            })
+            new_row = new_row[df.columns]
+            df = pd.concat([new_row, df], ignore_index=True)
+            df['date'] = pd.to_datetime(df['date'])
 
-    return df
+        return df
+    except Exception as e:
+        print("utils/handle_external_apis.py, def handle_late_last_date reported an error:", e)
+        return df
