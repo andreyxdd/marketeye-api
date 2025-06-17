@@ -120,7 +120,7 @@ def get_ticker_analytics(
         ) from e
 
 
-# @cache.use_cache()
+@cache.use_cache()
 def get_ticker_base_analytics(
     ticker: str,
     date: str,
@@ -195,7 +195,7 @@ def get_ticker_base_analytics(
             f"utils/handle_external_apis.py, get_ticker_base_analytics reported an error for ticker {ticker} and date {date}"
         ) from e
 
-# @cache.use_cache()
+@cache.use_cache()
 def get_ticker_extra_analytics(
     ticker: str,
     date: str,
