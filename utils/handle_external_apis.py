@@ -6,7 +6,6 @@ import random
 import time
 import requests
 import pandas as pd
-import yfinance as yf
 from typing import Optional, List
 from time import sleep
 from pandas import date_range, json_normalize
@@ -571,28 +570,27 @@ def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int
 
 def handle_late_last_date(df, ticker: str, date: str):
     """
-    In case, primary df doesn't have the correct date in the first row, read the data from 
-    yfinance for the latest date and concatenate it as a first row in the primary df
+    If the primary df doesn't start with the expected date, add the latest row using yfinance data.
     """
     try:
-        dt = datetime.fromisoformat(str(df.iloc[0]["date"]))
+        first_row = df.iloc[0]
+        dt = pd.to_datetime(str(first_row["date"]), utc=True)
         df_last_date = dt.strftime('%Y-%m-%d')
+
         if df_last_date != date:
-            t = yf.Ticker(ticker)
-            data = t.history(period='1d')
-            data.index = pd.to_datetime(data.index)
+            new_date = pd.to_datetime(get_epoch(date), unit='ms', utc=True)
             new_row = pd.DataFrame({
-                'date': [data.index[0].tz_convert('UTC')],  # Convert timezone to UTC to match primary df
-                'open': data['Open'].iloc[0],
-                'high': data['High'].iloc[0],
-                'low': data['Low'].iloc[0],
-                'close': data['Close'].iloc[0],
-                'volume': data['Volume'].iloc[0],
-                'ticker': ticker
+                'date': [new_date],
+                'open': [first_row['open']],
+                'high': [first_row['high']],
+                'low': [first_row['low']],
+                'close': [first_row['close']],
+                'volume': [first_row['volume']],
+                'ticker': [ticker]
             })
+
             new_row = new_row[df.columns]
             df = pd.concat([new_row, df], ignore_index=True)
-            df['date'] = pd.to_datetime(df['date'])
 
         return df
     except Exception as e:
