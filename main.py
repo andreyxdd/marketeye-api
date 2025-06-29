@@ -11,6 +11,7 @@ from core.settings import DEFAULT_ROUTE_STR
 from api import router as endpoint_router
 from db.mongodb import connect as connect_mongo, close as close_mongo
 from db.redis import RedisCache
+from contextlib import asynccontextmanager
 
 VERSION = "1.5.0"
 
@@ -57,23 +58,25 @@ app = FastAPI(
     },
     openapi_tags=tags_metadata,
 )
+
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 
 
-@app.on_event("startup")
-async def on_app_start():
-    """Anything that needs to be done while app starts"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
     await connect_mongo()
     cache = RedisCache()
     cache.connect()
+    try:
+        yield
+    finally:
+        # Shutdown actions
+        await close_mongo()
 
-
-@app.on_event("shutdown")
-async def on_app_shutdown():
-    """Anything that needs to be done while app shutdown"""
-    await close_mongo()
+app.router.lifespan_context = lifespan
 
 
 @app.get("/", tags=["Home"], response_class=HTMLResponse)
@@ -100,7 +103,7 @@ async def swagger_ui_html():
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
         title="Market-Eye API",
-        swagger_favicon_url="/assets/icon.ico",
+        swagger_favicon_url="/assets/img/favicon.ico",
     )
 
 
