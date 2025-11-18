@@ -42,7 +42,7 @@ Currently, the following warnings are ignored:
 - ```E0402``` indicates erreneous relative importings
 - ```R0801``` ignore similarities between files
 
-It is recommended to initiate the linter tool in the code editor. For example, in VSCode, press ```ctrl+shift+p```, search for ```Select linter``` and choose ```pylint```.
+Initiate the linter tool in the code editor. For example, in VSCode, press ```ctrl+shift+p```, search for ```Select linter``` and choose ```pylint```.
 
 ### Pre-commit Hooks
 
