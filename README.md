@@ -35,6 +35,7 @@ uvicorn main:app --reload
 ```
 
 ### Linting
+
 The ```pylint``` is selected as a default linter. To avoid certain warnings, adjust settings of ```.pylintrc``` in the root folder.
 Currently, the following warnings are ignored:
 - ```E1136``` relates to the issues with ```Optional``` and ```Union``` types from ```typings```
