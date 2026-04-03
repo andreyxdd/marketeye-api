@@ -8,10 +8,6 @@ Furthermore, the API includes a scraping bot that collects the number of mention
 
 Finally, the API provides methods for sorting all the stock data and scraping results (for the given date) based on several implemented criteria.
 
-## Deployment
-
-The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB handles data storage. Learn a bit more on the [documentation page](https://marketeye-api.herokuapp.com/docs).
-
 ## Code Directories
 
 - *api*: for implementing endpoints
