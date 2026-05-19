@@ -1,5 +1,8 @@
 {
   "packages": [
     "@samfp/pi-memory"
-  ]
+  ],
+  "pi-total-recall": {
+    "localPath": ".pi/total-recall"
+  }
 }
