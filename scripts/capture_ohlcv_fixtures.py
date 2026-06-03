@@ -5,6 +5,7 @@ Build OHLCV + golden calc fixtures.
 Uses Polygon when POLYGON_API_KEY is set; otherwise generates synthetic bars.
 """
 
+import argparse
 import json
 import os
 import sys
@@ -23,6 +24,10 @@ os.environ.setdefault("POLYGON_API_KEY", "test-polygon-key")
 from tests.helpers.constants import CALC_TICKERS, FIXTURE_DATE  # noqa: E402
 from utils.handle_external_apis import get_ticker_analytics  # noqa: E402
 
+MARKET_TICKERS = {
+    "US": CALC_TICKERS,
+}
+
 OHLCV_DIR = ROOT / "tests" / "fixtures" / "ohlcv"
 GOLDEN_DIR = ROOT / "tests" / "fixtures" / "golden"
 GOLDEN_FIELDS = [
@@ -39,9 +44,10 @@ GOLDEN_FIELDS = [
 
 
 def synthetic_polygon_payload(ticker: str, end_date: str, days: int = 100) -> dict:
+    tickers = CALC_TICKERS
     end = datetime.strptime(end_date, "%Y-%m-%d")
     results = []
-    price = 100.0 + CALC_TICKERS.index(ticker) * 10
+    price = 100.0 + tickers.index(ticker) * 10
     cursor = end
     while len(results) < days:
         if cursor.weekday() < 5:
@@ -103,23 +109,37 @@ def build_golden(ticker: str) -> dict:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Capture OHLCV and calc golden fixtures")
+    parser.add_argument(
+        "--market",
+        default="US",
+        help="Market code (default: US)",
+    )
+    args = parser.parse_args()
+    market = args.market.upper()
+    tickers = MARKET_TICKERS.get(market)
+    if not tickers:
+        raise SystemExit(f"unsupported market: {market}")
+
     OHLCV_DIR.mkdir(parents=True, exist_ok=True)
     GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
 
-    for ticker in CALC_TICKERS:
+    for ticker in tickers:
         payload = fetch_polygon_payload(ticker, FIXTURE_DATE)
         (OHLCV_DIR / f"{ticker}.json").write_text(
             json.dumps(payload, indent=2), encoding="utf-8"
         )
 
-    with patch("utils.handle_external_apis.requests.get", side_effect=mock_get):
-        for ticker in CALC_TICKERS:
+    with patch("providers.polygon_us.requests.get", side_effect=mock_get):
+        for ticker in tickers:
             golden = build_golden(ticker)
             (GOLDEN_DIR / f"{ticker.lower()}_{FIXTURE_DATE}.json").write_text(
                 json.dumps(golden, indent=2), encoding="utf-8"
             )
 
-    print(f"Wrote OHLCV to {OHLCV_DIR} and golden to {GOLDEN_DIR}")
+    print(
+        f"market={market} wrote OHLCV to {OHLCV_DIR} and golden to {GOLDEN_DIR}"
+    )
 
 
 if __name__ == "__main__":
