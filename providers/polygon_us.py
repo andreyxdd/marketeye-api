@@ -7,7 +7,11 @@ import pandas as pd
 import requests
 
 from core.settings import POLYGON_API_KEY
-from utils.handle_calculations import compute_base_analytics, compute_extra_analytics
+from providers.analytics_mixin import (
+    analytics_from_ohlcv,
+    base_analytics_from_ohlcv_utc,
+    extra_analytics_from_ohlcv,
+)
 
 POLYGON_SYMBOL_ALIASES = {
     "GOOG": "GOOGL",
@@ -23,8 +27,9 @@ class PolygonUSProvider:
     def _polygon_aggs_url(
         self, ticker: str, start_date: pd.Timestamp, end_date: pd.Timestamp
     ) -> str:
+        polygon_symbol = self._polygon_symbol(ticker)
         return (
-            f"https://api.polygon.io/v2/aggs/ticker/{ticker.upper()}/range/1/day/"
+            f"https://api.polygon.io/v2/aggs/ticker/{polygon_symbol}/range/1/day/"
             f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
             f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
         )
@@ -36,10 +41,9 @@ class PolygonUSProvider:
         offset_n_days: Optional[int] = 85,
         actual_offset_n_days: Optional[int] = 50,
     ) -> pd.DataFrame:
-        polygon_symbol = self._polygon_symbol(ticker)
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
-        url = self._polygon_aggs_url(polygon_symbol, start_date, end_date)
+        url = self._polygon_aggs_url(ticker, start_date, end_date)
 
         response = requests.get(url)
         response.raise_for_status()
@@ -76,10 +80,9 @@ class PolygonUSProvider:
         actual_offset_n_days: Optional[int] = 50,
     ) -> pd.DataFrame:
         """OHLCV with UTC-aware timestamps (pipeline insert path)."""
-        polygon_symbol = self._polygon_symbol(ticker)
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
-        url = self._polygon_aggs_url(polygon_symbol, start_date, end_date)
+        url = self._polygon_aggs_url(ticker, start_date, end_date)
 
         response = requests.get(url)
         response.raise_for_status()
@@ -109,6 +112,16 @@ class PolygonUSProvider:
         df["ticker"] = ticker.upper()
         return df
 
+    def fetch_ticker_extra_analytics(
+        self,
+        ticker: str,
+        date: str,
+        offset_n_days: Optional[int] = 85,
+        actual_offset_n_days: Optional[int] = 50,
+    ) -> dict:
+        df = self.fetch_ohlcv(ticker, date, offset_n_days, actual_offset_n_days)
+        return extra_analytics_from_ohlcv(df)
+
     def fetch_ticker_analytics(
         self,
         ticker: str,
@@ -119,12 +132,7 @@ class PolygonUSProvider:
     ) -> dict:
         del test_offset
         df = self.fetch_ohlcv(ticker, date, offset_n_days, actual_offset_n_days)
-        if df.empty:
-            return {}
-        return {
-            **compute_base_analytics(df),
-            **compute_extra_analytics(df),
-        }
+        return analytics_from_ohlcv(df)
 
     def fetch_ticker_base_analytics(
         self,
@@ -134,9 +142,7 @@ class PolygonUSProvider:
         actual_offset_n_days: Optional[int] = 50,
     ) -> dict:
         df = self.fetch_ohlcv_utc(ticker, date, offset_n_days, actual_offset_n_days)
-        if df.empty:
-            return {}
-        return compute_base_analytics(df)
+        return base_analytics_from_ohlcv_utc(df)
 
     def fetch_ticker_universe(self, date: str) -> list[str]:
         url = (

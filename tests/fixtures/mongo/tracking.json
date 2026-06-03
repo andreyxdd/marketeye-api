@@ -1,5 +1,6 @@
 [
   {
+    "market": "US",
     "date": 1717372800000.0,
     "criterion": "one_day_avg_mf",
     "tickers": [
@@ -26,6 +27,7 @@
     ]
   },
   {
+    "market": "US",
     "date": 1717372800000.0,
     "criterion": "three_day_avg_mf",
     "tickers": [
@@ -52,6 +54,7 @@
     ]
   },
   {
+    "market": "US",
     "date": 1717372800000.0,
     "criterion": "volume",
     "tickers": [
@@ -78,6 +81,7 @@
     ]
   },
   {
+    "market": "US",
     "date": 1717372800000.0,
     "criterion": "three_day_avg_volume",
     "tickers": [
@@ -104,6 +108,7 @@
     ]
   },
   {
+    "market": "US",
     "date": 1717372800000.0,
     "criterion": "macd",
     "tickers": [

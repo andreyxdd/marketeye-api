@@ -3,6 +3,8 @@ Methods to handle CRUD operation with 'analytics' collection in the db
 with regard to stock tracking procedure
 """
 from typing import Optional
+
+from core.markets import DEFAULT_MARKET, market_mongo_filter, normalize_market
 from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
 from utils.handle_datetimes import get_epoch, get_past_date
@@ -20,20 +22,20 @@ CRITERIA = [
 
 
 async def put_top_tickers_by_criterion(
-    conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
+    conn: AsyncIOMotorClient,
+    date: str,
+    criterion: str,
+    lim: Optional[int] = 20,
+    market: str = DEFAULT_MARKET,
 ):
-    """
-    Method to retrieve and upsert ticker trackings for a given criterion
-
-    Raises:
-      Exception: Method reported an error
-    """
     try:
+        market = normalize_market(market)
         epoch_date = get_epoch(date)
+        query = {"date": epoch_date, **market_mongo_filter(market)}
         cursor = (
             conn[MONGO_DB_NAME][MONGO_ANALYTICS_COLLECTION]
             .find(
-                {"date": epoch_date},
+                query,
                 {"_id": False, "ticker": True},
             )
             .sort(criterion, -1)
@@ -43,12 +45,13 @@ async def put_top_tickers_by_criterion(
 
         if tickers:
             await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].update_one(
-                {"date": epoch_date, "criterion": criterion},
+                {"date": epoch_date, "criterion": criterion, "market": market},
                 {
                     "$set": {
                         "tickers": tickers,
                         "date": epoch_date,
                         "criterion": criterion,
+                        "market": market,
                     }
                 },
                 upsert=True,
@@ -61,20 +64,13 @@ async def put_top_tickers_by_criterion(
         ) from e
 
 
-async def put_top_tickers(conn: AsyncIOMotorClient, date: str):
-    """
-    Method to upsert the ticker tracking documents with different selection criteria
-    into main MongoDB and cache some other related data into Redis
-
-    Raises:
-      Exception: Method reported an error
-    """
+async def put_top_tickers(conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET):
     try:
         for criterion in CRITERIA:
-            tickers = await put_top_tickers_by_criterion(conn, date, criterion)
+            await put_top_tickers_by_criterion(conn, date, criterion, market=market)
         return (
             "db/crud/tracking.py, def put_top_tickers:"
-            + " tickers were retrieved and set up for tracking"
+            + f" tickers were retrieved and set up for tracking ({market})"
         )
     except Exception as e:  # pylint: disable=W0703
         print("Error message:", e)
@@ -89,30 +85,20 @@ async def get_analytics_frequencies(
     criterion: str,
     ticker: str,
     period: Optional[int] = 25,
+    market: str = DEFAULT_MARKET,
 ):
-    """
-    Method that returns a string representing the appearance frequency of a stock
-    during the period for the givne selection criterion.
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date string
-        criterion (str): criterion by which to sort analytics
-        ticker (str): ticker string of a stock
-        period (Optional[int], optional): number of stocks to return. Defaults to 20
-
-    Raises:
-        Exception: Method reports an error
-
-    Returns:
-        frequencies_str: string of freqeuncies
-    """
     try:
+        market = normalize_market(market)
         past_date = get_past_date(period, date)
         epoch_past_date = get_epoch(past_date)
         epoch_date = get_epoch(date)
         pipeline = [
-            {"$match": {"criterion": criterion}},
+            {
+                "$match": {
+                    "criterion": criterion,
+                    **market_mongo_filter(market),
+                }
+            },
             {
                 "$match": {
                     "date": {

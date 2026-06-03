@@ -4,11 +4,9 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-import api.endpoints.analytics as analytics_api
 import api.endpoints.notifications as notifications
-import db.crud.analytics as analytics_crud
+import services.analytics_service as analytics_service
 import utils.handle_emails as handle_emails
-import utils.handle_external_apis as external
 from tests.helpers.stubs import (
     NotifyRecorder,
     stub_get_fcf,
@@ -20,19 +18,11 @@ from tests.helpers.stubs import (
 
 
 def _apply_stubs(recorder):
-    external.get_ticker_analytics = stub_get_ticker_analytics
-    external.get_ticker_extra_analytics = stub_get_ticker_extra_analytics
-    external.get_quarterly_free_cash_flow_polygon = stub_get_fcf
-    external.get_market_sp500 = stub_get_market_sp500
-    external.get_market_vixs = stub_get_market_vixs
-
-    analytics_api.get_ticker_analytics = stub_get_ticker_analytics
-    analytics_api.get_market_sp500 = stub_get_market_sp500
-    analytics_api.get_market_vixs = stub_get_market_vixs
-    analytics_api.get_quarterly_free_cash_flow_polygon = stub_get_fcf
-
-    analytics_crud.get_ticker_extra_analytics = stub_get_ticker_extra_analytics
-    analytics_crud.get_quarterly_free_cash_flow_polygon = stub_get_fcf
+    analytics_service.external_get_ticker_analytics = stub_get_ticker_analytics
+    analytics_service.external_get_ticker_extra_analytics = stub_get_ticker_extra_analytics
+    analytics_service.get_quarterly_free_cash_flow_polygon = stub_get_fcf
+    analytics_service.get_market_sp500 = stub_get_market_sp500
+    analytics_service.get_market_vixs = stub_get_market_vixs
 
     handle_emails.notify_developer = recorder
     notifications.notify_developer = recorder

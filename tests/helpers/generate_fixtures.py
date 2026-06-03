@@ -51,6 +51,7 @@ def build_analytics() -> list[dict]:
         for rank, ticker in enumerate(FIXTURE_TICKERS):
             change = 0.015 if rank < adv_count else -0.012
             doc = {
+                "market": "US",
                 "ticker": ticker,
                 "date": epoch,
                 "one_day_open_close_change": change,
@@ -59,6 +60,20 @@ def build_analytics() -> list[dict]:
                 for criterion in CRITERIA:
                     doc[criterion] = criterion_score(criterion, rank)
             docs.append(doc)
+    for rank, ticker in enumerate(["SHOP", "RY"]):
+        docs.append(
+            {
+                "market": "TO",
+                "ticker": ticker,
+                "date": get_epoch(FIXTURE_DATE),
+                "one_day_open_close_change": 0.01,
+                "one_day_avg_mf": criterion_score("one_day_avg_mf", rank),
+                "three_day_avg_mf": criterion_score("three_day_avg_mf", rank),
+                "volume": criterion_score("volume", rank),
+                "three_day_avg_volume": criterion_score("three_day_avg_volume", rank),
+                "macd": criterion_score("macd", rank),
+            }
+        )
     return docs
 
 
@@ -89,6 +104,7 @@ def build_tracking() -> list[dict]:
         )
         docs.append(
             {
+                "market": "US",
                 "date": epoch,
                 "criterion": criterion,
                 "tickers": ordered[:LIST_LIMIT],

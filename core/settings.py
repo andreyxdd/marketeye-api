@@ -44,6 +44,13 @@ QUANDL_SLEEP_MINUTES = int(os.getenv("QUANDL_SLEEP_MINUTES", 10))
 # Polygon API key
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
 
+# EODHD API key (Toronto / TO market)
+EODHD_API_KEY = os.getenv("EODHD_API_KEY")
+
+# Cron parallel ingest
+CRON_MAX_WORKERS = int(os.getenv("CRON_MAX_WORKERS", "15"))
+CRON_INSERT_BATCH_SIZE = int(os.getenv("CRON_INSERT_BATCH_SIZE", "500"))
+
 # URL setting to get market analytics using external datasets
 MI_BASE_URL = os.getenv("MI_BASE_URL")
 MI_SP500_CODE = os.getenv("MI_SP500_CODE", "998434")

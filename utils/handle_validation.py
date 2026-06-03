@@ -5,6 +5,7 @@ Utilities methods to validate API calls
 from fastapi import Query
 from fastapi.exceptions import HTTPException
 from core.settings import API_KEY
+from core.markets import DEFAULT_MARKET, normalize_market
 from utils.handle_datetimes import is_valid_date
 
 
@@ -55,3 +56,15 @@ def validate_bounce_period(
         raise HTTPException(status_code=422, detail="No such period implemented.")
 
     return period
+
+
+def validate_market(
+    market: str = Query(
+        default=DEFAULT_MARKET,
+        description="Market venue code (US or TO)",
+    ),
+):
+    try:
+        return normalize_market(market)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error

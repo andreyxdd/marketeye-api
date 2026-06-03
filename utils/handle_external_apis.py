@@ -35,6 +35,8 @@ from core.settings import (
     MI_VIX_DATASET,
     YAHOO_BASE_FCF_URL,
 )
+from core.markets import DEFAULT_MARKET, normalize_market
+
 from providers import get_market_data_provider
 
 nasdaqdatalink.ApiConfig.api_key = QUANDL_API_KEY
@@ -49,6 +51,7 @@ def get_ticker_analytics(
     offset_n_days: Optional[int] = 85,
     actual_offset_n_days: Optional[int] = 50,
     test_offset: Optional[bool] = False,
+    market: str = DEFAULT_MARKET,
 ) -> dict:
     """
     Function that returns analytics (base and extra) for a single stock
@@ -76,7 +79,7 @@ def get_ticker_analytics(
         dict: combination of returned values from compute_base_analytics and compute_extra_analytics
     """
     try:
-        provider = get_market_data_provider("US")
+        provider = get_market_data_provider(market)
         return provider.fetch_ticker_analytics(
             ticker, date, offset_n_days, actual_offset_n_days, test_offset
         )
@@ -94,6 +97,7 @@ def get_ticker_base_analytics(
     offset_n_days: Optional[int] = 85,
     actual_offset_n_days: Optional[int] = 50,
     to_paginate: Optional[bool] = True,
+    market: str = DEFAULT_MARKET,
 ) -> dict:
     """
     Function that returns only base analytics for a single stock
@@ -123,7 +127,8 @@ def get_ticker_base_analytics(
         dict: see returned values from compute_base_analytics
     """
     try:
-        provider = get_market_data_provider("US")
+        del to_paginate
+        provider = get_market_data_provider(market)
         return provider.fetch_ticker_base_analytics(
             ticker, date, offset_n_days, actual_offset_n_days
         )
@@ -140,64 +145,14 @@ def get_ticker_extra_analytics(
     offset_n_days: Optional[int] = 85,
     actual_offset_n_days: Optional[int] = 50,
     test_offset: Optional[bool] = False,
+    market: str = DEFAULT_MARKET,
 ) -> dict:
-    """
-    Function that returns extra analytics for a single stock
-    represneted by the ticker. If Quandl databse don't have enough EOD
-    data for the given ticker (not enough actural days), the empty
-    dictionary is returned.
-
-    Args:
-        ticker (str):
-            stock ticker, e.g. "TSLA"
-        date (str):
-            date string, at which the analytics should be evaluated
-        offset_n_days (Optional[int], optional):
-            offset of calendar days back in the past. Defaults to 85.
-        actual_offset_n_days (Optional[int], optional):
-            number of trading days actually needed to compute analytics. Defaults to 50.
-        test_offset (Optional[bool], optional):
-            Boolean to check if Quandl API has enough EOD records
-            for the actual_offset_n_days. Defaults to False.
-
-    Raises:
-        Exception: Method reported an error
-
-    Returns:
-        dict: see output for compute_extra_analytics
-    """
+    del test_offset
     try:
-        end_date = pd.to_datetime(date)
-        start_date = end_date - pd.Timedelta(days=offset_n_days)
-
-        url = (
-            f"https://api.polygon.io/v2/aggs/ticker/{ticker.upper()}/range/1/day/"
-            f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
-            f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
+        provider = get_market_data_provider(market)
+        return provider.fetch_ticker_extra_analytics(
+            ticker, date, offset_n_days, actual_offset_n_days
         )
-
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-
-        results = data.get("results", [])
-        if not results or len(results) < actual_offset_n_days:
-            print(f"utils/handle_external_apis.py, get_ticker_extra_analytics: not enough EOD records ({len(results)}) for ticker {ticker}")
-            return {}
-
-        df = pd.DataFrame(results)
-        df["date"] = pd.to_datetime(df["t"], unit='ms').dt.strftime('%Y-%m-%d')
-        df = df.rename(columns={
-            "o": "open",
-            "h": "high",
-            "l": "low",
-            "c": "close",
-            "v": "volume"
-        })
-        df = df[["date", "open", "high", "low", "close", "volume"]]
-        df["ticker"] = ticker.upper()
-
-        return compute_extra_analytics(df)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
@@ -314,27 +269,21 @@ def get_market_vixs(
             "utils/handle_external_apis.py, def get_market_vixs reported an error"
         ) from e
 
-def get_polygon_tickers(date: str) -> list:
-    """
-    Function to get the list of all currently available tickers from Polygon.io
-
-    Args:
-        date (str): date, for which to search
-
-    Raises:
-        Exception: Method reported an error
-
-    Returns:
-        list: List of strings (tickers' symbols)
-    """
+def get_tickers(date: str, market: str = DEFAULT_MARKET) -> list:
     try:
-        provider = get_market_data_provider("US")
+        market = normalize_market(market)
+        provider = get_market_data_provider(market)
         return provider.fetch_ticker_universe(date)
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "utils/handle_external_apis.py, def get_polygon_tickers reported an error"
+            f"utils/handle_external_apis.py, get_tickers reported an error for market {market}"
         ) from e
+
+
+def get_polygon_tickers(date: str) -> list:
+    """Backward-compatible alias for US ticker universe."""
+    return get_tickers(date, market="US")
 
 def get_quandl_tickers(date: str):
     """

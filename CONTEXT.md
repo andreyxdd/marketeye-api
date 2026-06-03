@@ -1,16 +1,18 @@
-# MarketEye API — test glossary
-
-Terms from the local pytest plan (`client_api_e2e_tests`).
+# MarketEye API — glossary
 
 | Term | Meaning |
 |------|---------|
-| **FixtureTradingDay** | Frozen session date for tests (`2024-06-03`); not calendar today |
+| **Market** | Trading venue code: `US` or `TO` (Toronto Stock Exchange via EODHD) |
+| **AnalyticsService** | Orchestration module for ticker/list/market routes and cron ingest |
+| **Enrichment policy** | Per-market rules for attaching extras (US: FCF/mentions; TO: OHLCV indicators only) |
+| **FixtureTradingDay** | Frozen session date for tests (`2024-06-03`) |
 | **Fixture tickers** | Fixed US symbol set in Mongo seed (50 large-cap names) |
 | **Tier A** | HTTP e2e — client routes, Mongo reads, real CVI aggregation |
 | **Tier B** | Calc golden — OHLCV → indicators via `compute_*` |
-| **Tier B′** | Provider golden — `MarketDataProvider` implementations vs same goldens |
-| **Tier C** | Pipeline — `compute_base_analytics_and_insert` → `get_analytics_sorted_by` |
-| **MarketDataProvider** | Protocol for exchange-specific OHLCV + ticker universe fetch (`providers/base.py`) |
-| **PolygonUSProvider** | US implementation wrapping Polygon.io (`providers/polygon_us.py`) |
+| **Tier B′** | Provider golden — `MarketDataProvider` implementations vs goldens |
+| **Tier C** | Pipeline — ingest → `get_analytics_sorted_by` |
+| **MarketDataProvider** | Protocol for exchange-specific OHLCV + ticker universe fetch |
+| **PolygonUSProvider** | US implementation wrapping Polygon.io |
+| **EodhdTOProvider** | TO implementation wrapping EODHD |
 
 Run instructions: `tests/README.md`.

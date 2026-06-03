@@ -2,21 +2,15 @@
 Methods to handle CRUD operation with 'analytics' collection in the db
 """
 import asyncio
-from typing import Optional, List
+from typing import Awaitable, Callable, Optional, List
 
+from core.markets import DEFAULT_MARKET, market_mongo_filter, normalize_market
 from core.settings import MONGO_DB_NAME
-from db.crud.tracking import get_analytics_frequencies
 from db.mongodb import AsyncIOMotorClient
-from db.crud.scrapes import get_mentions
 from db.redis import RedisCache
-from utils.handle_datetimes import get_date_string, get_epoch, get_last_quater_date
+from utils.handle_datetimes import get_date_string, get_epoch
 from utils.handle_calculations import get_slope_normalized
-from utils.handle_external_apis import (
-    get_polygon_tickers,
-    get_quarterly_free_cash_flow_polygon,
-    get_ticker_base_analytics,
-    get_ticker_extra_analytics,
-)
+from utils.handle_external_apis import get_tickers
 
 MONGO_COLLECTION_NAME = "analytics"
 
@@ -29,30 +23,13 @@ async def get_analytics_by_open_close_change(
     n_trading_days: int,
     epoch_date: int,
     query: Optional[str] = "$gt",
+    market: str = "US",
 ) -> List[dict]:
-    """
-    Function to get list of objects as {"_id": (epochDate), "count": (number)} where
-    the number of advancing (query="$gt") or declining (query="$lt") is counted.
-    The final array sorted by the 'epoch_date' (the "_id" field) in the ascending order.
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        n_trading_days (int): period to search for
-        epoch_date (int): date in epoch format
-        query (Optional[str], optional): query for the aggregation. Defaults to "$gt".
-
-    Raises:
-        Exception: Method reported an error
-
-    Returns:
-        list[dict]:
-            List with the stocks counted by the criterion (query) for each date,
-            e.g [{epoch_date (_id): number of stocks found by criterion}]
-    """
     try:
         pipeline = [
             {
                 "$match": {
+                    **market_mongo_filter(market),
                     "date": {"$lte": epoch_date},
                     "one_day_open_close_change": {query: 0},
                 }
@@ -73,38 +50,14 @@ async def get_analytics_by_open_close_change(
 async def get_normalazied_cvi_slope(
     conn: AsyncIOMotorClient, date: str, n_trading_days: Optional[int] = 50
 ) -> float:
-    """
-    Function to compute the slope of Cumulative Volume Index as a
-    linear regression over the last 50 trading days from the given date.
-    Recal CVI definition by the following link:
-    https://www.marketinout.com/technical_analysis.php?t=Cumulative_Volume_Index_(CVI)&id=38
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): starting date
-        n_trading_days (Optional[int], optional):
-            number of past trading days from the starting date. Defaults to 50.
-
-    Raises:
-        Exception:
-            list_num_adv_stocks and list_num_dec_stocks should have the
-            same size (it is the number of individual tickers)
-        Exception:
-            the dates should be the same in the lists
-        Exception: Method reported an error
-
-    Returns:
-        float: nomalized CVI slope
-    """
     try:
         epoch_date = get_epoch(date)
 
-        # getting lists of advanced and declining stocks
         list_num_adv_stocks = await get_analytics_by_open_close_change(
-            conn, n_trading_days, epoch_date
+            conn, n_trading_days, epoch_date, market="US"
         )
         list_num_dec_stocks = await get_analytics_by_open_close_change(
-            conn, n_trading_days, epoch_date, "$lt"
+            conn, n_trading_days, epoch_date, "$lt", market="US"
         )
         counter_length = len(list_num_adv_stocks)
 
@@ -121,12 +74,9 @@ async def get_normalazied_cvi_slope(
         trading_days = []
         cvis = []
 
-        # first elemnt in the array of CVIs:
         cvis.append(list_num_adv_stocks[0]["count"] - list_num_dec_stocks[0]["count"])
-        # and trading days array as well
         trading_days.append(1)
 
-        # iterations start with 0
         for i in range(1, counter_length):
             cvis.append(
                 cvis[i - 1]
@@ -144,108 +94,43 @@ async def get_normalazied_cvi_slope(
         ) from e
 
 
-async def compute_base_analytics_and_insert(conn: AsyncIOMotorClient, date: str) -> str:
-    """
-    Function to compute analytics for the given EOD data for the tickers
-    present in the Quandl database for the given date
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): starting date, for which to compute and insert data
-
-    Raises:
-        Exception: Any error occured except MongoDB "BulkWriteError"
-
-    Returns:
-        str: report message (with line breaks)
-    """
-    analytics_to_insert = []
-    msg = []
-
-    try:
-        tickers_to_insert = await get_missing_tickers(conn, date)
-        n_tickers = len(tickers_to_insert)
-
-        if tickers_to_insert:
-
-            msg.append(
-                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + f" The total number of tickers to analyze for {date} (epoch {get_epoch(date)}) is {n_tickers}"
+async def insert_analytics_batch(
+    conn: AsyncIOMotorClient, docs: List[dict], batch_size: int = 500
+) -> int:
+    inserted = 0
+    for start in range(0, len(docs), batch_size):
+        batch = docs[start : start + batch_size]
+        try:
+            response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
+                batch, ordered=False
             )
-            print(msg[-1])
-
-            for ticker in tickers_to_insert:
-                ticker_base_analytics = get_ticker_base_analytics(ticker, date)
-                if not ticker_base_analytics:
-                    continue
-                date_str = get_date_string(ticker_base_analytics["date"])
-                if date_str != date:
-                    ticker = ticker_base_analytics["ticker"]
-                    epoch = ticker_base_analytics["date"]
-                    msg.append("db/crud/analytics.py, def compute_base_analytics_and_insert:" + f" The ticker base analytics for ticker {ticker} contains erroneous date {date_str} (epoch {epoch}) while the date-to-insert is {date}")
-                    print(msg[-1])
-                    continue
-                analytics_to_insert.append(ticker_base_analytics)
-
-            msgResult = f"db/crud/analytics.py, def compute_base_analytics_and_insert: Tickers analytics were computed: total of {len(analytics_to_insert)}"
-            if len(analytics_to_insert) > 0 and analytics_to_insert[0]:
-                analytics_date = analytics_to_insert[0]["date"]
-                ticker = analytics_to_insert[0]["ticker"]
-                msgResult += f" for {date} (epoch - {analytics_date}, date string {get_date_string(analytics_date)}, ticker {ticker})"
-            msg.append(msgResult)
-            print(msg[-1])
-
-            if len(analytics_to_insert) > 0:
-                response = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].insert_many(
-                    analytics_to_insert, ordered=False
-                )
-                msg.append(
-                    "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                    + f" Tickers analytics were inserted via {response}"
-                )
-                print(msg[-1])
-        else:
-            msg.append(
-                "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-                + f" No tickers to insert for {date}"
+            inserted += len(response.inserted_ids)
+        except Exception as e:  # pylint: disable=W0703
+            if type(e).__name__ != "BulkWriteError":
+                raise
+            print(
+                "db/crud/analytics.py insert_analytics_batch:"
+                f" BulkWriteError during batch insert; partial insert may have occurred."
             )
-            print(msg[-1])
-
-        return "\n\n".join(msg)
-    except Exception as e:  # pylint: disable=W0703
-        print("def compute_base_analytics_and_insert reported an error:", {type(e).__name__})
-        if type(e).__name__ != "BulkWriteError":
-            raise Exception(
-                "db/crud/analytics.py, def compute_base_analytics_and_insert: reported an error"
-            ) from e
-
-        print(
-            "db/crud/analytics.py, def compute_base_analytics_and_insert:"
-            + f" Mongodb {type(e).__name__} occured during insert_many() operation."
-            + " Still, new base analytics data has been inserted."
-        )
-        return "\n\n".join(msg)
+    return inserted
 
 
-async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
-    """
-    Function that returns a list of all the tickers that
-    are present in the analytics mongodb collection for the given date
+async def compute_base_analytics_and_insert(
+    conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET
+) -> str:
+    from services.analytics_service import ingest_base_analytics_for_market
 
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date to search for
+    return await ingest_base_analytics_for_market(conn, date, market=market)
 
-    Raises:
-        Exception: Method reports an error
 
-    Returns:
-        list[str]: list of strings (tickers' names)
-    """
+async def get_analytics_tickers(
+    conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET
+) -> List[str]:
     try:
         epoch_date = get_epoch(date)
+        query = {"date": epoch_date, **market_mongo_filter(market)}
         cursor = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].distinct(
-            "ticker", {"date": epoch_date}
+            "ticker", query
         )
         return list(cursor)
     except Exception as e:
@@ -255,28 +140,13 @@ async def get_analytics_tickers(conn: AsyncIOMotorClient, date: str) -> List[str
         ) from e
 
 
-async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
-    """
-    Function that returns a list of tickers that are present in the
-    Quandl API response but are missing in the MongoDB analytics collection
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date to search for
-
-    Raises:
-        Exception: Method reports an error
-
-    Returns:
-        list[str]: list of strings (missing tickers)
-    """
+async def get_missing_tickers(
+    conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET
+) -> List[str]:
     try:
-        # tickers list from quandl
-        tickers = get_polygon_tickers(date)
-
-        # tickers list from analytics collection in mongodb
-        db_tickers = await get_analytics_tickers(conn, date)
-        # array substraction - result is an array
+        market = normalize_market(market)
+        tickers = get_tickers(date, market=market)
+        db_tickers = await get_analytics_tickers(conn, date, market=market)
         return list(set(tickers) - set(db_tickers))
     except Exception as e:
         print("Error message:", e)
@@ -286,36 +156,27 @@ async def get_missing_tickers(conn: AsyncIOMotorClient, date: str) -> List[str]:
 
 
 async def remove_base_analytics(
-    conn: AsyncIOMotorClient, date: str, collection_name: str = MONGO_COLLECTION_NAME
+    conn: AsyncIOMotorClient,
+    date: str,
+    collection_name: str = MONGO_COLLECTION_NAME,
+    market: str = DEFAULT_MARKET,
 ):
-    """
-    Function to remove all the stocks base analytics data for the provided date.
-    Make sure that provided date is for the 'America/New_York' timezone
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date IN THE 'America/New_York' TIMEZONE
-
-    Raises:
-        Exception: Method reports an error
-    """
     try:
         epoch_date = get_epoch(date)
-        deleted_docs = await conn[MONGO_DB_NAME][collection_name].delete_many(
-            {"date": epoch_date}
-        )
+        query = {"date": epoch_date, **market_mongo_filter(market)}
+        deleted_docs = await conn[MONGO_DB_NAME][collection_name].delete_many(query)
         deleted_docs_count = deleted_docs.deleted_count
 
         if deleted_docs_count > 0:
             print(
                 "db/crud/analytics.py, def remove_base_analytics:"
                 + f" Successfully removed {deleted_docs_count}"
-                + f" documents dated by {date} ({epoch_date})"
+                + f" documents for {market} dated by {date} ({epoch_date})"
             )
         else:
             print(
                 "db/crud/analytics.py, def remove_base_analytics:"
-                + f" No documents were found for {date} ({epoch_date})"
+                + f" No documents were found for {market} on {date} ({epoch_date})"
             )
     except Exception as e:
         print("Error message:", e)
@@ -326,30 +187,25 @@ async def remove_base_analytics(
 
 @cache.use_cache_async(ignore_first_arg=True)
 async def get_analytics_sorted_by(
-    conn: AsyncIOMotorClient, date: str, criterion: str, lim: Optional[int] = 20
+    conn: AsyncIOMotorClient,
+    date: str,
+    criterion: str,
+    lim: Optional[int] = 20,
+    market: str = DEFAULT_MARKET,
+    enrich_fn: Optional[Callable[..., Awaitable[dict]]] = None,
 ) -> List[dict]:
-    """
-    Function to get top 20 stocks by the given criterion
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        date (str): date to serach for
-        criterion (str): criterion by which to sort analytics
-        lim (Optional[int], optional): number of stocks to return. Defaults to 20.
-
-    Raises:
-        Exception: Method reports an error
-
-    Returns:
-        list[dict]:
-            list of dict. See compute_base_analytics and compute_extra_analytics for details
-    """
     try:
+        if enrich_fn is None:
+            from services.analytics_service import enrich_ticker_row
+
+            enrich_fn = enrich_ticker_row
+
         epoch_date = get_epoch(date)
+        query = {"date": epoch_date, **market_mongo_filter(market)}
         cursor = (
             conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
             .find(
-                {"date": epoch_date},
+                query,
                 {"_id": False, "bounce": False, "close": False, "open": False},
             )
             .sort(criterion, -1)
@@ -358,7 +214,7 @@ async def get_analytics_sorted_by(
         items = await cursor.to_list(length=lim)
 
         return await asyncio.gather(
-            *[extend_base_analytics(conn, item, criterion) for item in items]
+            *[enrich_fn(conn, item, criterion, market=market) for item in items]
         )
     except Exception as e:
         print("Error message:", e)
@@ -367,66 +223,17 @@ async def get_analytics_sorted_by(
         ) from e
 
 
-async def get_dates(conn: AsyncIOMotorClient) -> list:
-    """
-    Function to get all the distinct date from the analytics collection
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-
-    Raises:
-        Exception: Method reports an error
-
-    Returns:
-        list: list of dates in epoch format
-    """
+async def get_dates(conn: AsyncIOMotorClient, market: str = DEFAULT_MARKET) -> list:
     try:
-        cursor = await conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].distinct("date")
-        return [  # ed - epoch_date
-            {"epoch": ed, "date_string": get_date_string(ed)} for ed in list(cursor)
+        pipeline = [
+            {"$match": market_mongo_filter(market)},
+            {"$group": {"_id": "$date"}},
+            {"$sort": {"_id": 1}},
         ]
+        cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(pipeline)
+        epochs = [doc["_id"] for doc in await cursor.to_list(length=10000)]
+        return [{"epoch": ed, "date_string": get_date_string(ed)} for ed in epochs]
 
     except Exception as e:
         print("Error message:", e)
         raise Exception("db/crud/analytics.py, def get_dates reported an error") from e
-
-
-async def extend_base_analytics(
-    conn: AsyncIOMotorClient, base_analytics: dict, criterion: str
-):
-    """
-    Function that extends the provided base_analytics object (see
-    output schema for the compute_base_analytics) with extra_analytics
-    object (see output schema for the compute_extra_analytics) and
-    get_mentions fmethod output
-
-    Args:
-        conn (AsyncIOMotorClient): db-connection string
-        base_analytics (dict): see output schema for the compute_base_analytics
-
-    Raises:
-        Exception: Method reported an error
-
-    Returns:
-        dict: combination of returned values from compute_base_analytics,
-        compute_extra_analytics, get_mentions
-    """
-    try:
-        ticker = base_analytics["ticker"]
-        date = get_date_string(base_analytics["date"])
-        quater_date = get_last_quater_date(date)
-
-        return {
-            **base_analytics,
-            **get_ticker_extra_analytics(ticker, date),
-            **await get_mentions(conn, ticker, date),
-            "fcf": get_quarterly_free_cash_flow_polygon(ticker, quater_date),
-            "frequencies": await get_analytics_frequencies(
-                conn, date, criterion, ticker
-            ),
-        }
-    except Exception as e:
-        print("Error message:", e)
-        raise Exception(
-            "db/crud/analytics.py, def extend_base_analytics reported an error"
-        ) from e

@@ -36,9 +36,10 @@ class RedisCache:
         self.client.flushdb()
         print("Flushed Redis")
 
-    def _build_key(self, func_name, args):
+    def _build_key(self, func_name, args, kwargs=None):
         """Create a hash key from function name and arguments."""
-        raw_key = f"{func_name}|{json.dumps(args, sort_keys=True, default=str)}"
+        payload = {"args": args, "kwargs": kwargs or {}}
+        raw_key = f"{func_name}|{json.dumps(payload, sort_keys=True, default=str)}"
         return f"cache:{func_name}:{hashlib.md5(raw_key.encode()).hexdigest()}"
 
     def use_cache(self, ignore_first_arg=False):
@@ -52,7 +53,7 @@ class RedisCache:
                     raise RuntimeError("Redis client is not connected. Call connect() first.")
 
                 key_args = args[1:] if ignore_first_arg else args
-                key = self._build_key(func.__name__, key_args)
+                key = self._build_key(func.__name__, key_args, kwargs)
 
                 result = self.client.get(key)
                 if result is not None:
@@ -78,7 +79,7 @@ class RedisCache:
                     raise RuntimeError("Redis client is not connected. Call connect() first.")
 
                 key_args = args[1:] if ignore_first_arg else args
-                key = self._build_key(func.__name__, key_args)
+                key = self._build_key(func.__name__, key_args, kwargs)
 
                 result = self.client.get(key)
                 if result is not None:

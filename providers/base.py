@@ -38,3 +38,12 @@ class MarketDataProvider(Protocol):
 
     def fetch_ticker_universe(self, date: str) -> list[str]:
         """All tickers available for the market on the given date."""
+
+    def fetch_ticker_extra_analytics(
+        self,
+        ticker: str,
+        date: str,
+        offset_n_days: Optional[int] = 85,
+        actual_offset_n_days: Optional[int] = 50,
+    ) -> dict:
+        """Extra analytics (e.g. mfi) derived from OHLCV."""

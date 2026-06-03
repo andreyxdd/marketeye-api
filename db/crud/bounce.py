@@ -6,6 +6,8 @@ from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
 from utils.handle_datetimes import get_date_string, get_epoch
 
+from core.markets import market_mongo_filter
+
 MONGO_COLLECTION_NAME = "analytics"
 
 AGGREGATE_STAGES = {
@@ -104,6 +106,7 @@ async def get_bounce_dates(conn: AsyncIOMotorClient) -> list:
         cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(
             [
                 AGGREGATE_STAGES["is-bounce"],
+                {"$match": market_mongo_filter("US")},
                 {"$group": {"_id": "$date"}},
                 {"$sort": {"_id": 1}},
             ]
@@ -143,7 +146,7 @@ async def get_bounce_stocks(conn: AsyncIOMotorClient, date: str, period: int) ->
         is_long_term = period > 4
         possible_stage = (AGGREGATE_STAGES["long-term-filter"],) if is_long_term else ()
         pipeline = [
-            {"$match": {"date": epoch_date}},
+            {"$match": {"date": epoch_date, **market_mongo_filter("US")}},
             {"$match": {f"bounce.{period-1}": {"$lt": 0}}},
             AGGREGATE_STAGES["project"],
             AGGREGATE_STAGES["rising-stocks"],
@@ -184,7 +187,7 @@ async def get_tracked_stocks(conn: AsyncIOMotorClient, date: str, tickers: str) 
         epoch_date = get_epoch(date)
 
         pipeline = [
-            {"$match": {"date": epoch_date}},
+            {"$match": {"date": epoch_date, **market_mongo_filter("US")}},
             {"$match": {"ticker": {"$in": tickers}}},
             {
                 "$project": {

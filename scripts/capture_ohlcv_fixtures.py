@@ -30,6 +30,7 @@ from utils.handle_external_apis import get_ticker_analytics  # noqa: E402
 
 MARKET_TICKERS = {
     "US": CALC_TICKERS,
+    "TO": ["SHOP", "RY", "TD"],
 }
 
 POLYGON_SYMBOL_ALIASES = {
