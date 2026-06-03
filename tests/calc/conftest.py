@@ -23,4 +23,4 @@ def mock_polygon_requests(monkeypatch):
                 return response
         raise AssertionError(f"unexpected polygon URL: {url}")
 
-    monkeypatch.setattr("utils.handle_external_apis.requests.get", fake_get)
+    monkeypatch.setattr("providers.polygon_us.requests.get", fake_get)
