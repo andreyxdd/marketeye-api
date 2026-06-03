@@ -1,0 +1,2152 @@
+{
+  "AAPL": {
+    "ticker": "AAPL",
+    "date": 1717372800000.0,
+    "macd": 50000.0,
+    "one_day_avg_mf": 10000.0,
+    "three_day_avg_mf": 20000.0,
+    "volume": 30000.0,
+    "three_day_avg_volume": 40000.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "MSFT": {
+    "ticker": "MSFT",
+    "date": 1717372800000.0,
+    "macd": 49999.0,
+    "one_day_avg_mf": 9999.0,
+    "three_day_avg_mf": 19999.0,
+    "volume": 29999.0,
+    "three_day_avg_volume": 39999.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "GOOG": {
+    "ticker": "GOOG",
+    "date": 1717372800000.0,
+    "macd": 49998.0,
+    "one_day_avg_mf": 9998.0,
+    "three_day_avg_mf": 19998.0,
+    "volume": 29998.0,
+    "three_day_avg_volume": 39998.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "AMZN": {
+    "ticker": "AMZN",
+    "date": 1717372800000.0,
+    "macd": 49997.0,
+    "one_day_avg_mf": 9997.0,
+    "three_day_avg_mf": 19997.0,
+    "volume": 29997.0,
+    "three_day_avg_volume": 39997.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "META": {
+    "ticker": "META",
+    "date": 1717372800000.0,
+    "macd": 49996.0,
+    "one_day_avg_mf": 9996.0,
+    "three_day_avg_mf": 19996.0,
+    "volume": 29996.0,
+    "three_day_avg_volume": 39996.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "NVDA": {
+    "ticker": "NVDA",
+    "date": 1717372800000.0,
+    "macd": 49995.0,
+    "one_day_avg_mf": 9995.0,
+    "three_day_avg_mf": 19995.0,
+    "volume": 29995.0,
+    "three_day_avg_volume": 39995.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "TSLA": {
+    "ticker": "TSLA",
+    "date": 1717372800000.0,
+    "macd": 49994.0,
+    "one_day_avg_mf": 9994.0,
+    "three_day_avg_mf": 19994.0,
+    "volume": 29994.0,
+    "three_day_avg_volume": 39994.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "JPM": {
+    "ticker": "JPM",
+    "date": 1717372800000.0,
+    "macd": 49993.0,
+    "one_day_avg_mf": 9993.0,
+    "three_day_avg_mf": 19993.0,
+    "volume": 29993.0,
+    "three_day_avg_volume": 39993.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "V": {
+    "ticker": "V",
+    "date": 1717372800000.0,
+    "macd": 49992.0,
+    "one_day_avg_mf": 9992.0,
+    "three_day_avg_mf": 19992.0,
+    "volume": 29992.0,
+    "three_day_avg_volume": 39992.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "UNH": {
+    "ticker": "UNH",
+    "date": 1717372800000.0,
+    "macd": 49991.0,
+    "one_day_avg_mf": 9991.0,
+    "three_day_avg_mf": 19991.0,
+    "volume": 29991.0,
+    "three_day_avg_volume": 39991.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "XOM": {
+    "ticker": "XOM",
+    "date": 1717372800000.0,
+    "macd": 49990.0,
+    "one_day_avg_mf": 9990.0,
+    "three_day_avg_mf": 19990.0,
+    "volume": 29990.0,
+    "three_day_avg_volume": 39990.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "JNJ": {
+    "ticker": "JNJ",
+    "date": 1717372800000.0,
+    "macd": 49989.0,
+    "one_day_avg_mf": 9989.0,
+    "three_day_avg_mf": 19989.0,
+    "volume": 29989.0,
+    "three_day_avg_volume": 39989.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "WMT": {
+    "ticker": "WMT",
+    "date": 1717372800000.0,
+    "macd": 49988.0,
+    "one_day_avg_mf": 9988.0,
+    "three_day_avg_mf": 19988.0,
+    "volume": 29988.0,
+    "three_day_avg_volume": 39988.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "PG": {
+    "ticker": "PG",
+    "date": 1717372800000.0,
+    "macd": 49987.0,
+    "one_day_avg_mf": 9987.0,
+    "three_day_avg_mf": 19987.0,
+    "volume": 29987.0,
+    "three_day_avg_volume": 39987.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "MA": {
+    "ticker": "MA",
+    "date": 1717372800000.0,
+    "macd": 49986.0,
+    "one_day_avg_mf": 9986.0,
+    "three_day_avg_mf": 19986.0,
+    "volume": 29986.0,
+    "three_day_avg_volume": 39986.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "HD": {
+    "ticker": "HD",
+    "date": 1717372800000.0,
+    "macd": 49985.0,
+    "one_day_avg_mf": 9985.0,
+    "three_day_avg_mf": 19985.0,
+    "volume": 29985.0,
+    "three_day_avg_volume": 39985.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "CVX": {
+    "ticker": "CVX",
+    "date": 1717372800000.0,
+    "macd": 49984.0,
+    "one_day_avg_mf": 9984.0,
+    "three_day_avg_mf": 19984.0,
+    "volume": 29984.0,
+    "three_day_avg_volume": 39984.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "LLY": {
+    "ticker": "LLY",
+    "date": 1717372800000.0,
+    "macd": 49983.0,
+    "one_day_avg_mf": 9983.0,
+    "three_day_avg_mf": 19983.0,
+    "volume": 29983.0,
+    "three_day_avg_volume": 39983.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "AVGO": {
+    "ticker": "AVGO",
+    "date": 1717372800000.0,
+    "macd": 49982.0,
+    "one_day_avg_mf": 9982.0,
+    "three_day_avg_mf": 19982.0,
+    "volume": 29982.0,
+    "three_day_avg_volume": 39982.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "COST": {
+    "ticker": "COST",
+    "date": 1717372800000.0,
+    "macd": 49981.0,
+    "one_day_avg_mf": 9981.0,
+    "three_day_avg_mf": 19981.0,
+    "volume": 29981.0,
+    "three_day_avg_volume": 39981.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "ORCL": {
+    "ticker": "ORCL",
+    "date": 1717372800000.0,
+    "macd": 49980.0,
+    "one_day_avg_mf": 9980.0,
+    "three_day_avg_mf": 19980.0,
+    "volume": 29980.0,
+    "three_day_avg_volume": 39980.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "AMD": {
+    "ticker": "AMD",
+    "date": 1717372800000.0,
+    "macd": 49979.0,
+    "one_day_avg_mf": 9979.0,
+    "three_day_avg_mf": 19979.0,
+    "volume": 29979.0,
+    "three_day_avg_volume": 39979.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "PEP": {
+    "ticker": "PEP",
+    "date": 1717372800000.0,
+    "macd": 49978.0,
+    "one_day_avg_mf": 9978.0,
+    "three_day_avg_mf": 19978.0,
+    "volume": 29978.0,
+    "three_day_avg_volume": 39978.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "KO": {
+    "ticker": "KO",
+    "date": 1717372800000.0,
+    "macd": 49977.0,
+    "one_day_avg_mf": 9977.0,
+    "three_day_avg_mf": 19977.0,
+    "volume": 29977.0,
+    "three_day_avg_volume": 39977.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "DIS": {
+    "ticker": "DIS",
+    "date": 1717372800000.0,
+    "macd": 49976.0,
+    "one_day_avg_mf": 9976.0,
+    "three_day_avg_mf": 19976.0,
+    "volume": 29976.0,
+    "three_day_avg_volume": 39976.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "BAC": {
+    "ticker": "BAC",
+    "date": 1717372800000.0,
+    "macd": 49975.0,
+    "one_day_avg_mf": 9975.0,
+    "three_day_avg_mf": 19975.0,
+    "volume": 29975.0,
+    "three_day_avg_volume": 39975.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "CRM": {
+    "ticker": "CRM",
+    "date": 1717372800000.0,
+    "macd": 49974.0,
+    "one_day_avg_mf": 9974.0,
+    "three_day_avg_mf": 19974.0,
+    "volume": 29974.0,
+    "three_day_avg_volume": 39974.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "NFLX": {
+    "ticker": "NFLX",
+    "date": 1717372800000.0,
+    "macd": 49973.0,
+    "one_day_avg_mf": 9973.0,
+    "three_day_avg_mf": 19973.0,
+    "volume": 29973.0,
+    "three_day_avg_volume": 39973.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "ABBV": {
+    "ticker": "ABBV",
+    "date": 1717372800000.0,
+    "macd": 49972.0,
+    "one_day_avg_mf": 9972.0,
+    "three_day_avg_mf": 19972.0,
+    "volume": 29972.0,
+    "three_day_avg_volume": 39972.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "MRK": {
+    "ticker": "MRK",
+    "date": 1717372800000.0,
+    "macd": 49971.0,
+    "one_day_avg_mf": 9971.0,
+    "three_day_avg_mf": 19971.0,
+    "volume": 29971.0,
+    "three_day_avg_volume": 39971.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "TMO": {
+    "ticker": "TMO",
+    "date": 1717372800000.0,
+    "macd": 49970.0,
+    "one_day_avg_mf": 9970.0,
+    "three_day_avg_mf": 19970.0,
+    "volume": 29970.0,
+    "three_day_avg_volume": 39970.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "CSCO": {
+    "ticker": "CSCO",
+    "date": 1717372800000.0,
+    "macd": 49969.0,
+    "one_day_avg_mf": 9969.0,
+    "three_day_avg_mf": 19969.0,
+    "volume": 29969.0,
+    "three_day_avg_volume": 39969.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "ACN": {
+    "ticker": "ACN",
+    "date": 1717372800000.0,
+    "macd": 49968.0,
+    "one_day_avg_mf": 9968.0,
+    "three_day_avg_mf": 19968.0,
+    "volume": 29968.0,
+    "three_day_avg_volume": 39968.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "LIN": {
+    "ticker": "LIN",
+    "date": 1717372800000.0,
+    "macd": 49967.0,
+    "one_day_avg_mf": 9967.0,
+    "three_day_avg_mf": 19967.0,
+    "volume": 29967.0,
+    "three_day_avg_volume": 39967.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "MCD": {
+    "ticker": "MCD",
+    "date": 1717372800000.0,
+    "macd": 49966.0,
+    "one_day_avg_mf": 9966.0,
+    "three_day_avg_mf": 19966.0,
+    "volume": 29966.0,
+    "three_day_avg_volume": 39966.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "ADBE": {
+    "ticker": "ADBE",
+    "date": 1717372800000.0,
+    "macd": 49965.0,
+    "one_day_avg_mf": 9965.0,
+    "three_day_avg_mf": 19965.0,
+    "volume": 29965.0,
+    "three_day_avg_volume": 39965.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "WFC": {
+    "ticker": "WFC",
+    "date": 1717372800000.0,
+    "macd": 49964.0,
+    "one_day_avg_mf": 9964.0,
+    "three_day_avg_mf": 19964.0,
+    "volume": 29964.0,
+    "three_day_avg_volume": 39964.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "DHR": {
+    "ticker": "DHR",
+    "date": 1717372800000.0,
+    "macd": 49963.0,
+    "one_day_avg_mf": 9963.0,
+    "three_day_avg_mf": 19963.0,
+    "volume": 29963.0,
+    "three_day_avg_volume": 39963.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "PM": {
+    "ticker": "PM",
+    "date": 1717372800000.0,
+    "macd": 49962.0,
+    "one_day_avg_mf": 9962.0,
+    "three_day_avg_mf": 19962.0,
+    "volume": 29962.0,
+    "three_day_avg_volume": 39962.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "TXN": {
+    "ticker": "TXN",
+    "date": 1717372800000.0,
+    "macd": 49961.0,
+    "one_day_avg_mf": 9961.0,
+    "three_day_avg_mf": 19961.0,
+    "volume": 29961.0,
+    "three_day_avg_volume": 39961.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "INTU": {
+    "ticker": "INTU",
+    "date": 1717372800000.0,
+    "macd": 49960.0,
+    "one_day_avg_mf": 9960.0,
+    "three_day_avg_mf": 19960.0,
+    "volume": 29960.0,
+    "three_day_avg_volume": 39960.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "QCOM": {
+    "ticker": "QCOM",
+    "date": 1717372800000.0,
+    "macd": 49959.0,
+    "one_day_avg_mf": 9959.0,
+    "three_day_avg_mf": 19959.0,
+    "volume": 29959.0,
+    "three_day_avg_volume": 39959.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "UNP": {
+    "ticker": "UNP",
+    "date": 1717372800000.0,
+    "macd": 49958.0,
+    "one_day_avg_mf": 9958.0,
+    "three_day_avg_mf": 19958.0,
+    "volume": 29958.0,
+    "three_day_avg_volume": 39958.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "AMGN": {
+    "ticker": "AMGN",
+    "date": 1717372800000.0,
+    "macd": 49957.0,
+    "one_day_avg_mf": 9957.0,
+    "three_day_avg_mf": 19957.0,
+    "volume": 29957.0,
+    "three_day_avg_volume": 39957.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "HON": {
+    "ticker": "HON",
+    "date": 1717372800000.0,
+    "macd": 49956.0,
+    "one_day_avg_mf": 9956.0,
+    "three_day_avg_mf": 19956.0,
+    "volume": 29956.0,
+    "three_day_avg_volume": 39956.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "LOW": {
+    "ticker": "LOW",
+    "date": 1717372800000.0,
+    "macd": 49955.0,
+    "one_day_avg_mf": 9955.0,
+    "three_day_avg_mf": 19955.0,
+    "volume": 29955.0,
+    "three_day_avg_volume": 39955.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "UPS": {
+    "ticker": "UPS",
+    "date": 1717372800000.0,
+    "macd": 49954.0,
+    "one_day_avg_mf": 9954.0,
+    "three_day_avg_mf": 19954.0,
+    "volume": 29954.0,
+    "three_day_avg_volume": 39954.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "IBM": {
+    "ticker": "IBM",
+    "date": 1717372800000.0,
+    "macd": 49953.0,
+    "one_day_avg_mf": 9953.0,
+    "three_day_avg_mf": 19953.0,
+    "volume": 29953.0,
+    "three_day_avg_volume": 39953.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "GE": {
+    "ticker": "GE",
+    "date": 1717372800000.0,
+    "macd": 49952.0,
+    "one_day_avg_mf": 9952.0,
+    "three_day_avg_mf": 19952.0,
+    "volume": 29952.0,
+    "three_day_avg_volume": 39952.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  },
+  "CAT": {
+    "ticker": "CAT",
+    "date": 1717372800000.0,
+    "macd": 49951.0,
+    "one_day_avg_mf": 9951.0,
+    "three_day_avg_mf": 19951.0,
+    "volume": 29951.0,
+    "three_day_avg_volume": 39951.0,
+    "one_day_open_close_change": 0.01,
+    "mentions_over_one_day": 3,
+    "mentions_over_two_days": 6,
+    "mentions_over_three_days": 9,
+    "fcf": "12.3B",
+    "frequencies": "T-2, T-4",
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0
+  }
+}

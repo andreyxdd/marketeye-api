@@ -1,0 +1,1552 @@
+{
+  "AAPL": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "AAPL"
+  },
+  "MSFT": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "MSFT"
+  },
+  "GOOG": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "GOOG"
+  },
+  "AMZN": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "AMZN"
+  },
+  "META": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "META"
+  },
+  "NVDA": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "NVDA"
+  },
+  "TSLA": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "TSLA"
+  },
+  "JPM": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "JPM"
+  },
+  "V": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "V"
+  },
+  "UNH": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "UNH"
+  },
+  "XOM": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "XOM"
+  },
+  "JNJ": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "JNJ"
+  },
+  "WMT": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "WMT"
+  },
+  "PG": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "PG"
+  },
+  "MA": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "MA"
+  },
+  "HD": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "HD"
+  },
+  "CVX": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "CVX"
+  },
+  "LLY": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "LLY"
+  },
+  "AVGO": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "AVGO"
+  },
+  "COST": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "COST"
+  },
+  "ORCL": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "ORCL"
+  },
+  "AMD": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "AMD"
+  },
+  "PEP": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "PEP"
+  },
+  "KO": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "KO"
+  },
+  "DIS": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "DIS"
+  },
+  "BAC": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "BAC"
+  },
+  "CRM": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "CRM"
+  },
+  "NFLX": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "NFLX"
+  },
+  "ABBV": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "ABBV"
+  },
+  "MRK": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "MRK"
+  },
+  "TMO": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "TMO"
+  },
+  "CSCO": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "CSCO"
+  },
+  "ACN": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "ACN"
+  },
+  "LIN": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "LIN"
+  },
+  "MCD": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "MCD"
+  },
+  "ADBE": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "ADBE"
+  },
+  "WFC": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "WFC"
+  },
+  "DHR": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "DHR"
+  },
+  "PM": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "PM"
+  },
+  "TXN": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "TXN"
+  },
+  "INTU": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "INTU"
+  },
+  "QCOM": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "QCOM"
+  },
+  "UNP": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "UNP"
+  },
+  "AMGN": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "AMGN"
+  },
+  "HON": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "HON"
+  },
+  "LOW": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "LOW"
+  },
+  "UPS": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "UPS"
+  },
+  "IBM": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "IBM"
+  },
+  "GE": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "GE"
+  },
+  "CAT": {
+    "macd_2_sessions_ago": 1.1,
+    "macd_5_sessions_ago": 1.0,
+    "macd_20_sessions_ago": 0.9,
+    "one_day_volume_change": 0.01,
+    "three_day_avg_volume_change": 0.02,
+    "one_day_close_change": 0.005,
+    "three_day_avg_close_change": 0.004,
+    "ema_3over9": [
+      "up"
+    ],
+    "ema_12over9": [
+      "up"
+    ],
+    "ema_12over26": [
+      "up"
+    ],
+    "ema_50over20": [
+      "up"
+    ],
+    "closingPriceChangeDay12": 0.01,
+    "closingPriceChangeDay23": 0.02,
+    "mfi": 55.5,
+    "ema3": 100.0,
+    "ema9": 99.0,
+    "ema12": 98.0,
+    "ema20": 97.0,
+    "ema26": 96.0,
+    "ema50": 95.0,
+    "ticker": "CAT"
+  }
+}

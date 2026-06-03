@@ -1,0 +1,252 @@
+[
+  {
+    "date": 1717372800000.0,
+    "ticker": "AAPL",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "MSFT",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "GOOG",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "AMZN",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "META",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "NVDA",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "TSLA",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "JPM",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "V",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "UNH",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "XOM",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "JNJ",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "WMT",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "PG",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "MA",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "HD",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "CVX",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "LLY",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "AVGO",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "COST",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "ORCL",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "AMD",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "PEP",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "KO",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "DIS",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "BAC",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "CRM",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "NFLX",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "ABBV",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "MRK",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "TMO",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "CSCO",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "ACN",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "LIN",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "MCD",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "ADBE",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "WFC",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "DHR",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "PM",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "TXN",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "INTU",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "QCOM",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "UNP",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "AMGN",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "HON",
+    "mentions": 7
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "LOW",
+    "mentions": 3
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "UPS",
+    "mentions": 4
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "IBM",
+    "mentions": 5
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "GE",
+    "mentions": 6
+  },
+  {
+    "date": 1717372800000.0,
+    "ticker": "CAT",
+    "mentions": 7
+  }
+]
