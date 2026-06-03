@@ -85,7 +85,9 @@ async def read_market_analytics(
     return {
         "SP500": get_market_sp500(date),
         **get_market_vixs(date),
-        "normalazied_CVI_slope": await get_normalazied_cvi_slope(db, date),
+        "normalazied_CVI_slope": float(
+            await get_normalazied_cvi_slope(db, date)
+        ),
     }
 
 
@@ -148,7 +150,7 @@ async def read_analytics_lists_by_criterion(
 async def read_dates(
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
-) -> dict:
+) -> list:
     """
     Endpoint to get dates for which analytics data exists in the database
 

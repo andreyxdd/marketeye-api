@@ -14,14 +14,16 @@ MONGO_MIN_CONNECTIONS = int(os.getenv("MIN_CONNECTIONS_COUNT", "10"))
 MONGO_USERNAME = os.getenv("MONGO_USERNAME")
 MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
-MONGO_URI = (
-    "mongodb+srv://"
-    + f"{MONGO_USERNAME}:{MONGO_PASSWORD}@cluster0.xlodq.mongodb.net/"
-    + f"{MONGO_DB_NAME}?retryWrites=true&w=majority"
-)
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    MONGO_URI = (
+        "mongodb+srv://"
+        + f"{MONGO_USERNAME}:{MONGO_PASSWORD}@cluster0.xlodq.mongodb.net/"
+        + f"{MONGO_DB_NAME}?retryWrites=true&w=majority"
+    )
 
 # Redis configurations
-REDIS_URI = os.getenv("REDISCLOUD_URL")
+REDIS_URI = os.getenv("REDIS_URI") or os.getenv("REDISCLOUD_URL")
 
 # API key to access endpoints
 API_KEY = os.getenv("API_KEY")

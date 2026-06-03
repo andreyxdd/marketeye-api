@@ -3,7 +3,6 @@ Methods to handle CRUD operation with 'analytics' collection in the db
 """
 import asyncio
 from typing import Optional, List
-from concurrent.futures import ThreadPoolExecutor
 
 from core.settings import MONGO_DB_NAME
 from db.crud.tracking import get_analytics_frequencies
@@ -359,16 +358,9 @@ async def get_analytics_sorted_by(
         )
         items = await cursor.to_list(length=lim)
 
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            futures = [
-                await loop.run_in_executor(
-                    executor, extend_base_analytics, conn, item, criterion
-                )
-                for item in items
-            ]
-
-            return await asyncio.gather(*futures)
+        return await asyncio.gather(
+            *[extend_base_analytics(conn, item, criterion) for item in items]
+        )
     except Exception as e:
         print("Error message:", e)
         raise Exception(
