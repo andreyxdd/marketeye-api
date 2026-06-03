@@ -57,7 +57,6 @@ async def get_analytics_by_open_close_change(
                     "one_day_open_close_change": {query: 0},
                 }
             },
-            {"$unwind": "$date"},
             {"$group": {"_id": "$date", "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}},
         ]

@@ -36,14 +36,20 @@ def criterion_score(criterion: str, rank: int) -> float:
     return float(base - rank)
 
 
+def advancing_ticker_count(day_index: int) -> int:
+    """Vary advancers per day so CVI slope is non-flat over HISTORY_WEEKDAYS."""
+    return 20 + (day_index % 11)
+
+
 def build_analytics() -> list[dict]:
     docs = []
     dates = weekday_dates(FIXTURE_DATE, HISTORY_WEEKDAYS)
     for day_index, date_str in enumerate(dates):
         epoch = get_epoch(date_str)
         anchor = date_str == FIXTURE_DATE
+        adv_count = advancing_ticker_count(day_index)
         for rank, ticker in enumerate(FIXTURE_TICKERS):
-            change = 0.015 if (rank + day_index) % 2 == 0 else -0.012
+            change = 0.015 if rank < adv_count else -0.012
             doc = {
                 "ticker": ticker,
                 "date": epoch,

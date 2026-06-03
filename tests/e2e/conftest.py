@@ -19,10 +19,6 @@ from tests.helpers.stubs import (
 )
 
 
-async def stub_cvi_slope(db, date, n_trading_days=50):
-    return 0.65
-
-
 def _apply_stubs(recorder):
     external.get_ticker_analytics = stub_get_ticker_analytics
     external.get_ticker_extra_analytics = stub_get_ticker_extra_analytics
@@ -34,7 +30,6 @@ def _apply_stubs(recorder):
     analytics_api.get_market_sp500 = stub_get_market_sp500
     analytics_api.get_market_vixs = stub_get_market_vixs
     analytics_api.get_quarterly_free_cash_flow_polygon = stub_get_fcf
-    analytics_api.get_normalazied_cvi_slope = stub_cvi_slope
 
     analytics_crud.get_ticker_extra_analytics = stub_get_ticker_extra_analytics
     analytics_crud.get_quarterly_free_cash_flow_polygon = stub_get_fcf
