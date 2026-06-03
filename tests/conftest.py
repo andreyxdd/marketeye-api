@@ -1,6 +1,19 @@
 """Root pytest configuration and shared session fixtures."""
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load secrets from .env, then force local test infra before settings/db import.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=True)
+os.environ["MONGO_URI"] = "mongodb://localhost:27017"
+os.environ["REDIS_URI"] = "redis://localhost:6379/1"
+os.environ["MONGO_DB_NAME"] = "marketeye_test"
+
+from tests.helpers.constants import FIXTURE_API_KEY
+
+os.environ["API_KEY"] = FIXTURE_API_KEY
 
 import pytest
 import pytest_asyncio
@@ -9,16 +22,11 @@ from db.mongodb import close as close_mongo
 from db.mongodb import connect as connect_mongo
 from db.mongodb import db
 from db.redis import RedisCache
-from tests.helpers.constants import FIXTURE_API_KEY
 from tests.helpers.seed import seed_collections
 
 
 def pytest_configure(config):
-    os.environ.setdefault("API_KEY", FIXTURE_API_KEY)
-    os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017")
-    os.environ.setdefault("REDIS_URI", "redis://localhost:6379/1")
-    os.environ.setdefault("MONGO_DB_NAME", "marketeye_test")
-    os.environ.setdefault("POLYGON_API_KEY", "test-polygon-key")
+    pass
 
 
 @pytest.fixture(scope="session")

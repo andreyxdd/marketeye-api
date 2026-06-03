@@ -31,8 +31,11 @@ def mock_polygon(monkeypatch):
     )
 
     def fake_get(url, *args, **kwargs):
+        from providers.polygon_us import POLYGON_SYMBOL_ALIASES
+
         for ticker in CALC_TICKERS:
-            if f"/ticker/{ticker.upper()}/" in url:
+            polygon_symbol = POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
+            if f"/ticker/{polygon_symbol}/" in url or f"/ticker/{ticker.upper()}/" in url:
                 payload = json.loads((OHLCV_DIR / f"{ticker}.json").read_text())
                 response = requests.Response()
                 response.status_code = 200

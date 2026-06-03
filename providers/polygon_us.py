@@ -9,9 +9,16 @@ import requests
 from core.settings import POLYGON_API_KEY
 from utils.handle_calculations import compute_base_analytics, compute_extra_analytics
 
+POLYGON_SYMBOL_ALIASES = {
+    "GOOG": "GOOGL",
+}
+
 
 class PolygonUSProvider:
     market = "US"
+
+    def _polygon_symbol(self, ticker: str) -> str:
+        return POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
 
     def _polygon_aggs_url(
         self, ticker: str, start_date: pd.Timestamp, end_date: pd.Timestamp
@@ -29,9 +36,10 @@ class PolygonUSProvider:
         offset_n_days: Optional[int] = 85,
         actual_offset_n_days: Optional[int] = 50,
     ) -> pd.DataFrame:
+        polygon_symbol = self._polygon_symbol(ticker)
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
-        url = self._polygon_aggs_url(ticker, start_date, end_date)
+        url = self._polygon_aggs_url(polygon_symbol, start_date, end_date)
 
         response = requests.get(url)
         response.raise_for_status()
@@ -68,9 +76,10 @@ class PolygonUSProvider:
         actual_offset_n_days: Optional[int] = 50,
     ) -> pd.DataFrame:
         """OHLCV with UTC-aware timestamps (pipeline insert path)."""
+        polygon_symbol = self._polygon_symbol(ticker)
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
-        url = self._polygon_aggs_url(ticker, start_date, end_date)
+        url = self._polygon_aggs_url(polygon_symbol, start_date, end_date)
 
         response = requests.get(url)
         response.raise_for_status()
