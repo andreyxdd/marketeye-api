@@ -37,6 +37,7 @@ def test_eodhd_to_fetch_ohlcv(eodhd_to_provider, monkeypatch):
     response.status_code = 200
     response.json.return_value = _eodhd_rows()
     monkeypatch.setattr("providers.eodhd_to.requests.get", lambda *a, **k: response)
+    monkeypatch.setattr("providers.eodhd_to.EodhdTOProvider._http_get", lambda *a, **k: response)
 
     df = eodhd_to_provider.fetch_ohlcv("SHOP", FIXTURE_DATE, offset_n_days=85, actual_offset_n_days=50)
     assert not df.empty
@@ -48,6 +49,7 @@ def test_eodhd_to_fetch_ticker_analytics(eodhd_to_provider, monkeypatch):
     response.status_code = 200
     response.json.return_value = _eodhd_rows()
     monkeypatch.setattr("providers.eodhd_to.requests.get", lambda *a, **k: response)
+    monkeypatch.setattr("providers.eodhd_to.EodhdTOProvider._http_get", lambda *a, **k: response)
 
     analytics = eodhd_to_provider.fetch_ticker_analytics("SHOP", FIXTURE_DATE)
     assert analytics
@@ -64,6 +66,7 @@ def test_eodhd_to_fetch_ticker_universe(eodhd_to_provider, monkeypatch):
         {"Code": "XYZ", "Type": "ETF"},
     ]
     monkeypatch.setattr("providers.eodhd_to.requests.get", lambda *a, **k: response)
+    monkeypatch.setattr("providers.eodhd_to.EodhdTOProvider._http_get", lambda *a, **k: response)
 
     tickers = eodhd_to_provider.fetch_ticker_universe(FIXTURE_DATE)
     assert tickers == ["SHOP", "RY"]
