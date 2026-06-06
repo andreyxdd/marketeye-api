@@ -193,14 +193,22 @@ async def ingest_base_analytics_for_market(
 
     async def process_ticker(ticker: str):
         async with sem:
-            return await asyncio.to_thread(
-                external_get_ticker_base_analytics,
-                ticker,
-                date,
-                market=market,
-            )
+            try:
+                return await asyncio.to_thread(
+                    external_get_ticker_base_analytics,
+                    ticker,
+                    date,
+                    market=market,
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                print(
+                    f"services/analytics_service: failed {ticker} for {market} on {date}: {e}"
+                )
+                return None
 
-    results = await asyncio.gather(*[process_ticker(t) for t in tickers_to_insert])
+    results = await asyncio.gather(
+        *[process_ticker(t) for t in tickers_to_insert], return_exceptions=False
+    )
 
     analytics_to_insert = []
     for ticker, ticker_base_analytics in zip(tickers_to_insert, results):

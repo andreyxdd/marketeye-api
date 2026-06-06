@@ -58,8 +58,11 @@ async def cronjob(markets=None):
     markets_to_run = markets or list_markets()
     curr_date = None
 
+    market_timings = []
+
     try:
         for market in markets_to_run:
+            market_start = time()
             market = normalize_market(market)
             tz = MARKETS[market]["timezone"]
             today_utc = get_today_utc_date_in_timezone(tz)
@@ -69,10 +72,19 @@ async def cronjob(markets=None):
             print(f"Market {market} ({tz}) target dates: {target_dates}")
 
             for curr_date in target_dates:
+                date_start = time()
                 validate_date_string(curr_date)
                 past_date = get_past_date(91, curr_date)
                 msg = await run_crud_ops(curr_date, past_date, market=market)
                 print(msg)
+                print(
+                    f"Market {market} date {curr_date} finished in "
+                    f"{round(time() - date_start, 2)} seconds"
+                )
+
+            market_elapsed = round(time() - market_start, 2)
+            market_timings.append((market, market_elapsed))
+            print(f"Market {market} total: {market_elapsed} seconds")
 
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
@@ -83,7 +95,12 @@ async def cronjob(markets=None):
             subject="Cronjob Report",
         )
 
-    print(f"\nAnalytics cronjob finished on {round(time() - start_time, 2)} seconds")
+    total_elapsed = round(time() - start_time, 2)
+    print(f"\nAnalytics cronjob finished on {total_elapsed} seconds")
+    if market_timings:
+        print("Per-market summary:")
+        for market, elapsed in market_timings:
+            print(f"  {market}: {elapsed}s")
     print("--------------------------------------------------------")
 
 

@@ -34,6 +34,33 @@ class PolygonUSProvider:
             f"?adjusted=true&sort=desc&limit=50000&apiKey={POLYGON_API_KEY}"
         )
 
+    def _request_json(self, url: str, max_attempts: int = 3) -> dict:
+        backoff = 1
+        last_error = None
+        for attempt in range(max_attempts):
+            try:
+                response = requests.get(url, timeout=60)
+                if response.status_code == 429:
+                    print(
+                        f"providers/polygon_us.py: rate limit hit, sleeping {backoff}s"
+                    )
+                    time.sleep(backoff)
+                    backoff = min(backoff * 2, 60)
+                    continue
+                response.raise_for_status()
+                return response.json()
+            except (requests.RequestException, ValueError) as exc:
+                last_error = exc
+                if attempt == max_attempts - 1:
+                    break
+                wait = min(backoff * (2**attempt), 30)
+                print(
+                    f"providers/polygon_us.py: request failed ({exc}), "
+                    f"retry {attempt + 1}/{max_attempts - 1} in {wait}s"
+                )
+                time.sleep(wait)
+        raise last_error
+
     def fetch_ohlcv(
         self,
         ticker: str,
@@ -45,9 +72,7 @@ class PolygonUSProvider:
         start_date = end_date - pd.Timedelta(days=offset_n_days)
         url = self._polygon_aggs_url(ticker, start_date, end_date)
 
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
+        data = self._request_json(url)
 
         results = data.get("results", [])
         if not results or len(results) < actual_offset_n_days:
@@ -84,9 +109,7 @@ class PolygonUSProvider:
         start_date = end_date - pd.Timedelta(days=offset_n_days)
         url = self._polygon_aggs_url(ticker, start_date, end_date)
 
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
+        data = self._request_json(url)
 
         results = data.get("results", [])
         if not results or len(results) < actual_offset_n_days:
