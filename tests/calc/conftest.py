@@ -13,7 +13,8 @@ OHLCV_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "ohlcv"
 
 @pytest.fixture(autouse=True)
 def mock_polygon_requests(monkeypatch):
-    def fake_get(url, *args, **kwargs):
+    def fake_http_get(self, url, *args, **kwargs):
+        del self, args, kwargs
         from providers.polygon_us import POLYGON_SYMBOL_ALIASES
 
         for ticker in CALC_TICKERS:
@@ -26,4 +27,4 @@ def mock_polygon_requests(monkeypatch):
                 return response
         raise AssertionError(f"unexpected polygon URL: {url}")
 
-    monkeypatch.setattr("providers.polygon_us.requests.get", fake_get)
+    monkeypatch.setattr("providers.polygon_us.PolygonUSProvider._http_get", fake_http_get)

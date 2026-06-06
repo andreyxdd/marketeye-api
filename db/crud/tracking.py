@@ -2,6 +2,7 @@
 Methods to handle CRUD operation with 'analytics' collection in the db
 with regard to stock tracking procedure
 """
+import asyncio
 from typing import Optional
 
 from core.markets import DEFAULT_MARKET, market_mongo_filter, normalize_market
@@ -66,8 +67,12 @@ async def put_top_tickers_by_criterion(
 
 async def put_top_tickers(conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET):
     try:
-        for criterion in CRITERIA:
-            await put_top_tickers_by_criterion(conn, date, criterion, market=market)
+        await asyncio.gather(
+            *[
+                put_top_tickers_by_criterion(conn, date, criterion, market=market)
+                for criterion in CRITERIA
+            ]
+        )
         return (
             "db/crud/tracking.py, def put_top_tickers:"
             + f" tickers were retrieved and set up for tracking ({market})"

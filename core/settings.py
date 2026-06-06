@@ -51,6 +51,10 @@ EODHD_API_KEY = os.getenv("EODHD_API_KEY")
 CRON_MAX_WORKERS = int(os.getenv("CRON_MAX_WORKERS", "15"))
 CRON_INSERT_BATCH_SIZE = int(os.getenv("CRON_INSERT_BATCH_SIZE", "500"))
 
+# Session probe tickers (LastCompletedSession resolution)
+PROBE_TICKER_US = os.getenv("PROBE_TICKER_US", "SPY")
+PROBE_TICKER_TO = os.getenv("PROBE_TICKER_TO", "SHOP")
+
 # URL setting to get market analytics using external datasets
 MI_BASE_URL = os.getenv("MI_BASE_URL")
 MI_SP500_CODE = os.getenv("MI_SP500_CODE", "998434")

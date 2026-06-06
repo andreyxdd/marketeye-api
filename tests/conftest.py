@@ -41,6 +41,15 @@ def fixture_api_key():
     return FIXTURE_API_KEY
 
 
+@pytest.fixture(autouse=True)
+def _clear_ticker_universe_cache():
+    from utils.handle_external_apis import clear_ticker_universe_cache
+
+    clear_ticker_universe_cache()
+    yield
+    clear_ticker_universe_cache()
+
+
 @pytest_asyncio.fixture(scope="session")
 async def mongo_client():
     await connect_mongo()

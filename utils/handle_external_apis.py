@@ -44,6 +44,13 @@ nasdaqdatalink.ApiConfig.api_key = QUANDL_API_KEY
 cache = RedisCache()
 cache.connect()
 
+_ticker_universe_cache: dict[tuple[str, str], list] = {}
+
+
+def clear_ticker_universe_cache() -> None:
+    """Clear in-process ticker universe memoization (call at cron start)."""
+    _ticker_universe_cache.clear()
+
 @cache.use_cache()
 def get_ticker_analytics(
     ticker: str,
@@ -272,8 +279,14 @@ def get_market_vixs(
 def get_tickers(date: str, market: str = DEFAULT_MARKET) -> list:
     try:
         market = normalize_market(market)
+        cache_key = (market, date)
+        if cache_key in _ticker_universe_cache:
+            return list(_ticker_universe_cache[cache_key])
+
         provider = get_market_data_provider(market)
-        return provider.fetch_ticker_universe(date)
+        tickers = provider.fetch_ticker_universe(date)
+        _ticker_universe_cache[cache_key] = tickers
+        return tickers
     except Exception as e:
         print("Error message:", e)
         raise Exception(

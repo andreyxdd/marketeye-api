@@ -47,3 +47,12 @@ class MarketDataProvider(Protocol):
         actual_offset_n_days: Optional[int] = 50,
     ) -> dict:
         """Extra analytics (e.g. mfi) derived from OHLCV."""
+
+    @property
+    def probe_ticker(self) -> str:
+        """Liquid benchmark ticker for session-date probing."""
+
+    def resolve_session_dates(
+        self, date: str
+    ) -> tuple[Optional[str], Optional[str]]:
+        """Return (LastCompletedSession, PriorCompletedSession) for the market."""

@@ -12,6 +12,8 @@
 | **Tier B′** | Provider golden — `MarketDataProvider` implementations vs goldens |
 | **Tier C** | Pipeline — ingest → `get_analytics_sorted_by` |
 | **MarketDataProvider** | Protocol for exchange-specific OHLCV + ticker universe fetch |
+| **LastCompletedSession** | Latest EOD bar date available from the market data provider for a **Market** |
+| **PriorCompletedSession** | Trading session immediately before **LastCompletedSession** (not calendar yesterday) |
 | **PolygonUSProvider** | US implementation wrapping Polygon.io |
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
 

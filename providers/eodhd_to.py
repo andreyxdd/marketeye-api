@@ -1,23 +1,38 @@
 """Toronto Stock Exchange (TO) market data via EODHD."""
 
+import threading
 import time
 from typing import Optional
 
 import pandas as pd
 import requests
 
-from core.settings import EODHD_API_KEY
+from core.settings import EODHD_API_KEY, PROBE_TICKER_TO
 from providers.analytics_mixin import (
     analytics_from_ohlcv,
     base_analytics_from_ohlcv_utc,
     extra_analytics_from_ohlcv,
 )
+from services.session_dates import session_dates_from_ohlcv
 
 EODHD_BASE_URL = "https://eodhd.com/api"
+
+_thread_local = threading.local()
 
 
 class EodhdTOProvider:
     market = "TO"
+    probe_ticker = PROBE_TICKER_TO
+
+    def _http_session(self) -> requests.Session:
+        session = getattr(_thread_local, "eodhd_session", None)
+        if session is None:
+            session = requests.Session()
+            _thread_local.eodhd_session = session
+        return session
+
+    def _http_get(self, url: str, **kwargs) -> requests.Response:
+        return self._http_session().get(url, **kwargs)
 
     def _eod_symbol(self, ticker: str) -> str:
         return f"{ticker.upper()}.TO"
@@ -45,7 +60,7 @@ class EodhdTOProvider:
 
         backoff = 1
         while True:
-            response = requests.get(url)
+            response = self._http_get(url)
             if response.status_code == 429:
                 print(
                     f"providers/eodhd_to.py: rate limit hit for {ticker}, "
@@ -141,6 +156,14 @@ class EodhdTOProvider:
         df = self.fetch_ohlcv_utc(ticker, date, offset_n_days, actual_offset_n_days)
         return base_analytics_from_ohlcv_utc(df)
 
+    def resolve_session_dates(
+        self, date: str
+    ) -> tuple[Optional[str], Optional[str]]:
+        df = self.fetch_ohlcv(
+            self.probe_ticker, date, offset_n_days=10, actual_offset_n_days=2
+        )
+        return session_dates_from_ohlcv(df)
+
     def fetch_ticker_universe(self, date: str) -> list[str]:
         del date
         url = (
@@ -149,7 +172,7 @@ class EodhdTOProvider:
         )
         backoff = 1
         while True:
-            response = requests.get(url)
+            response = self._http_get(url)
             if response.status_code == 429:
                 print(
                     f"providers/eodhd_to.py fetch_ticker_universe: "

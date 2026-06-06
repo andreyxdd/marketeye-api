@@ -17,12 +17,13 @@ from db.crud.analytics import remove_base_analytics
 from db.crud.scrapes import remove_scrapes
 from utils.handle_emails import notify_developer
 from utils.handle_datetimes import (
-    get_today_utc_date_in_timezone,
     get_past_date,
     get_epoch,
 )
 from utils.handle_validation import validate_date_string
+from utils.handle_external_apis import clear_ticker_universe_cache
 import services.analytics_service as analytics_service
+from services.cron_dates import resolve_ingest_dates_for_market
 
 try:
     import asyncio
@@ -54,6 +55,7 @@ async def cronjob(markets=None):
     print("\n--------------------------------------------------------")
     print("Running analytics cronjob ...\n")
     start_time = time()
+    clear_ticker_universe_cache()
 
     markets_to_run = markets or list_markets()
     curr_date = None
@@ -65,11 +67,27 @@ async def cronjob(markets=None):
             market_start = time()
             market = normalize_market(market)
             tz = MARKETS[market]["timezone"]
-            today_utc = get_today_utc_date_in_timezone(tz)
-            yesterday_utc = get_past_date(1, today_utc)
-            target_dates = [today_utc, yesterday_utc]
 
-            print(f"Market {market} ({tz}) target dates: {target_dates}")
+            await connect_mongo()
+            conn = await get_mongo_database()
+            try:
+                target_dates = await resolve_ingest_dates_for_market(conn, market)
+            except Exception as probe_error:  # pylint: disable=broad-except
+                print(
+                    f"cronjob.py: session probe failed for {market} ({tz}): {probe_error}"
+                )
+                notify_developer(
+                    body=(
+                        f"Analytics cronjob session probe failed for {market} ({tz})"
+                        f" with error message:\n\n {probe_error}"
+                    ),
+                    subject="Cronjob Report",
+                )
+                continue
+            finally:
+                await close_mongo()
+
+            print(f"Market {market} ({tz}) session dates: {target_dates}")
 
             for curr_date in target_dates:
                 date_start = time()

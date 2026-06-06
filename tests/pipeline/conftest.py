@@ -77,7 +77,8 @@ def mock_provider_registry(monkeypatch):
     import requests
     from providers.polygon_us import POLYGON_SYMBOL_ALIASES
 
-    def fake_get(url, *args, **kwargs):
+    def fake_http_get(self, url, *args, **kwargs):
+        del self, args, kwargs
         for ticker in CALC_TICKERS:
             polygon_symbol = POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
             if f"/ticker/{polygon_symbol}/" in url or f"/ticker/{ticker.upper()}/" in url:
@@ -88,7 +89,7 @@ def mock_provider_registry(monkeypatch):
                 return response
         raise AssertionError(f"unexpected polygon URL: {url}")
 
-    monkeypatch.setattr("providers.polygon_us.requests.get", fake_get)
+    monkeypatch.setattr("providers.polygon_us.PolygonUSProvider._http_get", fake_http_get)
     monkeypatch.setattr(
         "services.analytics_service.external_get_ticker_extra_analytics",
         lambda *args, **kwargs: {},

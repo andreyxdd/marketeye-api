@@ -1,25 +1,40 @@
 """US equities market data via Polygon.io."""
 
+import threading
 import time
 from typing import Optional
 
 import pandas as pd
 import requests
 
-from core.settings import POLYGON_API_KEY
+from core.settings import POLYGON_API_KEY, PROBE_TICKER_US
 from providers.analytics_mixin import (
     analytics_from_ohlcv,
     base_analytics_from_ohlcv_utc,
     extra_analytics_from_ohlcv,
 )
+from services.session_dates import session_dates_from_ohlcv
 
 POLYGON_SYMBOL_ALIASES = {
     "GOOG": "GOOGL",
 }
 
+_thread_local = threading.local()
+
 
 class PolygonUSProvider:
     market = "US"
+    probe_ticker = PROBE_TICKER_US
+
+    def _http_session(self) -> requests.Session:
+        session = getattr(_thread_local, "polygon_session", None)
+        if session is None:
+            session = requests.Session()
+            _thread_local.polygon_session = session
+        return session
+
+    def _http_get(self, url: str, **kwargs) -> requests.Response:
+        return self._http_session().get(url, **kwargs)
 
     def _polygon_symbol(self, ticker: str) -> str:
         return POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
@@ -39,7 +54,7 @@ class PolygonUSProvider:
         last_error = None
         for attempt in range(max_attempts):
             try:
-                response = requests.get(url, timeout=60)
+                response = self._http_get(url, timeout=60)
                 if response.status_code == 429:
                     print(
                         f"providers/polygon_us.py: rate limit hit, sleeping {backoff}s"
@@ -167,6 +182,14 @@ class PolygonUSProvider:
         df = self.fetch_ohlcv_utc(ticker, date, offset_n_days, actual_offset_n_days)
         return base_analytics_from_ohlcv_utc(df)
 
+    def resolve_session_dates(
+        self, date: str
+    ) -> tuple[Optional[str], Optional[str]]:
+        df = self.fetch_ohlcv(
+            self.probe_ticker, date, offset_n_days=10, actual_offset_n_days=2
+        )
+        return session_dates_from_ohlcv(df)
+
     def fetch_ticker_universe(self, date: str) -> list[str]:
         url = (
             f"https://api.polygon.io/v3/reference/tickers?market=stocks&active=true"
@@ -176,7 +199,7 @@ class PolygonUSProvider:
         backoff = 1
 
         while url:
-            response = requests.get(url)
+            response = self._http_get(url)
             if response.status_code == 429:
                 print(
                     f"providers/polygon_us.py fetch_ticker_universe: "
