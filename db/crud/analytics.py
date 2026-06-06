@@ -97,6 +97,8 @@ async def get_normalazied_cvi_slope(
 async def insert_analytics_batch(
     conn: AsyncIOMotorClient, docs: List[dict], batch_size: int = 500
 ) -> int:
+    from pymongo.errors import BulkWriteError
+
     inserted = 0
     for start in range(0, len(docs), batch_size):
         batch = docs[start : start + batch_size]
@@ -105,13 +107,22 @@ async def insert_analytics_batch(
                 batch, ordered=False
             )
             inserted += len(response.inserted_ids)
-        except Exception as e:  # pylint: disable=W0703
-            if type(e).__name__ != "BulkWriteError":
-                raise
+        except BulkWriteError as e:
+            batch_inserted = e.details.get("nInserted", 0)
+            inserted += batch_inserted
+            write_errors = e.details.get("writeErrors", [])
+            duplicate_count = sum(
+                1 for err in write_errors if err.get("code") == 11000
+            )
             print(
                 "db/crud/analytics.py insert_analytics_batch:"
-                f" BulkWriteError during batch insert; partial insert may have occurred."
+                f" BulkWriteError during batch insert;"
+                f" nInserted={batch_inserted}, duplicate_errors={duplicate_count},"
+                f" total_write_errors={len(write_errors)}"
             )
+        except Exception as e:
+            print("Error message:", e)
+            raise
     return inserted
 
 
