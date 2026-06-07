@@ -9,6 +9,7 @@ from utils.handle_validation import (
     validate_api_key,
     validate_date_string,
     validate_market,
+    validate_price_band,
 )
 from db.crud.tracking import CRITERIA
 from db.mongodb import AsyncIOMotorClient, get_database
@@ -61,10 +62,13 @@ async def read_market_analytics(
 async def read_analytics_by_criteria(
     date: str = Depends(validate_date_string),
     market: str = Depends(validate_market),
+    price_band: str = Depends(validate_price_band),
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
 ) -> dict:
-    return await analytics_service.get_analytics_lists_by_criteria(db, date, market=market)
+    return await analytics_service.get_analytics_lists_by_criteria(
+        db, date, market=market, price_band=price_band
+    )
 
 
 @analytics_router.get("/get_analytics_lists_by_criterion", tags=["Analytics"])
@@ -76,6 +80,7 @@ async def read_analytics_lists_by_criterion(
         One of "one_day_avg_mf", "three_day_avg_mf", "volume", "three_day_avg_volume", "macd\"""",
     ),
     market: str = Depends(validate_market),
+    price_band: str = Depends(validate_price_band),
     api_key: str = Depends(validate_api_key),  # pylint: disable=W0613
     db: AsyncIOMotorClient = Depends(get_database),
 ) -> dict:
@@ -83,7 +88,7 @@ async def read_analytics_lists_by_criterion(
         raise HTTPException(status_code=422, detail="No such criterion implemented.")
 
     rows = await analytics_service.get_analytics_sorted_by(
-        db, date, criterion, market=market
+        db, date, criterion, market=market, price_band=price_band
     )
     return {criterion: rows}
 

@@ -15,6 +15,7 @@ from db.crud.scrapes import get_mentions
 from db.crud.tracking import get_analytics_frequencies
 from core.markets import DEFAULT_MARKET, normalize_market
 from utils.handle_datetimes import get_last_quater_date, get_date_string
+from utils.price_bands import resolve_price_band
 from utils.handle_external_apis import (
     get_market_sp500,
     get_market_vixs,
@@ -110,22 +111,40 @@ async def get_analytics_sorted_by(
     criterion: str,
     market: str = DEFAULT_MARKET,
     lim: Optional[int] = 20,
+    price_band: Optional[str] = None,
 ) -> list:
+    min_close = None
+    max_close = None
+    include_close = False
+    if price_band is not None:
+        min_close, max_close = resolve_price_band(price_band)
+        include_close = True
     return await crud_get_analytics_sorted_by(
-        conn, date, criterion, lim, market=market, enrich_fn=enrich_ticker_row
+        conn,
+        date,
+        criterion,
+        lim,
+        market=market,
+        enrich_fn=enrich_ticker_row,
+        min_close=min_close,
+        max_close=max_close,
+        include_close=include_close,
     )
 
 
 async def get_analytics_lists_by_criteria(
-    conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET
+    conn: AsyncIOMotorClient,
+    date: str,
+    market: str = DEFAULT_MARKET,
+    price_band: Optional[str] = None,
 ) -> dict:
     market = normalize_market(market)
     futures = [
-        get_analytics_sorted_by(conn, date, "one_day_avg_mf", market=market),
-        get_analytics_sorted_by(conn, date, "three_day_avg_mf", market=market),
-        get_analytics_sorted_by(conn, date, "volume", market=market),
-        get_analytics_sorted_by(conn, date, "three_day_avg_volume", market=market),
-        get_analytics_sorted_by(conn, date, "macd", market=market),
+        get_analytics_sorted_by(conn, date, "one_day_avg_mf", market=market, price_band=price_band),
+        get_analytics_sorted_by(conn, date, "three_day_avg_mf", market=market, price_band=price_band),
+        get_analytics_sorted_by(conn, date, "volume", market=market, price_band=price_band),
+        get_analytics_sorted_by(conn, date, "three_day_avg_volume", market=market, price_band=price_band),
+        get_analytics_sorted_by(conn, date, "macd", market=market, price_band=price_band),
     ]
     res = await asyncio.gather(*futures)
     return {

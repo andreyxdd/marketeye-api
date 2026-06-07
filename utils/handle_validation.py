@@ -7,6 +7,7 @@ from fastapi.exceptions import HTTPException
 from core.settings import API_KEY
 from core.markets import DEFAULT_MARKET, normalize_market
 from utils.handle_datetimes import is_valid_date
+from utils.price_bands import PRICE_BANDS
 
 
 def validate_api_key(
@@ -68,3 +69,16 @@ def validate_market(
         return normalize_market(market)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+def validate_price_band(
+    price_band: str = Query(
+        default=None,
+        description="Optional close-price band for Micro screening: lte5, 5to10, 10to20, 20to50",
+    ),
+):
+    if price_band is None:
+        return None
+    if price_band not in PRICE_BANDS:
+        raise HTTPException(status_code=422, detail="No such price_band implemented.")
+    return price_band

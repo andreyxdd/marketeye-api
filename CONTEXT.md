@@ -16,5 +16,7 @@
 | **PriorCompletedSession** | Trading session immediately before **LastCompletedSession** (not calendar yesterday) |
 | **PolygonUSProvider** | US implementation wrapping Polygon.io |
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
+| **Price band** | One of four close-price ranges for Micro screening: `lte5`, `5to10`, `10to20`, `20to50` |
+| **Micro screening** | Filter analytics rows by EOD close before top-20 sort |
 
 Run instructions: `tests/README.md`.

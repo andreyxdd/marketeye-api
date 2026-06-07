@@ -204,6 +204,9 @@ async def get_analytics_sorted_by(
     lim: Optional[int] = 20,
     market: str = DEFAULT_MARKET,
     enrich_fn: Optional[Callable[..., Awaitable[dict]]] = None,
+    min_close: Optional[float] = None,
+    max_close: Optional[float] = None,
+    include_close: bool = False,
 ) -> List[dict]:
     try:
         if enrich_fn is None:
@@ -213,11 +216,23 @@ async def get_analytics_sorted_by(
 
         epoch_date = get_epoch(date)
         query = {"date": epoch_date, **market_mongo_filter(market)}
+        close_filter: dict = {"close": {"$exists": True, "$ne": None}}
+        if min_close is not None:
+            close_filter["close"]["$gte"] = min_close
+        if max_close is not None:
+            close_filter["close"]["$lte"] = max_close
+        if min_close is not None or max_close is not None:
+            query.update(close_filter)
+
+        projection = {"_id": False, "bounce": False, "open": False}
+        if not include_close:
+            projection["close"] = False
+
         cursor = (
             conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
             .find(
                 query,
-                {"_id": False, "bounce": False, "close": False, "open": False},
+                projection,
             )
             .sort(criterion, -1)
             .limit(lim)
