@@ -18,5 +18,6 @@
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
 | **Price band** | One of four close-price ranges for Micro screening: `lte5`, `5to10`, `10to20`, `20to50` |
 | **Micro screening** | Filter analytics rows by EOD close before top-20 sort |
+| **Deploy revision** | Full git SHA exposed on `/healthz` and `/readyz` as `commit`; resolved from `HEROKU_SLUG_COMMIT` → `SOURCE_VERSION` → `git rev-parse HEAD` → `"unknown"` |
 
 Run instructions: `tests/README.md`.

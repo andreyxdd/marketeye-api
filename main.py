@@ -8,16 +8,22 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from core.settings import DEFAULT_ROUTE_STR
+from core.build_info import APP_VERSION
 from api import router as endpoint_router
+from api.endpoints.health import health_router
 from db.mongodb import connect as connect_mongo, close as close_mongo
 from db.redis import RedisCache
 
-VERSION = "1.5.0"
+VERSION = APP_VERSION
 
 tags_metadata = [
     {
         "name": "Home",
         "description": "Initial endpoint.",
+    },
+    {
+        "name": "Health",
+        "description": "Liveness and readiness probes.",
     },
     {
         "name": "Analytics",
@@ -59,6 +65,7 @@ app = FastAPI(
 )
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
+app.include_router(health_router)
 app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 
 
