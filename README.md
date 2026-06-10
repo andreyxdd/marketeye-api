@@ -8,10 +8,6 @@ Furthermore, the API includes a scraping bot that collects the number of mention
 
 Finally, the API provides methods for sorting all the stock data and scraping results (for the given date) based on several implemented criteria.
 
-## Deployment
-
-The API is deployed on [Heroku](https://marketeye-api.herokuapp.com/). MongoDB handles data storage. Learn a bit more on the [documentation page](https://marketeye-api.herokuapp.com/docs).
-
 ## Code Directories
 
 - *api*: for implementing endpoints
@@ -35,6 +31,7 @@ uvicorn main:app --reload
 ```
 
 ### Linting
+
 The ```pylint``` is selected as a default linter. To avoid certain warnings, adjust settings of ```.pylintrc``` in the root folder.
 Currently, the following warnings are ignored:
 - ```E1136``` relates to the issues with ```Optional``` and ```Union``` types from ```typings```
@@ -42,7 +39,7 @@ Currently, the following warnings are ignored:
 - ```E0402``` indicates erreneous relative importings
 - ```R0801``` ignore similarities between files
 
-It is recommended to initiate the linter tool in the code editor. For example, in VSCode, press ```ctrl+shift+p```, search for ```Select linter``` and choose ```pylint```.
+Initiate the linter tool in the code editor. For example, in VSCode, press ```ctrl+shift+p```, search for ```Select linter``` and choose ```pylint```.
 
 ### Pre-commit Hooks
 
@@ -50,5 +47,3 @@ This template project also utilizes the pre-commit hooks (see ```.pre-commit-con
 ```
 pre-commit install
 ```
-
-
