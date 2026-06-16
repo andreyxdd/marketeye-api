@@ -46,6 +46,8 @@ class RedisCache:
             username=url.username or None,
             password=url.password or None,
             decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
         )
         db.client = self.client
         print(f"Connected to Redis on port {url.port}")

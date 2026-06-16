@@ -12,6 +12,7 @@ from core.build_info import APP_VERSION
 from api import router as endpoint_router
 from api.endpoints.health import health_router
 from db.mongodb import connect as connect_mongo, close as close_mongo
+from db.postgres import close as close_postgres, connect as connect_postgres
 from db.redis import RedisCache
 
 VERSION = APP_VERSION
@@ -73,6 +74,7 @@ app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 async def on_app_start():
     """Anything that needs to be done while app starts"""
     await connect_mongo()
+    await connect_postgres()
     cache = RedisCache()
     cache.connect()
 
@@ -81,6 +83,7 @@ async def on_app_start():
 async def on_app_shutdown():
     """Anything that needs to be done while app shutdown"""
     await close_mongo()
+    await close_postgres()
 
 
 @app.get("/", tags=["Home"], response_class=HTMLResponse)

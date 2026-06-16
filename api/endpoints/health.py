@@ -1,5 +1,7 @@
 """Liveness and readiness probe endpoints."""
 
+import asyncio
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from typing import Optional
@@ -10,6 +12,8 @@ from db.postgres import ping as ping_postgres
 from db.redis import ping as ping_redis
 
 health_router = APIRouter()
+
+_PROBE_TIMEOUT_SECONDS = 5.0
 
 
 def _probe_payload(
@@ -42,22 +46,25 @@ async def readyz():
     has_failure = False
 
     try:
-        db = await get_database()
-        if db is None:
-            raise RuntimeError("MongoDB client not initialized")
-        await db.admin.command("ping")
+        async def _ping_mongo():
+            db = await get_database()
+            if db is None:
+                raise RuntimeError("MongoDB client not initialized")
+            await db.admin.command("ping")
+
+        await asyncio.wait_for(_ping_mongo(), timeout=_PROBE_TIMEOUT_SECONDS)
     except Exception:  # pylint: disable=broad-except
         has_failure = True
         payload["mongo"] = "down"
 
     try:
-        await ping_postgres()
+        await asyncio.wait_for(ping_postgres(), timeout=_PROBE_TIMEOUT_SECONDS)
     except Exception:  # pylint: disable=broad-except
         has_failure = True
         payload["postgres"] = "down"
 
     try:
-        await ping_redis()
+        await asyncio.wait_for(ping_redis(), timeout=_PROBE_TIMEOUT_SECONDS)
     except Exception:  # pylint: disable=broad-except
         has_failure = True
         payload["redis"] = "down"
