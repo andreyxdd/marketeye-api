@@ -4,6 +4,7 @@ import pytest
 
 from core.build_info import APP_VERSION, get_deploy_revision
 from db import mongodb
+from db import redis as redis_module
 
 
 @pytest.mark.asyncio
@@ -26,6 +27,7 @@ async def test_readyz_returns_200_when_mongo_up(client):
     assert data["status"] == "ok"
     assert data["mongo"] == "ok"
     assert data["postgres"] == "ok"
+    assert data["redis"] == "ok"
     assert data["commit"] == get_deploy_revision()
     assert data["version"] == APP_VERSION
 
@@ -44,5 +46,24 @@ async def test_readyz_returns_503_when_mongo_down(client):
     assert data["status"] == "unavailable"
     assert data["mongo"] == "down"
     assert data["postgres"] == "ok"
+    assert data["commit"] == get_deploy_revision()
+    assert data["version"] == APP_VERSION
+
+
+@pytest.mark.asyncio
+async def test_readyz_returns_503_when_redis_down(client):
+    original_client = redis_module.db.client
+    redis_module.db.client = None
+    try:
+        response = await client.get("/readyz")
+    finally:
+        redis_module.db.client = original_client
+
+    assert response.status_code == 503
+    data = response.json()
+    assert data["status"] == "unavailable"
+    assert data["mongo"] == "ok"
+    assert data["postgres"] == "ok"
+    assert data["redis"] == "down"
     assert data["commit"] == get_deploy_revision()
     assert data["version"] == APP_VERSION

@@ -2,6 +2,7 @@
 Reusable Redis caching utilities.
 """
 
+import asyncio
 import json
 import redis
 import hashlib
@@ -10,6 +11,24 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 DEFAULT_EXPIRATION = timedelta(days=14)
+
+
+class RedisDatabase:  # pylint: disable=R0903
+    """Holds process-level Redis client for health probes."""
+
+    client: redis.Redis = None
+
+
+db = RedisDatabase()
+
+
+async def ping() -> bool:
+    """Return True when Redis responds to PING."""
+    if db.client is None:
+        raise RuntimeError("Redis client not initialized")
+    return await asyncio.to_thread(db.client.ping)
+
+
 class RedisCache:
     def __init__(self, redis_uri: str = None, expiration: timedelta = None):
         from core.settings import REDIS_URI
@@ -28,6 +47,7 @@ class RedisCache:
             password=url.password or None,
             decode_responses=True,
         )
+        db.client = self.client
         print(f"Connected to Redis on port {url.port}")
 
     def flushdb(self):
