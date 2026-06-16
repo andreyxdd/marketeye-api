@@ -229,7 +229,11 @@ def get_last_quater_date(date: str):
         str: last date (as string) of the previous quater
     """
     start_date = get_past_date(366, date)
-    quater_dates = date_range(start_date, date, freq="QE")
+    try:
+        quater_dates = date_range(start_date, date, freq="QE")
+    except ValueError:
+        # Pandas <2.0 does not support QE alias.
+        quater_dates = date_range(start_date, date, freq="Q")
 
     last_quater_limit_date = quater_dates[-1].strftime("%Y-%m-%d")
     is_valid_date(last_quater_limit_date)

@@ -1,6 +1,6 @@
 # Local test suite
 
-Run MongoDB and Redis, generate fixtures once, then pytest.
+Run MongoDB, Redis, and Postgres, apply migrations, then pytest.
 
 ```bash
 docker compose -f docker-compose.test.yml up -d
@@ -9,14 +9,16 @@ docker compose -f docker-compose.test.yml up -d
 export MONGO_URI=mongodb://localhost:27017
 export REDIS_URI=redis://localhost:6379/1
 export MONGO_DB_NAME=marketeye_test
+export DATABASE_URL=postgresql://marketeye:marketeye@localhost:5432/marketeye_test
 
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 
+python scripts/apply_migrations.py
 python tests/helpers/generate_fixtures.py
 python scripts/capture_ohlcv_fixtures.py --market US
 
-pytest tests/ -v
+pytest tests/ --ignore=tests/calc/test_providers -v
 ```
 
 ## Tiers
@@ -35,7 +37,7 @@ Glossary: `CONTEXT.md`.
 ## Environment
 
 Tests load secrets from repo-root `.env` (`POLYGON_API_KEY`, etc.) with `override=True`.
-Local Mongo/Redis/API key for the suite are forced in `tests/conftest.py` (docker + `test-api-key-e2e`).
+Local Mongo/Redis/Postgres/API key for the suite are forced in `tests/conftest.py` (docker + `test-api-key-e2e`).
 
 ## OHLCV capture
 

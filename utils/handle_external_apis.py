@@ -438,7 +438,10 @@ def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int
             Defaults to 2.
     """
     start_date = get_past_date(366, date)
-    quater_dates = date_range(start_date, date, freq="QE")
+    try:
+        quater_dates = date_range(start_date, date, freq="QE")
+    except ValueError:
+        quater_dates = date_range(start_date, date, freq="Q")
 
     last_quater_limit_date = quater_dates[-1].strftime("%Y-%m-%d")
     validate_date_string(last_quater_limit_date)

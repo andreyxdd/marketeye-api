@@ -53,6 +53,7 @@ jobs:
       EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
       REDIS_URI: ${{ secrets.REDIS_URI }}
       REDISCLOUD_URL: ${{ secrets.REDIS_URI }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       - name: Checkout repository content

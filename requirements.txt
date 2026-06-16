@@ -22,6 +22,7 @@ html5lib
 bs4
 fake_headers
 asyncstdlib
+asyncpg
 redis
 Jinja2
 nasdaq-data-link

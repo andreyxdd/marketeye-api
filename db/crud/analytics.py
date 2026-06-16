@@ -196,7 +196,6 @@ async def remove_base_analytics(
         ) from e
 
 
-@cache.use_cache_async(ignore_first_arg=True)
 async def get_analytics_sorted_by(
     conn: AsyncIOMotorClient,
     date: str,

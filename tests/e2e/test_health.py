@@ -25,6 +25,7 @@ async def test_readyz_returns_200_when_mongo_up(client):
     data = response.json()
     assert data["status"] == "ok"
     assert data["mongo"] == "ok"
+    assert data["postgres"] == "ok"
     assert data["commit"] == get_deploy_revision()
     assert data["version"] == APP_VERSION
 
@@ -42,5 +43,6 @@ async def test_readyz_returns_503_when_mongo_down(client):
     data = response.json()
     assert data["status"] == "unavailable"
     assert data["mongo"] == "down"
+    assert data["postgres"] == "ok"
     assert data["commit"] == get_deploy_revision()
     assert data["version"] == APP_VERSION

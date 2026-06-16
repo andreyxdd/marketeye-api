@@ -6,13 +6,13 @@ from typing import Optional
 from db.mongodb import AsyncIOMotorClient
 from db.crud.analytics import (
     get_analytics_sorted_by as crud_get_analytics_sorted_by,
-    get_dates as crud_get_dates,
     get_missing_tickers,
     get_normalazied_cvi_slope,
     insert_analytics_batch,
 )
 from db.crud.scrapes import get_mentions
 from db.crud.tracking import get_analytics_frequencies
+from db.postgres import get_pool as get_postgres_pool
 from core.markets import DEFAULT_MARKET, normalize_market
 from utils.handle_datetimes import get_last_quater_date, get_date_string
 from utils.price_bands import resolve_price_band
@@ -25,6 +25,7 @@ from utils.handle_external_apis import (
     get_ticker_base_analytics as external_get_ticker_base_analytics,
     get_tickers as external_get_tickers,
 )
+import services.read_router as read_router
 
 
 def _to_stub_mentions() -> dict:
@@ -33,6 +34,13 @@ def _to_stub_mentions() -> dict:
         "mentions_over_two_days": 0,
         "mentions_over_three_days": 0,
     }
+
+
+async def _get_postgres_pool_or_none():
+    try:
+        return await get_postgres_pool()
+    except Exception:  # pylint: disable=broad-except
+        return None
 
 
 async def enrich_ticker_row(
@@ -74,6 +82,30 @@ async def get_ticker_analytics_response(
     market: str = DEFAULT_MARKET,
     criterion: Optional[str] = None,
 ) -> dict:
+    pool = await _get_postgres_pool_or_none()
+    market = normalize_market(market)
+    if pool is None:
+        return await get_ticker_analytics_response_hot(
+            conn, date, ticker, market=market, criterion=criterion
+        )
+    is_hot = await read_router.is_hot_date(conn, pool, date, market=market)
+    if not is_hot:
+        return await read_router.get_ticker_analytics_cold(
+            pool, date, ticker, market=market
+        )
+
+    return await get_ticker_analytics_response_hot(
+        conn, date, ticker, market=market, criterion=criterion
+    )
+
+
+async def get_ticker_analytics_response_hot(
+    conn: AsyncIOMotorClient,
+    date: str,
+    ticker: str,
+    market: str = DEFAULT_MARKET,
+    criterion: Optional[str] = None,
+) -> dict:
     market = normalize_market(market)
     last_quater_limit_date = get_last_quater_date(date)
 
@@ -98,6 +130,17 @@ async def get_ticker_analytics_response(
 
 
 async def get_market_analytics(db: AsyncIOMotorClient, date: str) -> dict:
+    pool = await _get_postgres_pool_or_none()
+    if pool is None:
+        return await get_market_analytics_hot(db, date)
+    is_hot = await read_router.is_hot_date(db, pool, date, market="US")
+    if not is_hot:
+        return await read_router.get_market_analytics_cold(pool, date, market="US")
+
+    return await get_market_analytics_hot(db, date)
+
+
+async def get_market_analytics_hot(db: AsyncIOMotorClient, date: str) -> dict:
     return {
         "SP500": get_market_sp500(date),
         **get_market_vixs(date),
@@ -106,6 +149,45 @@ async def get_market_analytics(db: AsyncIOMotorClient, date: str) -> dict:
 
 
 async def get_analytics_sorted_by(
+    conn: AsyncIOMotorClient,
+    date: str,
+    criterion: str,
+    market: str = DEFAULT_MARKET,
+    lim: Optional[int] = 20,
+    price_band: Optional[str] = None,
+) -> list:
+    pool = await _get_postgres_pool_or_none()
+    market = normalize_market(market)
+    if pool is None:
+        return await get_analytics_sorted_by_hot(
+            conn,
+            date,
+            criterion,
+            market=market,
+            lim=lim,
+            price_band=price_band,
+        )
+    is_hot = await read_router.is_hot_date(conn, pool, date, market=market)
+    if not is_hot:
+        return await read_router.get_analytics_sorted_by_cold(
+            pool,
+            date,
+            criterion,
+            market=market,
+            price_band=price_band,
+        )
+
+    return await get_analytics_sorted_by_hot(
+        conn,
+        date,
+        criterion,
+        market=market,
+        lim=lim,
+        price_band=price_band,
+    )
+
+
+async def get_analytics_sorted_by_hot(
     conn: AsyncIOMotorClient,
     date: str,
     criterion: str,
@@ -139,12 +221,54 @@ async def get_analytics_lists_by_criteria(
     price_band: Optional[str] = None,
 ) -> dict:
     market = normalize_market(market)
+    pool = await _get_postgres_pool_or_none()
+    if pool is None:
+        return await get_analytics_lists_by_criteria_hot(
+            conn,
+            date,
+            market=market,
+            price_band=price_band,
+        )
+    is_hot = await read_router.is_hot_date(conn, pool, date, market=market)
+    if not is_hot:
+        return await read_router.get_analytics_lists_by_criteria_cold(
+            pool,
+            date,
+            market=market,
+            price_band=price_band,
+        )
+
+    return await get_analytics_lists_by_criteria_hot(
+        conn,
+        date,
+        market=market,
+        price_band=price_band,
+    )
+
+
+async def get_analytics_lists_by_criteria_hot(
+    conn: AsyncIOMotorClient,
+    date: str,
+    market: str = DEFAULT_MARKET,
+    price_band: Optional[str] = None,
+) -> dict:
+    market = normalize_market(market)
     futures = [
-        get_analytics_sorted_by(conn, date, "one_day_avg_mf", market=market, price_band=price_band),
-        get_analytics_sorted_by(conn, date, "three_day_avg_mf", market=market, price_band=price_band),
-        get_analytics_sorted_by(conn, date, "volume", market=market, price_band=price_band),
-        get_analytics_sorted_by(conn, date, "three_day_avg_volume", market=market, price_band=price_band),
-        get_analytics_sorted_by(conn, date, "macd", market=market, price_band=price_band),
+        get_analytics_sorted_by_hot(
+            conn, date, "one_day_avg_mf", market=market, price_band=price_band
+        ),
+        get_analytics_sorted_by_hot(
+            conn, date, "three_day_avg_mf", market=market, price_band=price_band
+        ),
+        get_analytics_sorted_by_hot(
+            conn, date, "volume", market=market, price_band=price_band
+        ),
+        get_analytics_sorted_by_hot(
+            conn, date, "three_day_avg_volume", market=market, price_band=price_band
+        ),
+        get_analytics_sorted_by_hot(
+            conn, date, "macd", market=market, price_band=price_band
+        ),
     ]
     res = await asyncio.gather(*futures)
     return {
@@ -157,7 +281,8 @@ async def get_analytics_lists_by_criteria(
 
 
 async def get_dates(conn: AsyncIOMotorClient, market: str = DEFAULT_MARKET) -> list:
-    return await crud_get_dates(conn, market=market)
+    pool = await _get_postgres_pool_or_none()
+    return await read_router.get_dates_union(conn, pool, market=market)
 
 
 async def get_frequencies_for_tickers(

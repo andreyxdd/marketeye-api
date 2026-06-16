@@ -1,0 +1,46 @@
+name: pg-storage-monitor
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      check_only:
+        description: "Run in check-only mode"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    environment: marketeye-api
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PG_STORAGE_LIMIT_BYTES: ${{ secrets.PG_STORAGE_LIMIT_BYTES }}
+      DEV_RECIEVER_EMAIL: ${{ secrets.DEV_RECIEVER_EMAIL }}
+      ADDITIONAL_DEV_RECIEVER_EMAIL: ${{ secrets.ADDITIONAL_DEV_RECIEVER_EMAIL }}
+      DEV_SENDER_EMAIL: ${{ secrets.DEV_SENDER_EMAIL }}
+      DEV_SENDER_SERVICE: ${{ secrets.DEV_SENDER_SERVICE }}
+      DEV_SENDER_SERVICE_PASSWORD: ${{ secrets.DEV_SENDER_SERVICE_PASSWORD }}
+      DEV_SENDER_SERVICE_PORT: ${{ secrets.DEV_SENDER_SERVICE_PORT }}
+
+    steps:
+      - name: Checkout repository content
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run monitor (check-only)
+        if: ${{ inputs.check_only == true }}
+        run: python scripts/pg_storage_monitor.py --check-only
+
+      - name: Run monitor (prune enabled)
+        if: ${{ inputs.check_only != true }}
+        run: python scripts/pg_storage_monitor.py
