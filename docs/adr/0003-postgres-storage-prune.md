@@ -20,7 +20,7 @@ Implement storage monitor and prune loop:
 
 - Daily monitor checks `pg_database_size(current_database()) / PG_STORAGE_LIMIT_BYTES`.
 - At ratio >= 0.85:
-  - notify developer by email.
+  - notify developer by Telegram.
   - if not `--check-only`, delete oldest `session_date` from `published_dates` (cascade) repeatedly.
 - Stop when ratio <= 0.70 or archive is empty.
 

@@ -12,7 +12,7 @@ from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from scrapy.utils.project import get_project_settings
-from utils.handle_emails import notify_developer
+from utils.handle_telegram import notify_developer
 from utils.handle_datetimes import (
     get_today_utc_date_in_timezone,
     get_epoch,

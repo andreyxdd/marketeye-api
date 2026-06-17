@@ -36,7 +36,7 @@ class NotifyRecorder:
 
 
 def apply_external_stubs(monkeypatch):
-    import utils.handle_emails as handle_emails
+    import utils.handle_telegram as handle_telegram
     import utils.handle_external_apis as external
 
     monkeypatch.setattr(external, "get_ticker_analytics", stub_get_ticker_analytics)
@@ -52,5 +52,5 @@ def apply_external_stubs(monkeypatch):
     monkeypatch.setattr(external, "get_market_vixs", stub_get_market_vixs)
 
     recorder = NotifyRecorder()
-    monkeypatch.setattr(handle_emails, "notify_developer", recorder)
+    monkeypatch.setattr(handle_telegram, "notify_developer", recorder)
     return recorder

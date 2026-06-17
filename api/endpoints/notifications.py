@@ -1,11 +1,11 @@
 """
-Endpoints to make email notifications
+Endpoints to make developer notifications
 """
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from utils.handle_emails import notify_developer
+from utils.handle_telegram import notify_developer
 from utils.handle_validation import validate_api_key
 
 notifications_router = APIRouter()

@@ -16,7 +16,7 @@ from db.mongodb import connect as connect_mongo, get_database as get_mongo_datab
 from db.postgres import connect as connect_postgres, get_pool as get_postgres_pool, close as close_postgres
 from db.crud.analytics import remove_base_analytics
 from db.crud.scrapes import remove_scrapes
-from utils.handle_emails import notify_developer
+from utils.handle_telegram import notify_developer
 from utils.handle_datetimes import (
     get_past_date,
     get_epoch,

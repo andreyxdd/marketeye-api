@@ -1,31 +1,29 @@
-name: test api
+name: healthcheck
 
 on:
   schedule:
-    # at 23:00 (UTC or 19:00 NY) on every day-of-week - from Monday through Friday
-    - cron: "0 2 * * 2-6"
+    - cron: "*/20 * * * *"
   workflow_dispatch:
 
 jobs:
-  test-api-job:
+  healthcheck-job:
     runs-on: ubuntu-22.04
     environment: marketeye-api
     steps:
       - name: Checkout repository content
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Python Version
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.11
 
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip requests typing pandas
+        run: python -m pip install --upgrade pip requests python-dotenv
 
-      - name: Execute Python script
+      - name: Run healthcheck monitor
         env:
-          API_KEY: ${{ secrets.API_KEY }}
           PING_URL: ${{ secrets.PING_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-        run: python test-api.py
+        run: python scripts/healthcheck_monitor.py

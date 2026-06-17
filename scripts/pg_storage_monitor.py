@@ -14,7 +14,7 @@ from db.crud.published_archive import get_storage_ratio, prune_oldest_session_da
 from db.postgres import close as close_postgres
 from db.postgres import connect as connect_postgres
 from db.postgres import get_pool as get_postgres_pool
-from utils.handle_emails import notify_developer
+from utils.handle_telegram import notify_developer
 
 
 PRUNE_TRIGGER_RATIO = 0.85

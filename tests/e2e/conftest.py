@@ -6,7 +6,7 @@ from httpx import ASGITransport, AsyncClient
 
 import api.endpoints.notifications as notifications
 import services.analytics_service as analytics_service
-import utils.handle_emails as handle_emails
+import utils.handle_telegram as handle_telegram
 from tests.helpers.stubs import (
     NotifyRecorder,
     stub_get_fcf,
@@ -24,7 +24,7 @@ def _apply_stubs(recorder):
     analytics_service.get_market_sp500 = stub_get_market_sp500
     analytics_service.get_market_vixs = stub_get_market_vixs
 
-    handle_emails.notify_developer = recorder
+    handle_telegram.notify_developer = recorder
     notifications.notify_developer = recorder
 
 

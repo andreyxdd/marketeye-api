@@ -13,7 +13,7 @@ Finally, the API provides methods for sorting all the stock data and scraping re
 - *api*: for implementing endpoints
 - *core*: general settings of the project, i.e. initiating environmental variables
 - *db*: for establishing a connection to MongoDB and implementing methods for CRUD operations
-- *utils*: general utility folder, e.g. useful methods to handle date-time objects and sending emails (via smtplib)
+- *utils*: general utility folder, e.g. useful methods to handle date-time objects and sending Telegram alerts
 - ```main.py```: script to initiate the server, open/close connection to db
 - .github/workflows: to run
   - the ```cronjob.py``` that fetches the EOD stock prices later to be used for calculations
