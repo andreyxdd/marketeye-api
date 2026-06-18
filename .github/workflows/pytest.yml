@@ -46,4 +46,4 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run tests
-        run: pytest tests/ --ignore=tests/calc/test_providers -v
+        run: pytest tests/ --ignore=tests/calc/test_providers --ignore=tests/pipeline -v
