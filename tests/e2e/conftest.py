@@ -28,11 +28,15 @@ def _apply_stubs(recorder):
     notifications.notify_developer = recorder
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def _patch_externals_session():
     recorder = NotifyRecorder()
+    original_telegram = handle_telegram.notify_developer
+    original_notifications = notifications.notify_developer
     _apply_stubs(recorder)
     yield recorder
+    handle_telegram.notify_developer = original_telegram
+    notifications.notify_developer = original_notifications
 
 
 @pytest.fixture
@@ -50,8 +54,8 @@ def _disable_app_mongo_lifecycle():
     yield
 
 
-@pytest_asyncio.fixture
-async def client(mongo_client):
+@pytest_asyncio.fixture(loop_scope="session")
+async def client(mongo_client, _patch_externals_session):
     from main import app
 
     transport = ASGITransport(app=app)

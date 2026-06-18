@@ -52,7 +52,7 @@ class _StubUSProvider:
         return {}
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def pipeline_db(mongo_client):
     await mongo_client[MONGO_DB_NAME][MONGO_COLLECTION_NAME].delete_many({})
     if await mongo_client[MONGO_DB_NAME]["scrapes"].count_documents({}) == 0:

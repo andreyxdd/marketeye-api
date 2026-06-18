@@ -35,6 +35,19 @@ def pytest_configure(config):
     pass
 
 
+def pytest_collection_modifyitems(items):
+    """Use session event loop for tests that depend on session-scoped async fixtures."""
+    session_async_fixtures = {"mongo_client", "postgres_pool", "client", "pipeline_db"}
+    for item in items:
+        if not item.get_closest_marker("asyncio"):
+            continue
+        if session_async_fixtures.intersection(item.fixturenames):
+            item.add_marker(
+                pytest.mark.asyncio(loop_scope="session"),
+                append=False,
+            )
+
+
 @pytest.fixture(scope="session")
 def fixture_date():
     from tests.helpers.constants import FIXTURE_DATE
@@ -56,7 +69,7 @@ def _clear_ticker_universe_cache():
     clear_ticker_universe_cache()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def postgres_pool():
     await connect_postgres()
     await apply_migrations()
@@ -66,7 +79,7 @@ async def postgres_pool():
     await close_postgres()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def mongo_client(postgres_pool):  # pylint: disable=unused-argument
     await connect_mongo()
     cache = RedisCache()
