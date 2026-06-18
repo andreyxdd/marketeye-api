@@ -4,11 +4,19 @@ based on the histroical EOD data
 """
 from typing import Optional, List
 from json import loads
+import pandas as pd
 from pandas import DataFrame, concat
 from numpy import where, exp
 from scipy.stats import linregress
 
 from utils.handle_datetimes import bar_date_to_epoch_ms
+
+
+def _date_values_for_json(dates: pd.Series) -> pd.Series:
+    """pandas 1.3.x to_json() fails on tz-aware timestamps in a Series row."""
+    if pd.api.types.is_datetime64_any_dtype(dates):
+        return dates.map(bar_date_to_epoch_ms).rename("date")
+    return dates
 
 
 def get_ema_n(series, period):
@@ -43,6 +51,7 @@ def compute_base_analytics(df):
 
     # making sure the last row in dataframe coincides with the first date in the past period
     df = df.sort_values(by="date")
+    date_values = _date_values_for_json(df["date"])
 
     # MACD
     macd = DataFrame(get_ema_n(df["close"], 12) - get_ema_n(df["close"], 26)).rename(
@@ -72,7 +81,7 @@ def compute_base_analytics(df):
     # assembling the final dataframe
     frames = [
         df["ticker"],
-        df["date"],
+        date_values,
         df["close"],
         df["open"],
         macd,
