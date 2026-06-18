@@ -7,7 +7,9 @@
 from typing import Union, Optional, List
 from datetime import datetime, timedelta
 from pandas import date_range
+import pandas as pd
 import pytz
+import numbers
 
 
 def get_today_utc_date_in_timezone(timezone: str) -> str:
@@ -162,6 +164,26 @@ def get_epoch(date_time: Union[datetime, str]) -> int:
         date_time = datetime.strptime(date_time, "%Y-%m-%d")
     epoch = datetime.utcfromtimestamp(0)
     return (date_time - epoch).total_seconds() * 1000.0
+
+
+def bar_date_to_string(value: Union[str, datetime, pd.Timestamp, numbers.Real]) -> str:
+    """Normalize OHLCV bar date (string, Timestamp, or epoch ms) to YYYY-MM-DD."""
+    if isinstance(value, str):
+        return value[:10]
+    if isinstance(value, pd.Timestamp):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d")
+    return get_date_string(value)
+
+
+def bar_date_to_epoch_ms(value: Union[str, datetime, pd.Timestamp, numbers.Real]) -> float:
+    """Normalize OHLCV bar date to UTC epoch milliseconds."""
+    if isinstance(value, pd.Timestamp):
+        return float(value.value / 1_000_000)
+    if isinstance(value, numbers.Real) and not isinstance(value, bool):
+        return float(value)
+    return float(get_epoch(bar_date_to_string(value)))
 
 
 def get_date_string(epoch: int) -> str:

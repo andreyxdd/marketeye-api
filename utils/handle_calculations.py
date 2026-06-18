@@ -8,7 +8,7 @@ from pandas import DataFrame, concat
 from numpy import where, exp
 from scipy.stats import linregress
 
-from utils.handle_datetimes import get_date_string, get_epoch
+from utils.handle_datetimes import bar_date_to_epoch_ms
 
 
 def get_ema_n(series, period):
@@ -86,21 +86,18 @@ def compute_base_analytics(df):
     # converting to json only the last day (-last row) data and converting NaNs to zeros
     res = loads(concat(frames, join="inner", axis=1).fillna(0).iloc[-1].to_json())
 
-    # ensure the date has the correct format
-    if not isinstance(res["date"], str):
-        date_str = get_date_string(res["date"])
-        res["date"] = get_epoch(date_str)
+    res["date"] = bar_date_to_epoch_ms(df["date"].iloc[-1])
 
+    bounce_changes = one_day_open_close_change["one_day_open_close_change"]
     return {
         **res,
         # bounce array is only for the last 18 trading days (but excluding the requested day)
         "bounce": [
             value * 100
-            for value in one_day_open_close_change.loc[
-                ::-1, "one_day_open_close_change"
-            ]  # converting to python list
-            .cumsum()[::-1]  # cumulative sum of the difference for the given stock
-            .to_list()[-19:-1][::-1]  # only certain range
+            for value in bounce_changes.iloc[::-1]
+            .cumsum()
+            .iloc[::-1]
+            .tolist()[-19:-1][::-1]
         ],
     }
 

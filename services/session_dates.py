@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 import pandas as pd
 
-from utils.handle_datetimes import get_date_string
+from utils.handle_datetimes import bar_date_to_string
 
 
 def session_dates_from_ohlcv(df: pd.DataFrame) -> Tuple[Optional[str], Optional[str]]:
@@ -23,7 +23,7 @@ def session_dates_from_ohlcv(df: pd.DataFrame) -> Tuple[Optional[str], Optional[
     def _as_date_string(value) -> str:
         if isinstance(value, str):
             return value[:10]
-        return get_date_string(value)
+        return bar_date_to_string(value)
 
     unique_dates = [_as_date_string(value) for value in normalized.tolist()]
     last_session = unique_dates[-1]

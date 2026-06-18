@@ -354,7 +354,7 @@ async def ingest_base_analytics_for_market(
     conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET
 ) -> str:
     from core.settings import CRON_INSERT_BATCH_SIZE, CRON_MAX_WORKERS
-    from utils.handle_datetimes import get_date_string, get_epoch
+    from utils.handle_datetimes import bar_date_to_string, get_epoch
 
     market = normalize_market(market)
     tickers_to_insert = await get_missing_tickers(conn, date, market=market)
@@ -399,7 +399,7 @@ async def ingest_base_analytics_for_market(
     for ticker, ticker_base_analytics in zip(tickers_to_insert, results):
         if not ticker_base_analytics:
             continue
-        date_str = get_date_string(ticker_base_analytics["date"])
+        date_str = bar_date_to_string(ticker_base_analytics["date"])
         if date_str != date:
             msg.append(
                 f"services/analytics_service: skipped {ticker} — "
