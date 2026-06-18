@@ -35,6 +35,35 @@ except ImportError:
     import trollius as asyncio
 
 
+_cron_failed = False
+
+
+def reset_cron_failed() -> None:
+    global _cron_failed
+    _cron_failed = False
+
+
+def cron_failed() -> bool:
+    return _cron_failed
+
+
+def _mark_cron_failed() -> None:
+    global _cron_failed
+    _cron_failed = True
+
+
+def _notify_cron_failure(error: Exception, curr_date: str | None = None) -> None:
+    epoch_suffix = get_epoch(curr_date) if curr_date else "n/a"
+    notify_developer(
+        body=(
+            f"Analytics cronjob reported an error: {curr_date} ({epoch_suffix})"
+            f" with error message:\n\n {error}"
+        ),
+        subject="Cronjob Report",
+    )
+    _mark_cron_failed()
+
+
 async def run_crud_ops(date_to_insert: str, date_to_remove: str, market: str, pg_pool=None) -> str:
     await connect_mongo()
     conn = await get_mongo_database()
@@ -151,11 +180,7 @@ async def cronjob(markets=None):
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
         print("Error message:", e)
-        notify_developer(
-            body=f"Analytics cronjob reported an error: {curr_date} ({get_epoch(curr_date) if curr_date else 'n/a'})"
-            + f" with error message:\n\n {e}",
-            subject="Cronjob Report",
-        )
+        _notify_cron_failure(e, curr_date)
     finally:
         await close_postgres()
 
@@ -184,37 +209,48 @@ def _parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+async def run_explicit_dates(dates, markets=None):
+    markets_to_run = markets or list_markets()
+    curr_date = None
+
+    try:
+        await connect_postgres()
+        pg_pool = await get_postgres_pool()
+        for market in markets_to_run:
+            market = normalize_market(market)
+            for curr_date in dates:
+                validate_date_string(curr_date)
+                past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
+                msg = await run_crud_ops(
+                    curr_date,
+                    past_date,
+                    market=market,
+                    pg_pool=pg_pool,
+                )
+                print(msg)
+    except Exception as e:  # pylint: disable=broad-except
+        print("cronjob.py: Something went wrong.")
+        print("Error message:", e)
+        _notify_cron_failure(e, curr_date)
+    finally:
+        await close_postgres()
+
+
+def main():
     args = _parse_args()
 
-    if args.dates:
-        markets = args.markets or list_markets()
-
-        async def _run_explicit_dates():
-            await connect_postgres()
-            try:
-                pg_pool = await get_postgres_pool()
-                for market in markets:
-                    market = normalize_market(market)
-                    for curr_date in args.dates:
-                        validate_date_string(curr_date)
-                        past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
-                        msg = await run_crud_ops(
-                            curr_date,
-                            past_date,
-                            market=market,
-                            pg_pool=pg_pool,
-                        )
-                        print(msg)
-            finally:
-                await close_postgres()
-
-        try:
-            asyncio.run(_run_explicit_dates())
-        except (KeyboardInterrupt, SystemExit):
-            pass
-    else:
-        try:
+    try:
+        if args.dates:
+            markets = args.markets or list_markets()
+            asyncio.run(run_explicit_dates(args.dates, markets=markets))
+        else:
             asyncio.run(cronjob(markets=args.markets))
-        except (KeyboardInterrupt, SystemExit):
-            pass
+    except (KeyboardInterrupt, SystemExit):
+        raise
+
+    if cron_failed():
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

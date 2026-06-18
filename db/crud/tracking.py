@@ -22,6 +22,13 @@ CRITERIA = [
 ]
 
 
+def _format_db_error(context: str, exc: Exception) -> str:
+    message = f"{context}: {exc}"
+    if exc.__cause__ is not None:
+        message += f" (cause: {exc.__cause__})"
+    return message
+
+
 async def put_top_tickers_by_criterion(
     conn: AsyncIOMotorClient,
     date: str,
@@ -61,7 +68,10 @@ async def put_top_tickers_by_criterion(
         return tickers
     except Exception as e:  # pylint: disable=W0703
         raise Exception(
-            "db/crud/tracking.py, def put_top_tickers_by_criterion: reported an error"
+            _format_db_error(
+                "db/crud/tracking.py, def put_top_tickers_by_criterion",
+                e,
+            )
         ) from e
 
 
@@ -80,7 +90,7 @@ async def put_top_tickers(conn: AsyncIOMotorClient, date: str, market: str = DEF
     except Exception as e:  # pylint: disable=W0703
         print("Error message:", e)
         raise Exception(
-            "db/crud/tracking.py, def put_top_tickers: reported an error"
+            _format_db_error("db/crud/tracking.py, def put_top_tickers", e)
         ) from e
 
 
@@ -126,5 +136,8 @@ async def get_analytics_frequencies(
     except Exception as e:
         print("Error message:", e)
         raise Exception(
-            "db/crud/tracking.py, def get_analytics_frequencies reported an error"
+            _format_db_error(
+                "db/crud/tracking.py, def get_analytics_frequencies",
+                e,
+            )
         ) from e
