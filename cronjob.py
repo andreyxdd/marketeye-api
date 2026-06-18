@@ -8,6 +8,7 @@ Raises:
 
 import argparse
 import sys
+from typing import Optional
 
 from time import time
 from core.markets import MARKETS, list_markets, normalize_market
@@ -52,7 +53,7 @@ def _mark_cron_failed() -> None:
     _cron_failed = True
 
 
-def _notify_cron_failure(error: Exception, curr_date: str | None = None) -> None:
+def _notify_cron_failure(error: Exception, curr_date: Optional[str] = None) -> None:
     epoch_suffix = get_epoch(curr_date) if curr_date else "n/a"
     notify_developer(
         body=(
