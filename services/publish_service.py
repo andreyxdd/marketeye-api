@@ -44,7 +44,11 @@ async def publish_day(
 
     market = normalize_market(market)
     tickers_to_publish: set[str] = set()
-    artifacts_written = 0
+    artifact_writes: list[tuple[str, dict]] = []
+
+    if market == "US":
+        market_payload = await analytics_service.get_market_analytics_hot(conn, date)
+        artifact_writes.append((MARKET_ARTIFACT_KEY, market_payload))
 
     for price_band in PRICE_BANDS_TO_PUBLISH:
         by_criteria_payload = await analytics_service.get_analytics_lists_by_criteria_hot(
@@ -54,34 +58,27 @@ async def publish_day(
             price_band=price_band,
             include_mentions=include_mentions,
         )
-        await upsert_artifact(
-            pool,
-            date,
-            build_lists_artifact_key(price_band),
-            by_criteria_payload,
-            market=market,
+        artifact_writes.append(
+            (build_lists_artifact_key(price_band), by_criteria_payload)
         )
-        artifacts_written += 1
 
         for criterion in CRITERIA:
             rows = by_criteria_payload[_criterion_payload_key(criterion)]
             _collect_tickers(rows, tickers_to_publish)
-            await upsert_artifact(
-                pool,
-                date,
-                build_criterion_artifact_key(criterion, price_band),
-                {criterion: rows},
-                market=market,
+            artifact_writes.append(
+                (
+                    build_criterion_artifact_key(criterion, price_band),
+                    {criterion: rows},
+                )
             )
-            artifacts_written += 1
 
-    if market == "US":
-        market_payload = await analytics_service.get_market_analytics_hot(conn, date)
+    artifacts_written = 0
+    for artifact_key, payload in artifact_writes:
         await upsert_artifact(
             pool,
             date,
-            MARKET_ARTIFACT_KEY,
-            market_payload,
+            artifact_key,
+            payload,
             market=market,
         )
         artifacts_written += 1

@@ -178,12 +178,29 @@ async def is_session_published(
         row = await conn.fetchrow(
             """
             SELECT 1
-            FROM published_dates
-            WHERE session_date = $1
-              AND market = $2
+            FROM published_dates d
+            WHERE d.session_date = $1
+              AND d.market = $2
+              AND EXISTS (
+                  SELECT 1
+                  FROM published_tickers t
+                  WHERE t.session_date = d.session_date
+                    AND t.market = d.market
+              )
+              AND (
+                  $2 <> 'US'
+                  OR EXISTS (
+                      SELECT 1
+                      FROM published_artifacts a
+                      WHERE a.session_date = d.session_date
+                        AND a.market = d.market
+                        AND a.artifact_key = $3
+                  )
+              )
             """,
             _to_date(date),
             market,
+            MARKET_ARTIFACT_KEY,
         )
     return row is not None
 

@@ -34,6 +34,7 @@ from core.settings import (
     MI_VIX_CODE,
     MI_VIX_DATASET,
     YAHOO_BASE_FCF_URL,
+    DEFAULT_HEADERS,
 )
 from core.markets import DEFAULT_MARKET, normalize_market
 
@@ -50,6 +51,49 @@ _ticker_universe_cache: dict[tuple[str, str], list] = {}
 def clear_ticker_universe_cache() -> None:
     """Clear in-process ticker universe memoization (call at cron start)."""
     _ticker_universe_cache.clear()
+
+
+MI_REQUEST_TIMEOUT_SECONDS = 30
+MI_MAX_ATTEMPTS = 3
+
+
+def _market_insider_headers() -> dict:
+    return {key: value for key, value in DEFAULT_HEADERS.items() if value}
+
+
+def _market_insider_request(url: str, label: str):
+    """GET Market Insider with stable headers and retry on transient failures."""
+    headers = _market_insider_headers()
+    last_error: Optional[Exception] = None
+
+    for attempt in range(1, MI_MAX_ATTEMPTS + 1):
+        try:
+            response = get(url, headers=headers, timeout=MI_REQUEST_TIMEOUT_SECONDS)
+            if response.status_code == 200:
+                return response
+            if response.status_code >= 500 and attempt < MI_MAX_ATTEMPTS:
+                sleep(2**attempt)
+                continue
+            raise Exception(
+                "Requests to the external data source for the market analytics failed "
+                + f"with the code {response.status_code} ({label}). \nRequest string is: {url}"
+            )
+        except RequestException as exc:
+            last_error = exc
+            if attempt < MI_MAX_ATTEMPTS:
+                sleep(2**attempt)
+                continue
+            raise Exception(
+                "Requests to the external data source for the market analytics failed "
+                + f"({label}). \nRequest string is: {url}"
+            ) from exc
+
+    if last_error is not None:
+        raise last_error
+    raise Exception(
+        "Requests to the external data source for the market analytics failed "
+        + f"({label}). \nRequest string is: {url}"
+    )
 
 @cache.use_cache()
 def get_ticker_analytics(
@@ -194,13 +238,7 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
             + f"{MI_SP500_DATASET}"
         )
 
-        response = get(request, headers=Headers(headers=True).generate())
-
-        if response.status_code != 200:
-            raise Exception(
-                "Requests to the external data source for the market analytics failed"
-                + f"with the code {response.status_code} (S&P). \nRequest string is: {request}"
-            )
+        response = _market_insider_request(request, "S&P")
 
         return response.json()[0]["Close"]  # only value for the provided date
     except Exception as e:
@@ -248,13 +286,7 @@ def get_market_vixs(
             + f"{MI_VIX_DATASET}"
         )
 
-        response = get(request, headers=Headers(headers=True).generate())
-
-        if response.status_code != 200:
-            raise Exception(
-                "Requests to the external data source for the market analytics failed"
-                + f"with the code {response.status_code} (VIX). \nRequest string is: {request}"
-            )
+        response = _market_insider_request(request, "VIX")
 
         # getting VIXs and n-trading days average (- actualOffset)
         json_response = response.json()
