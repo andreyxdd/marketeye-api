@@ -170,6 +170,24 @@ async def get_published_dates(
     ]
 
 
+async def is_session_published(
+    pool: asyncpg.Pool, date: str, market: str = DEFAULT_MARKET
+) -> bool:
+    market = normalize_market(market)
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT 1
+            FROM published_dates
+            WHERE session_date = $1
+              AND market = $2
+            """,
+            _to_date(date),
+            market,
+        )
+    return row is not None
+
+
 async def get_latest_published_date(
     pool: asyncpg.Pool, market: str = DEFAULT_MARKET
 ) -> Optional[str]:

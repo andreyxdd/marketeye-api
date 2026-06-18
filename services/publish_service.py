@@ -36,6 +36,7 @@ async def publish_day(
     pool: asyncpg.Pool,
     date: str,
     market: str = DEFAULT_MARKET,
+    include_mentions: bool = False,
 ) -> dict:
     """Materialize read-model artifacts for single market/date into PostgreSQL."""
     if pool is None:
@@ -47,7 +48,11 @@ async def publish_day(
 
     for price_band in PRICE_BANDS_TO_PUBLISH:
         by_criteria_payload = await analytics_service.get_analytics_lists_by_criteria_hot(
-            conn, date, market=market, price_band=price_band
+            conn,
+            date,
+            market=market,
+            price_band=price_band,
+            include_mentions=include_mentions,
         )
         await upsert_artifact(
             pool,
@@ -83,7 +88,11 @@ async def publish_day(
 
     for ticker in sorted(tickers_to_publish):
         ticker_payload = await analytics_service.get_ticker_analytics_response_hot(
-            conn, date, ticker, market=market
+            conn,
+            date,
+            ticker,
+            market=market,
+            include_mentions=include_mentions,
         )
         await upsert_ticker_payload(pool, date, ticker, ticker_payload, market=market)
 

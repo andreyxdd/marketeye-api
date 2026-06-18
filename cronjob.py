@@ -11,11 +11,12 @@ import sys
 
 from time import time
 from core.markets import MARKETS, list_markets, normalize_market
+from core.settings import MONGO_HOT_WINDOW_DAYS
 from db.crud.tracking import put_top_tickers
+from db.crud.published_archive import is_session_published
+from db.crud.mongo_storage import prune_mongo_session_date
 from db.mongodb import connect as connect_mongo, get_database as get_mongo_database, close as close_mongo
 from db.postgres import connect as connect_postgres, get_pool as get_postgres_pool, close as close_postgres
-from db.crud.analytics import remove_base_analytics
-from db.crud.scrapes import remove_scrapes
 from utils.handle_telegram import notify_developer
 from utils.handle_datetimes import (
     get_past_date,
@@ -26,6 +27,7 @@ from utils.handle_external_apis import clear_ticker_universe_cache
 import services.analytics_service as analytics_service
 import services.publish_service as publish_service
 from services.cron_dates import resolve_ingest_dates_for_market
+import scripts.mongo_storage_monitor as mongo_storage_monitor
 
 try:
     import asyncio
@@ -37,6 +39,11 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str, market: str, pg
     await connect_mongo()
     conn = await get_mongo_database()
     try:
+        if pg_pool is not None and await is_session_published(
+            pg_pool, date_to_remove, market
+        ):
+            await prune_mongo_session_date(conn, date_to_remove, market)
+
         msg_compute = await analytics_service.ingest_base_analytics_for_market(
             conn, date_to_insert, market=market
         )
@@ -44,12 +51,16 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str, market: str, pg
 
         try:
             publish_result = await publish_service.publish_day(
-                conn, pg_pool, date_to_insert, market=market
+                conn,
+                pg_pool,
+                date_to_insert,
+                market=market,
+                include_mentions=False,
             )
         except Exception as publish_error:  # pylint: disable=broad-except
             notify_developer(
                 body=(
-                    "Analytics cronjob publish gate failed; skipped Mongo prune.\n\n"
+                    "Analytics cronjob publish gate failed.\n\n"
                     f"market={market}\n"
                     f"date_to_insert={date_to_insert}\n"
                     f"date_to_remove={date_to_remove}\n"
@@ -62,13 +73,8 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str, market: str, pg
                 + "\n\n"
                 + msg_track
                 + "\n\n"
-                + "publish_service.publish_day failed; skipped remove_base_analytics"
+                + "publish_service.publish_day failed"
             )
-
-        await remove_base_analytics(conn, date_to_remove, market=market)
-        await remove_base_analytics(conn, date_to_remove, "tracking", market=market)
-        if market == "US":
-            await remove_scrapes(conn, date_to_remove)
 
         return (
             msg_compute
@@ -100,6 +106,7 @@ async def cronjob(markets=None):
     try:
         await connect_postgres()
         pg_pool = await get_postgres_pool()
+        await mongo_storage_monitor.run_monitor()
         for market in markets_to_run:
             market_start = time()
             market = normalize_market(market)
@@ -129,7 +136,7 @@ async def cronjob(markets=None):
             for curr_date in target_dates:
                 date_start = time()
                 validate_date_string(curr_date)
-                past_date = get_past_date(91, curr_date)
+                past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
                 msg = await run_crud_ops(curr_date, past_date, market=market, pg_pool=pg_pool)
                 print(msg)
                 print(
@@ -191,7 +198,7 @@ if __name__ == "__main__":
                     market = normalize_market(market)
                     for curr_date in args.dates:
                         validate_date_string(curr_date)
-                        past_date = get_past_date(91, curr_date)
+                        past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
                         msg = await run_crud_ops(
                             curr_date,
                             past_date,

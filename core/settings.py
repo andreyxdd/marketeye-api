@@ -28,7 +28,14 @@ REDIS_URI = os.getenv("REDIS_URI") or os.getenv("REDISCLOUD_URL")
 # PostgreSQL read-model configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 PG_STORAGE_LIMIT_BYTES = int(os.getenv("PG_STORAGE_LIMIT_BYTES", "10737418240"))
-MONGO_HOT_WINDOW_DAYS = int(os.getenv("MONGO_HOT_WINDOW_DAYS", "91"))
+MONGO_HOT_WINDOW_DAYS = int(os.getenv("MONGO_HOT_WINDOW_DAYS", "70"))
+MONGO_STORAGE_LIMIT_BYTES = int(os.getenv("MONGO_STORAGE_LIMIT_BYTES", "536870912"))
+MONGO_STORAGE_PRUNE_TRIGGER_RATIO = float(
+    os.getenv("MONGO_STORAGE_PRUNE_TRIGGER_RATIO", "0.85")
+)
+MONGO_STORAGE_PRUNE_TARGET_RATIO = float(
+    os.getenv("MONGO_STORAGE_PRUNE_TARGET_RATIO", "0.70")
+)
 
 # API key to access endpoints
 API_KEY = os.getenv("API_KEY")

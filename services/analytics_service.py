@@ -1,6 +1,7 @@
 """Analytics orchestration — routes and cron delegate here."""
 
 import asyncio
+from functools import partial
 from typing import Optional
 
 from db.mongodb import AsyncIOMotorClient
@@ -48,16 +49,22 @@ async def enrich_ticker_row(
     base_row: dict,
     criterion: str,
     market: str = DEFAULT_MARKET,
+    include_mentions: bool = True,
 ) -> dict:
     market = normalize_market(market)
     ticker = base_row["ticker"]
     date = get_date_string(base_row["date"])
 
     if market == "US":
+        mentions = (
+            await get_mentions(conn, ticker, date)
+            if include_mentions
+            else _to_stub_mentions()
+        )
         return {
             **base_row,
             **external_get_ticker_extra_analytics(ticker, date, market=market),
-            **await get_mentions(conn, ticker, date),
+            **mentions,
             "fcf": get_quarterly_free_cash_flow_polygon(ticker, get_last_quater_date(date)),
             "frequencies": await get_analytics_frequencies(
                 conn, date, criterion, ticker, market=market
@@ -105,14 +112,20 @@ async def get_ticker_analytics_response_hot(
     ticker: str,
     market: str = DEFAULT_MARKET,
     criterion: Optional[str] = None,
+    include_mentions: bool = True,
 ) -> dict:
     market = normalize_market(market)
     last_quater_limit_date = get_last_quater_date(date)
 
     if market == "US":
+        mentions = (
+            await get_mentions(conn, ticker, date)
+            if include_mentions
+            else _to_stub_mentions()
+        )
         return {
             **external_get_ticker_analytics(ticker, date, 45, 15, market=market),
-            **await get_mentions(conn, ticker, date),
+            **mentions,
             "fcf": get_quarterly_free_cash_flow_polygon(ticker, last_quater_limit_date),
             "frequencies": await get_analytics_frequencies(
                 conn, date, criterion, ticker, market=market
@@ -194,6 +207,7 @@ async def get_analytics_sorted_by_hot(
     market: str = DEFAULT_MARKET,
     lim: Optional[int] = 20,
     price_band: Optional[str] = None,
+    include_mentions: bool = True,
 ) -> list:
     min_close = None
     max_close = None
@@ -201,13 +215,14 @@ async def get_analytics_sorted_by_hot(
     if price_band is not None:
         min_close, max_close = resolve_price_band(price_band)
         include_close = True
+    enrich_fn = partial(enrich_ticker_row, include_mentions=include_mentions)
     return await crud_get_analytics_sorted_by(
         conn,
         date,
         criterion,
         lim,
         market=market,
-        enrich_fn=enrich_ticker_row,
+        enrich_fn=enrich_fn,
         min_close=min_close,
         max_close=max_close,
         include_close=include_close,
@@ -251,23 +266,49 @@ async def get_analytics_lists_by_criteria_hot(
     date: str,
     market: str = DEFAULT_MARKET,
     price_band: Optional[str] = None,
+    include_mentions: bool = True,
 ) -> dict:
     market = normalize_market(market)
     futures = [
         get_analytics_sorted_by_hot(
-            conn, date, "one_day_avg_mf", market=market, price_band=price_band
+            conn,
+            date,
+            "one_day_avg_mf",
+            market=market,
+            price_band=price_band,
+            include_mentions=include_mentions,
         ),
         get_analytics_sorted_by_hot(
-            conn, date, "three_day_avg_mf", market=market, price_band=price_band
+            conn,
+            date,
+            "three_day_avg_mf",
+            market=market,
+            price_band=price_band,
+            include_mentions=include_mentions,
         ),
         get_analytics_sorted_by_hot(
-            conn, date, "volume", market=market, price_band=price_band
+            conn,
+            date,
+            "volume",
+            market=market,
+            price_band=price_band,
+            include_mentions=include_mentions,
         ),
         get_analytics_sorted_by_hot(
-            conn, date, "three_day_avg_volume", market=market, price_band=price_band
+            conn,
+            date,
+            "three_day_avg_volume",
+            market=market,
+            price_band=price_band,
+            include_mentions=include_mentions,
         ),
         get_analytics_sorted_by_hot(
-            conn, date, "macd", market=market, price_band=price_band
+            conn,
+            date,
+            "macd",
+            market=market,
+            price_band=price_band,
+            include_mentions=include_mentions,
         ),
     ]
     res = await asyncio.gather(*futures)

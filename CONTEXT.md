@@ -4,10 +4,11 @@
 |------|---------|
 | **Market** | Trading venue code: `US` or `TO` (Toronto Stock Exchange via EODHD) |
 | **AnalyticsService** | Orchestration module for ticker/list/market routes and cron ingest |
-| **Calc workspace** | MongoDB hot compute store; rolling delete after successful publish (91-day window) |
+| **Calc workspace** | MongoDB hot compute store; rolling delete before ingest for published dates outside the 70-day window |
 | **Postgres serving archive** | Hybrid read-model (`published_dates`, `published_artifacts`, `published_tickers`) used for cold reads |
 | **Storage prune** | At PostgreSQL usage >=85%, alert developer and delete oldest `published_dates` until <=70% (no Drive cold archive) |
-| **Enrichment policy** | Per-market rules for attaching extras (US: FCF/mentions; TO: OHLCV indicators only) |
+| **Mongo storage guard** | At Mongo usage >=85%, alert developer and delete Mongo hot data for oldest published session (all markets) until <=70%; never deletes Postgres rows |
+| **Enrichment policy** | Per-market rules for attaching extras (US: FCF/mentions on hot reads; TO: OHLCV indicators only). Cron publish stubs US mentions to zero |
 | **FixtureTradingDay** | Frozen session date for tests (`2024-06-03`) |
 | **Fixture tickers** | Fixed US symbol set in Mongo seed (50 large-cap names) |
 | **Tier A** | HTTP e2e — client routes, Mongo reads, real CVI aggregation |
