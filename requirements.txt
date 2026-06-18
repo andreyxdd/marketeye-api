@@ -23,6 +23,8 @@ bs4
 fake_headers
 asyncstdlib
 asyncpg
+psycopg[binary]
+psycopg-pool
 redis
 Jinja2
 nasdaq-data-link

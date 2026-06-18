@@ -11,6 +11,7 @@ os.environ["MONGO_URI"] = "mongodb://localhost:27017"
 os.environ["REDIS_URI"] = "redis://localhost:6379/1"
 os.environ["MONGO_DB_NAME"] = "marketeye_test"
 os.environ["DATABASE_URL"] = "postgresql://marketeye:marketeye@localhost:5432/marketeye_test"
+os.environ["OHLCV_CACHE_DISABLED"] = "1"
 
 from tests.helpers.constants import FIXTURE_API_KEY
 

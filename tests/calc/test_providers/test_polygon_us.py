@@ -37,3 +37,45 @@ def test_polygon_us_fetch_ohlcv_from_fixtures(polygon_us_provider, mock_polygon_
     payload = json.loads((OHLCV_DIR / "AAPL.json").read_text(encoding="utf-8"))
     assert len(df) >= 50
     assert len(df) == len(payload["results"])
+
+
+def test_polygon_us_cache_hit_skips_http(monkeypatch, postgres_pool):
+    del postgres_pool
+    monkeypatch.delenv("OHLCV_CACHE_DISABLED", raising=False)
+    import core.settings as settings_module
+
+    monkeypatch.setattr(settings_module, "OHLCV_CACHE_DISABLED", False)
+
+    from datetime import date, timedelta
+
+    from db.crud.ohlcv_bars import BarRow, upsert_bars
+
+    end = date.fromisoformat(FIXTURE_DATE)
+    start = end - timedelta(days=85)
+    rows = [
+        BarRow(
+            session_date=start + timedelta(days=offset),
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.5,
+            volume=1_000_000,
+        )
+        for offset in range(60)
+    ]
+    upsert_bars("US", "AAPL", rows)
+
+    calls = {"http": 0}
+
+    def fail_http(self, url, *args, **kwargs):
+        del self, url, args, kwargs
+        calls["http"] += 1
+        raise AssertionError("HTTP should not be called on cache hit")
+
+    monkeypatch.setattr("providers.polygon_us.PolygonUSProvider._http_get", fail_http)
+
+    provider = PolygonUSProvider()
+    df = provider.fetch_ohlcv("AAPL", FIXTURE_DATE, offset_n_days=85, actual_offset_n_days=50)
+    assert not df.empty
+    assert len(df) >= 50
+    assert calls["http"] == 0

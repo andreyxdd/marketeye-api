@@ -13,6 +13,7 @@ from providers.analytics_mixin import (
     base_analytics_from_ohlcv_utc,
     extra_analytics_from_ohlcv,
 )
+from providers.ohlcv_cache_mixin import OhlcvCacheMixin
 from services.session_dates import session_dates_from_ohlcv
 
 EODHD_BASE_URL = "https://eodhd.com/api"
@@ -20,7 +21,7 @@ EODHD_BASE_URL = "https://eodhd.com/api"
 _thread_local = threading.local()
 
 
-class EodhdTOProvider:
+class EodhdTOProvider(OhlcvCacheMixin):
     market = "TO"
     probe_ticker = PROBE_TICKER_TO
 
@@ -46,7 +47,7 @@ class EodhdTOProvider:
             f"&period=d&fmt=json&api_token={EODHD_API_KEY}"
         )
 
-    def _fetch_eod_dataframe(
+    def _fetch_ohlcv_from_api(
         self,
         ticker: str,
         date: str,
@@ -101,6 +102,22 @@ class EodhdTOProvider:
         df = df[["date", "open", "high", "low", "close", "volume"]]
         df["ticker"] = ticker.upper()
         return df
+
+    def _fetch_eod_dataframe(
+        self,
+        ticker: str,
+        date: str,
+        offset_n_days: int,
+        actual_offset_n_days: int,
+        utc_dates: bool,
+    ) -> pd.DataFrame:
+        return self._load_ohlcv_window(
+            ticker,
+            date,
+            offset_n_days,
+            actual_offset_n_days,
+            utc_dates=utc_dates,
+        )
 
     def fetch_ohlcv(
         self,

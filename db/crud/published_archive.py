@@ -7,7 +7,7 @@ from typing import Optional
 import asyncpg
 
 from core.markets import DEFAULT_MARKET, normalize_market
-from core.settings import PG_STORAGE_LIMIT_BYTES
+from core.settings import OHLCV_LOOKBACK_BUFFER_DAYS, PG_STORAGE_LIMIT_BYTES
 
 
 def _decode_payload(payload):
@@ -236,19 +236,43 @@ async def get_storage_ratio(
 
 
 async def prune_oldest_session_date(pool: asyncpg.Pool) -> Optional[str]:
+    from datetime import timedelta
+
     async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            """
-            SELECT session_date
-            FROM published_dates
-            ORDER BY session_date ASC
-            LIMIT 1
-            """
+        latest_published = await conn.fetchval(
+            "SELECT MAX(session_date) FROM published_dates"
         )
-        if row is None:
+        oldest_published = await conn.fetchval(
+            "SELECT MIN(session_date) FROM published_dates"
+        )
+        oldest_ohlcv = await conn.fetchval(
+            "SELECT MIN(session_date) FROM ohlcv_bars"
+        )
+
+        if oldest_published is None and oldest_ohlcv is None:
             return None
 
-        session_date = row["session_date"]
+        candidates = [d for d in (oldest_published, oldest_ohlcv) if d is not None]
+        candidate = min(candidates)
+
+        if latest_published is None:
+            return None
+
+        lookback_floor = latest_published - timedelta(days=OHLCV_LOOKBACK_BUFFER_DAYS)
+
+        if candidate >= lookback_floor:
+            if oldest_published is None:
+                return None
+            session_date = oldest_published
+            await conn.execute(
+                "DELETE FROM published_dates WHERE session_date = $1", session_date
+            )
+            return session_date.isoformat()
+
+        session_date = candidate
+        await conn.execute(
+            "DELETE FROM ohlcv_bars WHERE session_date = $1", session_date
+        )
         await conn.execute(
             "DELETE FROM published_dates WHERE session_date = $1", session_date
         )
@@ -262,7 +286,8 @@ async def truncate_published_tables(pool: asyncpg.Pool):
             TRUNCATE TABLE
                 published_tickers,
                 published_artifacts,
-                published_dates
+                published_dates,
+                ohlcv_bars
             RESTART IDENTITY CASCADE
             """
         )

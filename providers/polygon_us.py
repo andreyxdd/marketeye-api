@@ -13,6 +13,7 @@ from providers.analytics_mixin import (
     base_analytics_from_ohlcv_utc,
     extra_analytics_from_ohlcv,
 )
+from providers.ohlcv_cache_mixin import OhlcvCacheMixin
 from services.session_dates import session_dates_from_ohlcv
 
 POLYGON_SYMBOL_ALIASES = {
@@ -22,7 +23,7 @@ POLYGON_SYMBOL_ALIASES = {
 _thread_local = threading.local()
 
 
-class PolygonUSProvider:
+class PolygonUSProvider(OhlcvCacheMixin):
     market = "US"
     probe_ticker = PROBE_TICKER_US
 
@@ -38,6 +39,9 @@ class PolygonUSProvider:
 
     def _polygon_symbol(self, ticker: str) -> str:
         return POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
+
+    def _normalize_cache_ticker(self, ticker: str) -> str:
+        return self._polygon_symbol(ticker)
 
     def _polygon_aggs_url(
         self, ticker: str, start_date: pd.Timestamp, end_date: pd.Timestamp
@@ -76,12 +80,13 @@ class PolygonUSProvider:
                 time.sleep(wait)
         raise last_error
 
-    def fetch_ohlcv(
+    def _fetch_ohlcv_from_api(
         self,
         ticker: str,
         date: str,
-        offset_n_days: Optional[int] = 85,
-        actual_offset_n_days: Optional[int] = 50,
+        offset_n_days: int,
+        actual_offset_n_days: int,
+        utc_dates: bool,
     ) -> pd.DataFrame:
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
@@ -98,19 +103,47 @@ class PolygonUSProvider:
             return pd.DataFrame()
 
         df = pd.DataFrame(results)
-        df["date"] = pd.to_datetime(df["t"], unit="ms").dt.strftime("%Y-%m-%d")
-        df = df.rename(
-            columns={
-                "o": "open",
-                "h": "high",
-                "l": "low",
-                "c": "close",
-                "v": "volume",
-            }
-        )
+        if utc_dates:
+            df["t"] = pd.to_datetime(df["t"], unit="ms", utc=True)
+            df = df.rename(
+                columns={
+                    "t": "date",
+                    "o": "open",
+                    "h": "high",
+                    "l": "low",
+                    "c": "close",
+                    "v": "volume",
+                }
+            )
+        else:
+            df["date"] = pd.to_datetime(df["t"], unit="ms").dt.strftime("%Y-%m-%d")
+            df = df.rename(
+                columns={
+                    "o": "open",
+                    "h": "high",
+                    "l": "low",
+                    "c": "close",
+                    "v": "volume",
+                }
+            )
         df = df[["date", "open", "high", "low", "close", "volume"]]
         df["ticker"] = ticker.upper()
         return df
+
+    def fetch_ohlcv(
+        self,
+        ticker: str,
+        date: str,
+        offset_n_days: Optional[int] = 85,
+        actual_offset_n_days: Optional[int] = 50,
+    ) -> pd.DataFrame:
+        return self._load_ohlcv_window(
+            ticker,
+            date,
+            offset_n_days,
+            actual_offset_n_days,
+            utc_dates=False,
+        )
 
     def fetch_ohlcv_utc(
         self,
@@ -120,35 +153,13 @@ class PolygonUSProvider:
         actual_offset_n_days: Optional[int] = 50,
     ) -> pd.DataFrame:
         """OHLCV with UTC-aware timestamps (pipeline insert path)."""
-        end_date = pd.to_datetime(date)
-        start_date = end_date - pd.Timedelta(days=offset_n_days)
-        url = self._polygon_aggs_url(ticker, start_date, end_date)
-
-        data = self._request_json(url)
-
-        results = data.get("results", [])
-        if not results or len(results) < actual_offset_n_days:
-            print(
-                f"providers/polygon_us.py fetch_ohlcv_utc: not enough EOD records "
-                f"({len(results)}) for ticker {ticker}"
-            )
-            return pd.DataFrame()
-
-        df = pd.DataFrame(results)
-        df["t"] = pd.to_datetime(df["t"], unit="ms", utc=True)
-        df = df.rename(
-            columns={
-                "t": "date",
-                "o": "open",
-                "h": "high",
-                "l": "low",
-                "c": "close",
-                "v": "volume",
-            }
+        return self._load_ohlcv_window(
+            ticker,
+            date,
+            offset_n_days,
+            actual_offset_n_days,
+            utc_dates=True,
         )
-        df = df[["date", "open", "high", "low", "close", "volume"]]
-        df["ticker"] = ticker.upper()
-        return df
 
     def fetch_ticker_extra_analytics(
         self,
