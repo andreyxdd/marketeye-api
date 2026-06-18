@@ -175,7 +175,9 @@ def get_date_string(epoch: int) -> str:
     Returns:
         str: date-string. Fromat is YYYY-MM-DD.
     """
-    return datetime.strftime(datetime.utcfromtimestamp(epoch / 1000), "%Y-%m-%d")
+    return datetime.strftime(
+        datetime.utcfromtimestamp(float(epoch) / 1000.0), "%Y-%m-%d"
+    )
 
 
 def get_market_insider_url_string(date_past: str, date_future: str) -> str:
