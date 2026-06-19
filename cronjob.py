@@ -8,6 +8,7 @@ Raises:
 
 import argparse
 import sys
+from dataclasses import dataclass, field
 from typing import Optional
 
 from time import time
@@ -39,6 +40,49 @@ except ImportError:
 _cron_failed = False
 
 
+@dataclass
+class CronPhaseError:
+    market: str
+    date: str
+    phase: str
+    error: str
+
+
+@dataclass
+class CronRunReport:
+    errors: list[CronPhaseError] = field(default_factory=list)
+
+    def record(self, market: str, date: str, phase: str, error: Exception | str) -> None:
+        message = str(error)
+        self.errors.append(
+            CronPhaseError(market=market, date=date, phase=phase, error=message)
+        )
+        _mark_cron_failed()
+        notify_developer(
+            body=(
+                "Analytics cronjob phase failed.\n\n"
+                f"market={market}\n"
+                f"date={date}\n"
+                f"phase={phase}\n"
+                f"error={message}"
+            ),
+            subject="Cronjob Report",
+        )
+
+    def has_errors(self) -> bool:
+        return bool(self.errors)
+
+    def summary_text(self) -> str:
+        if not self.errors:
+            return "Cron run completed with no recorded phase errors."
+        lines = ["Cron run completed with errors:"]
+        for item in self.errors:
+            lines.append(
+                f"- {item.market} {item.date} [{item.phase}]: {item.error}"
+            )
+        return "\n".join(lines)
+
+
 def reset_cron_failed() -> None:
     global _cron_failed
     _cron_failed = False
@@ -65,19 +109,59 @@ def _notify_cron_failure(error: Exception, curr_date: Optional[str] = None) -> N
     _mark_cron_failed()
 
 
-async def run_crud_ops(date_to_insert: str, date_to_remove: str, market: str, pg_pool=None) -> str:
+def _format_publish_message(publish_result: dict) -> str:
+    base = (
+        "publish_service.publish_day:"
+        f" artifacts={publish_result['artifacts_written']},"
+        f" tickers={publish_result['tickers_written']}"
+    )
+    skipped = publish_result.get("skipped_artifacts") or []
+    if skipped:
+        base += f", skipped={','.join(skipped)}"
+    return base
+
+
+async def run_crud_ops(
+    date_to_insert: str,
+    date_to_remove: str,
+    market: str,
+    pg_pool=None,
+    report: Optional[CronRunReport] = None,
+) -> str:
+    market = normalize_market(market)
+    report = report or CronRunReport()
+    msgs: list[str] = []
+    ingest_ok = False
+
     await connect_mongo()
     conn = await get_mongo_database()
     try:
         if pg_pool is not None and await is_session_published(
             pg_pool, date_to_remove, market
         ):
-            await prune_mongo_session_date(conn, date_to_remove, market)
+            try:
+                await prune_mongo_session_date(conn, date_to_remove, market)
+            except Exception as prune_error:  # pylint: disable=broad-except
+                report.record(market, date_to_insert, "prune", prune_error)
 
-        msg_compute = await analytics_service.ingest_base_analytics_for_market(
-            conn, date_to_insert, market=market
-        )
-        msg_track = await put_top_tickers(conn, date_to_insert, market=market)
+        try:
+            msg_compute = await analytics_service.ingest_base_analytics_for_market(
+                conn, date_to_insert, market=market
+            )
+            msgs.append(msg_compute)
+            ingest_ok = True
+        except Exception as ingest_error:  # pylint: disable=broad-except
+            report.record(market, date_to_insert, "ingest", ingest_error)
+            return "\n\n".join(msgs)
+
+        try:
+            msg_track = await put_top_tickers(conn, date_to_insert, market=market)
+            msgs.append(msg_track)
+        except Exception as track_error:  # pylint: disable=broad-except
+            report.record(market, date_to_insert, "track", track_error)
+
+        if not ingest_ok:
+            return "\n\n".join(msgs)
 
         try:
             publish_result = await publish_service.publish_day(
@@ -87,50 +171,43 @@ async def run_crud_ops(date_to_insert: str, date_to_remove: str, market: str, pg
                 market=market,
                 include_mentions=False,
             )
+            for phase_error in publish_result.get("phase_errors") or []:
+                report.record(market, date_to_insert, "market_analytics", phase_error)
+            msgs.append(_format_publish_message(publish_result))
         except Exception as publish_error:  # pylint: disable=broad-except
-            notify_developer(
-                body=(
-                    "Analytics cronjob publish gate failed.\n\n"
-                    f"market={market}\n"
-                    f"date_to_insert={date_to_insert}\n"
-                    f"date_to_remove={date_to_remove}\n"
-                    f"error={publish_error}"
-                ),
-                subject="Cronjob Report",
-            )
-            return (
-                msg_compute
-                + "\n\n"
-                + msg_track
-                + "\n\n"
-                + "publish_service.publish_day failed"
-            )
+            report.record(market, date_to_insert, "publish", publish_error)
+            msgs.append("publish_service.publish_day failed")
 
-        return (
-            msg_compute
-            + "\n\n"
-            + msg_track
-            + "\n\n"
-            + (
-                "publish_service.publish_day:"
-                f" artifacts={publish_result['artifacts_written']},"
-                f" tickers={publish_result['tickers_written']}"
-            )
-        )
+        return "\n\n".join(msgs)
     finally:
         await close_mongo()
 
 
-async def cronjob(markets=None):
+async def _finalize_cron_run(report: CronRunReport, start_time: float, market_timings: list):
+    total_elapsed = round(time() - start_time, 2)
+    print(f"\nAnalytics cronjob finished on {total_elapsed} seconds")
+    if market_timings:
+        print("Per-market summary:")
+        for market, elapsed in market_timings:
+            print(f"  {market}: {elapsed}s")
+    print(report.summary_text())
+    if report.has_errors():
+        notify_developer(
+            body=report.summary_text(),
+            subject="Cronjob Report",
+        )
+    print("--------------------------------------------------------")
+
+
+async def cronjob(markets=None, report: Optional[CronRunReport] = None):
     print("\n--------------------------------------------------------")
     print("Running analytics cronjob ...\n")
     start_time = time()
+    report = report or CronRunReport()
     clear_ticker_universe_cache()
 
     markets_to_run = markets or list_markets()
-    curr_date = None
     pg_pool = None
-
     market_timings = []
 
     try:
@@ -150,13 +227,7 @@ async def cronjob(markets=None):
                 print(
                     f"cronjob.py: session probe failed for {market} ({tz}): {probe_error}"
                 )
-                notify_developer(
-                    body=(
-                        f"Analytics cronjob session probe failed for {market} ({tz})"
-                        f" with error message:\n\n {probe_error}"
-                    ),
-                    subject="Cronjob Report",
-                )
+                report.record(market, "n/a", "session_probe", probe_error)
                 continue
             finally:
                 await close_mongo()
@@ -167,8 +238,19 @@ async def cronjob(markets=None):
                 date_start = time()
                 validate_date_string(curr_date)
                 past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
-                msg = await run_crud_ops(curr_date, past_date, market=market, pg_pool=pg_pool)
-                print(msg)
+                try:
+                    msg = await run_crud_ops(
+                        curr_date,
+                        past_date,
+                        market=market,
+                        pg_pool=pg_pool,
+                        report=report,
+                    )
+                except Exception as ops_error:  # pylint: disable=broad-except
+                    report.record(market, curr_date, "run_crud_ops", ops_error)
+                    print(f"run_crud_ops failed for {market} {curr_date}: {ops_error}")
+                else:
+                    print(msg)
                 print(
                     f"Market {market} date {curr_date} finished in "
                     f"{round(time() - date_start, 2)} seconds"
@@ -181,17 +263,11 @@ async def cronjob(markets=None):
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
         print("Error message:", e)
-        _notify_cron_failure(e, curr_date)
+        _notify_cron_failure(e)
     finally:
         await close_postgres()
 
-    total_elapsed = round(time() - start_time, 2)
-    print(f"\nAnalytics cronjob finished on {total_elapsed} seconds")
-    if market_timings:
-        print("Per-market summary:")
-        for market, elapsed in market_timings:
-            print(f"  {market}: {elapsed}s")
-    print("--------------------------------------------------------")
+    await _finalize_cron_run(report, start_time, market_timings)
 
 
 def _parse_args():
@@ -210,9 +286,10 @@ def _parse_args():
     return parser.parse_args()
 
 
-async def run_explicit_dates(dates, markets=None):
+async def run_explicit_dates(dates, markets=None, report: Optional[CronRunReport] = None):
     markets_to_run = markets or list_markets()
-    curr_date = None
+    report = report or CronRunReport()
+    start_time = time()
 
     try:
         await connect_postgres()
@@ -222,19 +299,27 @@ async def run_explicit_dates(dates, markets=None):
             for curr_date in dates:
                 validate_date_string(curr_date)
                 past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
-                msg = await run_crud_ops(
-                    curr_date,
-                    past_date,
-                    market=market,
-                    pg_pool=pg_pool,
-                )
-                print(msg)
+                try:
+                    msg = await run_crud_ops(
+                        curr_date,
+                        past_date,
+                        market=market,
+                        pg_pool=pg_pool,
+                        report=report,
+                    )
+                except Exception as ops_error:  # pylint: disable=broad-except
+                    report.record(market, curr_date, "run_crud_ops", ops_error)
+                    print(f"run_crud_ops failed for {market} {curr_date}: {ops_error}")
+                else:
+                    print(msg)
     except Exception as e:  # pylint: disable=broad-except
         print("cronjob.py: Something went wrong.")
         print("Error message:", e)
-        _notify_cron_failure(e, curr_date)
+        _notify_cron_failure(e)
     finally:
         await close_postgres()
+
+    await _finalize_cron_run(report, start_time, [])
 
 
 def main():

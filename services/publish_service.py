@@ -45,10 +45,16 @@ async def publish_day(
     market = normalize_market(market)
     tickers_to_publish: set[str] = set()
     artifact_writes: list[tuple[str, dict]] = []
+    skipped_artifacts: list[str] = []
+    phase_errors: list[str] = []
 
     if market == "US":
-        market_payload = await analytics_service.get_market_analytics_hot(conn, date)
-        artifact_writes.append((MARKET_ARTIFACT_KEY, market_payload))
+        try:
+            market_payload = await analytics_service.get_market_analytics_hot(conn, date)
+            artifact_writes.append((MARKET_ARTIFACT_KEY, market_payload))
+        except Exception as market_error:  # pylint: disable=broad-except
+            skipped_artifacts.append(MARKET_ARTIFACT_KEY)
+            phase_errors.append(f"market_analytics: {market_error}")
 
     for price_band in PRICE_BANDS_TO_PUBLISH:
         by_criteria_payload = await analytics_service.get_analytics_lists_by_criteria_hot(
@@ -98,4 +104,6 @@ async def publish_day(
         "date": date,
         "artifacts_written": artifacts_written,
         "tickers_written": len(tickers_to_publish),
+        "skipped_artifacts": skipped_artifacts,
+        "phase_errors": phase_errors,
     }

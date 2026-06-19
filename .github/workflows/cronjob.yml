@@ -14,7 +14,7 @@ on:
         type: string
 
 concurrency:
-  group: read_markets
+  group: read_markets-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:

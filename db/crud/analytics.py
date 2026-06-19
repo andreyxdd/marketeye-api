@@ -18,6 +18,60 @@ cache = RedisCache()
 cache.connect()
 
 
+async def get_adv_dec_counts_by_date(
+    conn: AsyncIOMotorClient,
+    n_trading_days: int,
+    epoch_date: int,
+    market: str = "US",
+) -> List[dict]:
+    """Return per-date adv/dec counts in one aggregation (aligned dates)."""
+    try:
+        pipeline = [
+            {
+                "$match": {
+                    **market_mongo_filter(market),
+                    "date": {"$lte": epoch_date},
+                    "one_day_open_close_change": {"$exists": True},
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$date",
+                    "adv": {
+                        "$sum": {
+                            "$cond": [
+                                {"$gt": ["$one_day_open_close_change", 0]},
+                                1,
+                                0,
+                            ]
+                        }
+                    },
+                    "dec": {
+                        "$sum": {
+                            "$cond": [
+                                {"$lt": ["$one_day_open_close_change", 0]},
+                                1,
+                                0,
+                            ]
+                        }
+                    },
+                }
+            },
+            {"$match": {"$expr": {"$gt": [{"$add": ["$adv", "$dec"]}, 0]}}},
+            {"$sort": {"_id": 1}},
+        ]
+        cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(pipeline)
+        results = await cursor.to_list(length=n_trading_days)
+        if len(results) > n_trading_days:
+            return results[-n_trading_days:]
+        return results
+    except Exception as e:
+        print("Error message:", e)
+        raise Exception(
+            "server/db/crud/analytics.py, def get_adv_dec_counts_by_date reported an error"
+        ) from e
+
+
 async def get_analytics_by_open_close_change(
     conn: AsyncIOMotorClient,
     n_trading_days: int,
@@ -52,36 +106,24 @@ async def get_normalazied_cvi_slope(
 ) -> float:
     try:
         epoch_date = get_epoch(date)
-
-        list_num_adv_stocks = await get_analytics_by_open_close_change(
+        daily_counts = await get_adv_dec_counts_by_date(
             conn, n_trading_days, epoch_date, market="US"
         )
-        list_num_dec_stocks = await get_analytics_by_open_close_change(
-            conn, n_trading_days, epoch_date, "$lt", market="US"
-        )
-        counter_length = len(list_num_adv_stocks)
-
-        if counter_length != len(list_num_dec_stocks):
+        if not daily_counts:
             raise Exception(
-                "Number of dates is not equal in the lists of advancing/declining stocks count."
-            )
-
-        if list_num_adv_stocks[-1]["_id"] != list_num_dec_stocks[-1]["_id"]:
-            raise Exception(
-                "The dates in the lists of advancing/declining stocks do not correlate"
+                "No advancing/declining stock counts found for CVI calculation."
             )
 
         trading_days = []
         cvis = []
-
-        cvis.append(list_num_adv_stocks[0]["count"] - list_num_dec_stocks[0]["count"])
+        cvis.append(daily_counts[0]["adv"] - daily_counts[0]["dec"])
         trading_days.append(1)
 
-        for i in range(1, counter_length):
+        for i in range(1, len(daily_counts)):
             cvis.append(
                 cvis[i - 1]
-                + list_num_adv_stocks[i]["count"]
-                - list_num_dec_stocks[i]["count"]
+                + daily_counts[i]["adv"]
+                - daily_counts[i]["dec"]
             )
             trading_days.append(i + 1)
 

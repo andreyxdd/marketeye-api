@@ -126,16 +126,19 @@ async def test_run_crud_ops_publish_gate_skips_delete(monkeypatch):
     monkeypatch.setattr(cronjob.publish_service, "publish_day", publish_fail_stub)
     monkeypatch.setattr(cronjob, "notify_developer", notify_stub)
 
+    report = cronjob.CronRunReport()
     message = await cronjob.run_crud_ops(
         "2024-06-03",
         "2024-03-04",
         "US",
         pg_pool=object(),
+        report=report,
     )
 
     assert calls["order"] == ["prune", "ingest", "track", "publish"]
     assert calls["pruned"] == 1
     assert calls["notified"] == 1
+    assert report.has_errors()
     assert "publish_service.publish_day failed" in message
     assert "skipped remove_base_analytics" not in message
 
