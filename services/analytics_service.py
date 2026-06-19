@@ -171,6 +171,16 @@ async def get_analytics_sorted_by(
 ) -> list:
     pool = await _get_postgres_pool_or_none()
     market = normalize_market(market)
+    if pool is not None:
+        published = await read_router.try_get_analytics_sorted_by_published(
+            pool,
+            date,
+            criterion,
+            market=market,
+            price_band=price_band,
+        )
+        if published is not None:
+            return published
     if pool is None:
         return await get_analytics_sorted_by_hot(
             conn,
@@ -237,6 +247,15 @@ async def get_analytics_lists_by_criteria(
 ) -> dict:
     market = normalize_market(market)
     pool = await _get_postgres_pool_or_none()
+    if pool is not None:
+        published = await read_router.try_get_analytics_lists_by_criteria_published(
+            pool,
+            date,
+            market=market,
+            price_band=price_band,
+        )
+        if published is not None:
+            return published
     if pool is None:
         return await get_analytics_lists_by_criteria_hot(
             conn,

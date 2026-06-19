@@ -94,6 +94,42 @@ async def get_dates_union(conn, pool: asyncpg.Pool, market: str = DEFAULT_MARKET
     return [{"epoch": epoch, "date_string": get_date_string(epoch)} for epoch in sorted_epochs]
 
 
+async def try_get_analytics_lists_by_criteria_published(
+    pool: asyncpg.Pool,
+    date: str,
+    market: str = DEFAULT_MARKET,
+    price_band: Optional[str] = None,
+) -> Optional[dict]:
+    """Return published lists payload when present; None if not yet published."""
+    market = normalize_market(market)
+    return await get_artifact_payload(
+        pool,
+        date,
+        build_lists_artifact_key(price_band),
+        market=market,
+    )
+
+
+async def try_get_analytics_sorted_by_published(
+    pool: asyncpg.Pool,
+    date: str,
+    criterion: str,
+    market: str = DEFAULT_MARKET,
+    price_band: Optional[str] = None,
+) -> Optional[list]:
+    """Return published criterion list when present; None if not yet published."""
+    market = normalize_market(market)
+    payload = await get_artifact_payload(
+        pool,
+        date,
+        build_criterion_artifact_key(criterion, price_band),
+        market=market,
+    )
+    if payload is None or criterion not in payload:
+        return None
+    return payload[criterion]
+
+
 async def get_analytics_lists_by_criteria_cold(
     pool: asyncpg.Pool,
     date: str,
