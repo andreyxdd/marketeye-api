@@ -132,6 +132,9 @@ dmypy.json
 # VS-code settings
 .vscode
 
+# Ephemeral andx/cursor plans
+.cursor/plans/
+
 # Script to initialize local environmental variables (windows, cmd)
 envars.bat
 envars.sh

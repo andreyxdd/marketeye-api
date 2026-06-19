@@ -136,7 +136,7 @@ async def cronjob(markets=None):
     try:
         await connect_postgres()
         pg_pool = await get_postgres_pool()
-        await mongo_storage_monitor.run_monitor()
+        await mongo_storage_monitor.run_monitor(manage_connections=False)
         for market in markets_to_run:
             market_start = time()
             market = normalize_market(market)

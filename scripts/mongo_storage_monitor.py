@@ -27,9 +27,14 @@ from db.postgres import get_pool as get_postgres_pool
 from utils.handle_telegram import notify_developer
 
 
-async def run_monitor(check_only: bool = False) -> dict:
-    """Check Mongo storage ratio and prune oldest published sessions when threshold is crossed."""
-    await connect_postgres()
+async def run_monitor(check_only: bool = False, manage_connections: bool = True) -> dict:
+    """Check Mongo storage ratio and prune oldest published sessions when threshold is crossed.
+
+    When ``manage_connections`` is False (embedded cron path), the caller owns Postgres
+    lifecycle; this function skips connect/close for both Postgres and Mongo.
+    """
+    if manage_connections:
+        await connect_postgres()
     await connect_mongo()
     pool = await get_postgres_pool()
     conn = await get_mongo_database()
@@ -75,8 +80,9 @@ async def run_monitor(check_only: bool = False) -> dict:
 
         return result
     finally:
-        await close_mongo()
-        await close_postgres()
+        if manage_connections:
+            await close_mongo()
+            await close_postgres()
 
 
 def _parse_args():
