@@ -178,11 +178,7 @@ def bar_date_to_string(value: Union[str, datetime, pd.Timestamp, numbers.Real]) 
 
 
 def bar_date_to_epoch_ms(value: Union[str, datetime, pd.Timestamp, numbers.Real]) -> float:
-    """Normalize OHLCV bar date to UTC epoch milliseconds."""
-    if isinstance(value, pd.Timestamp):
-        return float(value.value / 1_000_000)
-    if isinstance(value, numbers.Real) and not isinstance(value, bool):
-        return float(value)
+    """Normalize OHLCV bar date to UTC epoch milliseconds at UTC midnight."""
     return float(get_epoch(bar_date_to_string(value)))
 
 
