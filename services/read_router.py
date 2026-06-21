@@ -15,7 +15,7 @@ from db.crud.published_archive import (
     build_lists_artifact_key,
     get_artifact_payload,
     get_latest_published_date,
-    get_published_dates,
+    get_published_dates_with_tickers,
     get_ticker_payload,
 )
 from utils.handle_datetimes import get_date_string, get_epoch
@@ -85,7 +85,9 @@ async def get_dates_union(conn, pool: asyncpg.Pool, market: str = DEFAULT_MARKET
     cursor = conn[MONGO_DB_NAME][MONGO_COLLECTION_NAME].aggregate(pipeline)
     mongo_epochs = [doc["_id"] for doc in await cursor.to_list(length=10000)]
 
-    pg_dates = await get_published_dates(pool, market=market) if pool else []
+    pg_dates = (
+        await get_published_dates_with_tickers(pool, market=market) if pool else []
+    )
     epochs = set(mongo_epochs)
     for item in pg_dates:
         epochs.add(get_epoch(item["date_string"]))

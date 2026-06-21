@@ -95,7 +95,9 @@ class OhlcvCacheMixin:
                     end_date.date(),
                 )
                 if len(bars) >= actual_offset_n_days:
-                    return self._bars_to_dataframe(bars, ticker, utc_dates)
+                    max_session = max(bar.session_date for bar in bars)
+                    if max_session >= end_date.date():
+                        return self._bars_to_dataframe(bars, ticker, utc_dates)
             except Exception as exc:  # pylint: disable=broad-except
                 print(f"providers/ohlcv_cache_mixin.py PG read failed: {exc}")
 

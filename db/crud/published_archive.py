@@ -58,7 +58,6 @@ async def upsert_artifact(
     market: str = DEFAULT_MARKET,
 ):
     market = normalize_market(market)
-    await upsert_published_date(pool, date_string, market=market)
     async with pool.acquire() as conn:
         await conn.execute(
             """
@@ -170,6 +169,35 @@ async def get_published_dates(
     ]
 
 
+async def get_published_dates_with_tickers(
+    pool: asyncpg.Pool, market: str = DEFAULT_MARKET
+) -> list[dict]:
+    """Published session dates that have at least one archived ticker row."""
+    market = normalize_market(market)
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT DISTINCT d.session_date
+            FROM published_dates d
+            WHERE d.market = $1
+              AND EXISTS (
+                  SELECT 1
+                  FROM published_tickers t
+                  WHERE t.session_date = d.session_date
+                    AND t.market = d.market
+              )
+            ORDER BY d.session_date ASC
+            """,
+            market,
+        )
+    return [
+        {
+            "date_string": row["session_date"].isoformat(),
+        }
+        for row in rows
+    ]
+
+
 async def is_session_published(
     pool: asyncpg.Pool, date: str, market: str = DEFAULT_MARKET
 ) -> bool:
@@ -212,10 +240,16 @@ async def get_latest_published_date(
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            SELECT session_date
-            FROM published_dates
-            WHERE market = $1
-            ORDER BY session_date DESC
+            SELECT d.session_date
+            FROM published_dates d
+            WHERE d.market = $1
+              AND EXISTS (
+                  SELECT 1
+                  FROM published_tickers t
+                  WHERE t.session_date = d.session_date
+                    AND t.market = d.market
+              )
+            ORDER BY d.session_date DESC
             LIMIT 1
             """,
             market,

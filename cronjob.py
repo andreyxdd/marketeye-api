@@ -14,6 +14,7 @@ from typing import Optional
 from time import time
 from core.markets import MARKETS, list_markets, normalize_market
 from core.settings import MONGO_HOT_WINDOW_DAYS
+from db.crud.analytics import get_analytics_tickers
 from db.crud.tracking import put_top_tickers
 from db.crud.published_archive import is_session_published
 from db.crud.mongo_storage import prune_mongo_session_date
@@ -161,6 +162,16 @@ async def run_crud_ops(
             report.record(market, date_to_insert, "track", track_error)
 
         if not ingest_ok:
+            return "\n\n".join(msgs)
+
+        tickers_in_mongo = await get_analytics_tickers(
+            conn, date_to_insert, market=market
+        )
+        if not tickers_in_mongo:
+            msgs.append(
+                "Skipping publish_service.publish_day:"
+                f" no ticker analytics for {market} on {date_to_insert}"
+            )
             return "\n\n".join(msgs)
 
         try:

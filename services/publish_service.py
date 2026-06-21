@@ -78,6 +78,16 @@ async def publish_day(
                 )
             )
 
+    if not tickers_to_publish:
+        return {
+            "market": market,
+            "date": date,
+            "artifacts_written": 0,
+            "tickers_written": 0,
+            "skipped_artifacts": skipped_artifacts,
+            "phase_errors": phase_errors,
+        }
+
     artifacts_written = 0
     for artifact_key, payload in artifact_writes:
         await upsert_artifact(

@@ -70,3 +70,40 @@ async def test_publish_day_skips_market_analytics_but_publishes_lists(monkeypatc
     assert upserts["tickers"] == ["AAPL"]
     assert result["skipped_artifacts"] == [publish_service.MARKET_ARTIFACT_KEY]
     assert result["phase_errors"]
+
+
+@pytest.mark.asyncio
+async def test_publish_day_skips_when_no_tickers(monkeypatch):
+    upserts = {"artifacts": [], "tickers": []}
+
+    async def lists_empty(conn, date, market="US", price_band=None, include_mentions=False):
+        del conn, date, market, price_band, include_mentions
+        return {
+            "by_one_day_avg_mf": [],
+            "by_three_day_avg_mf": [],
+            "by_volume": [],
+            "by_three_day_avg_volume": [],
+            "by_macd": [],
+        }
+
+    async def upsert_artifact_stub(pool, date, artifact_key, payload, market="US"):
+        del pool, date, payload, market
+        upserts["artifacts"].append(artifact_key)
+
+    monkeypatch.setattr(
+        publish_service.analytics_service,
+        "get_analytics_lists_by_criteria_hot",
+        lists_empty,
+    )
+    monkeypatch.setattr(publish_service, "upsert_artifact", upsert_artifact_stub)
+
+    result = await publish_service.publish_day(
+        conn=object(),
+        pool=object(),
+        date="2026-06-19",
+        market="US",
+        include_mentions=False,
+    )
+
+    assert result["tickers_written"] == 0
+    assert upserts["artifacts"] == []
