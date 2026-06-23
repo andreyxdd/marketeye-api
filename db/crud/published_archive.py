@@ -58,6 +58,7 @@ async def upsert_artifact(
     market: str = DEFAULT_MARKET,
 ):
     market = normalize_market(market)
+    await upsert_published_date(pool, date_string, market=market)
     async with pool.acquire() as conn:
         await conn.execute(
             """
