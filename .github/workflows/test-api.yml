@@ -20,7 +20,7 @@ jobs:
           python-version: 3.8
 
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip requests typing pandas
+        run: python -m pip install --upgrade pip requests typing pandas python-dotenv
 
       - name: Execute Python script
         env:
