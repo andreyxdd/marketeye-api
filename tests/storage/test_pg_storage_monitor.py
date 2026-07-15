@@ -7,7 +7,11 @@ import pytest
 import scripts.pg_storage_monitor as pg_storage_monitor
 from core.settings import OHLCV_LOOKBACK_BUFFER_DAYS
 from db.crud.ohlcv_bars import BarRow, upsert_bars
-from db.crud.published_archive import prune_oldest_session_date, upsert_published_date
+from db.crud.published_archive import (
+    prune_oldest_session_date,
+    truncate_published_tables,
+    upsert_published_date,
+)
 
 
 async def _noop_async(*args, **kwargs):
@@ -117,6 +121,7 @@ async def test_pg_storage_monitor_prunes_until_target(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_prune_above_lookback_floor_skips_ohlcv_bars(postgres_pool):
+    await truncate_published_tables(postgres_pool)
     latest = date(2024, 6, 3)
     floor = latest - timedelta(days=OHLCV_LOOKBACK_BUFFER_DAYS)
     old_published = floor + timedelta(days=1)
@@ -157,6 +162,7 @@ async def test_prune_above_lookback_floor_skips_ohlcv_bars(postgres_pool):
 
 @pytest.mark.asyncio
 async def test_prune_below_lookback_floor_deletes_ohlcv_and_published(postgres_pool):
+    await truncate_published_tables(postgres_pool)
     latest = date(2024, 6, 3)
     floor = latest - timedelta(days=OHLCV_LOOKBACK_BUFFER_DAYS)
     old_session = floor - timedelta(days=5)

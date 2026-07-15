@@ -10,6 +10,11 @@ async def _noop_async(*args, **kwargs):
     return None
 
 
+async def _tickers_stub(conn, date, market="US"):
+    del conn, date, market
+    return ["AAPL"]
+
+
 @pytest.mark.asyncio
 async def test_run_crud_ops_happy_path(monkeypatch):
     calls = {
@@ -51,6 +56,7 @@ async def test_run_crud_ops_happy_path(monkeypatch):
     monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
     monkeypatch.setattr(cronjob, "is_session_published", published_stub)
     monkeypatch.setattr(cronjob, "prune_mongo_session_date", prune_stub)
+    monkeypatch.setattr(cronjob, "get_analytics_tickers", _tickers_stub)
     monkeypatch.setattr(
         cronjob.analytics_service,
         "ingest_base_analytics_for_market",
@@ -117,6 +123,7 @@ async def test_run_crud_ops_publish_gate_skips_delete(monkeypatch):
     monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
     monkeypatch.setattr(cronjob, "is_session_published", published_stub)
     monkeypatch.setattr(cronjob, "prune_mongo_session_date", prune_stub)
+    monkeypatch.setattr(cronjob, "get_analytics_tickers", _tickers_stub)
     monkeypatch.setattr(
         cronjob.analytics_service,
         "ingest_base_analytics_for_market",
@@ -171,6 +178,7 @@ async def test_run_crud_ops_idempotent_when_repeated(monkeypatch):
     monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
     monkeypatch.setattr(cronjob, "is_session_published", _noop_async)
     monkeypatch.setattr(cronjob, "prune_mongo_session_date", _noop_async)
+    monkeypatch.setattr(cronjob, "get_analytics_tickers", _tickers_stub)
     monkeypatch.setattr(
         cronjob.analytics_service,
         "ingest_base_analytics_for_market",

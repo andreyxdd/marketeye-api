@@ -10,6 +10,11 @@ async def _noop_async(*args, **kwargs):
     return None
 
 
+async def _tickers_stub(conn, date, market="US"):
+    del conn, date, market
+    return ["AAPL"]
+
+
 @pytest.mark.asyncio
 async def test_cronjob_continues_after_run_crud_ops_failure(monkeypatch):
     calls = []
@@ -116,6 +121,7 @@ async def test_run_crud_ops_publish_failure_keeps_ingest_message(monkeypatch):
     monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
     monkeypatch.setattr(cronjob, "is_session_published", _noop_async)
+    monkeypatch.setattr(cronjob, "get_analytics_tickers", _tickers_stub)
     monkeypatch.setattr(
         cronjob.analytics_service,
         "ingest_base_analytics_for_market",
