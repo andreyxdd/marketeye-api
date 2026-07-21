@@ -60,8 +60,8 @@ async def test_put_top_tickers_by_criterion_propagates_atlas_error(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_put_top_tickers_propagates_atlas_error(monkeypatch):
-    async def failing_criterion(conn, date, criterion, lim=None, market="US"):
-        del conn, date, lim, market
+    async def failing_criterion(conn, date, criterion, lim=None, market="US", price_band=None):
+        del conn, date, lim, market, price_band
         if criterion == "volume":
             raise Exception("AtlasError quota exceeded")
         return ["AAPL"]

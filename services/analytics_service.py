@@ -50,6 +50,7 @@ async def enrich_ticker_row(
     criterion: str,
     market: str = DEFAULT_MARKET,
     include_mentions: bool = True,
+    price_band: Optional[str] = None,
 ) -> dict:
     market = normalize_market(market)
     ticker = base_row["ticker"]
@@ -67,7 +68,7 @@ async def enrich_ticker_row(
             **mentions,
             "fcf": get_quarterly_free_cash_flow_polygon(ticker, get_last_quater_date(date)),
             "frequencies": await get_analytics_frequencies(
-                conn, date, criterion, ticker, market=market
+                conn, date, criterion, ticker, market=market, price_band=price_band
             ),
         }
 
@@ -77,7 +78,7 @@ async def enrich_ticker_row(
         **_to_stub_mentions(),
         "fcf": "",
         "frequencies": await get_analytics_frequencies(
-            conn, date, criterion, ticker, market=market
+            conn, date, criterion, ticker, market=market, price_band=price_band
         ),
     }
 
@@ -225,7 +226,11 @@ async def get_analytics_sorted_by_hot(
     if price_band is not None:
         min_close, max_close = resolve_price_band(price_band)
         include_close = True
-    enrich_fn = partial(enrich_ticker_row, include_mentions=include_mentions)
+    enrich_fn = partial(
+        enrich_ticker_row,
+        include_mentions=include_mentions,
+        price_band=price_band,
+    )
     return await crud_get_analytics_sorted_by(
         conn,
         date,

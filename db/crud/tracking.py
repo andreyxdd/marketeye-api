@@ -10,6 +10,7 @@ from core.settings import MONGO_DB_NAME
 from db.mongodb import AsyncIOMotorClient
 from utils.handle_datetimes import get_epoch, get_past_date
 from utils.handle_external_apis import cache_quaterly_free_cash_flow
+from utils.price_bands import PRICE_BANDS, resolve_price_band
 
 MONGO_ANALYTICS_COLLECTION = "analytics"
 MONGO_TRACKING_COLLECTION = "tracking"
@@ -35,11 +36,21 @@ async def put_top_tickers_by_criterion(
     criterion: str,
     lim: Optional[int] = 20,
     market: str = DEFAULT_MARKET,
+    price_band: Optional[str] = None,
 ):
     try:
         market = normalize_market(market)
         epoch_date = get_epoch(date)
         query = {"date": epoch_date, **market_mongo_filter(market)}
+        if price_band is not None:
+            min_close, max_close = resolve_price_band(price_band)
+            close_filter: dict = {"close": {"$exists": True, "$ne": None}}
+            if min_close is not None:
+                close_filter["close"]["$gte"] = min_close
+            if max_close is not None:
+                close_filter["close"]["$lte"] = max_close
+            query.update(close_filter)
+
         cursor = (
             conn[MONGO_DB_NAME][MONGO_ANALYTICS_COLLECTION]
             .find(
@@ -53,13 +64,19 @@ async def put_top_tickers_by_criterion(
 
         if tickers:
             await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].update_one(
-                {"date": epoch_date, "criterion": criterion, "market": market},
+                {
+                    "date": epoch_date,
+                    "criterion": criterion,
+                    "market": market,
+                    "price_band": price_band,
+                },
                 {
                     "$set": {
                         "tickers": tickers,
                         "date": epoch_date,
                         "criterion": criterion,
                         "market": market,
+                        "price_band": price_band,
                     }
                 },
                 upsert=True,
@@ -77,10 +94,14 @@ async def put_top_tickers_by_criterion(
 
 async def put_top_tickers(conn: AsyncIOMotorClient, date: str, market: str = DEFAULT_MARKET):
     try:
+        bands: list[Optional[str]] = [None, *PRICE_BANDS.keys()]
         await asyncio.gather(
             *[
-                put_top_tickers_by_criterion(conn, date, criterion, market=market)
+                put_top_tickers_by_criterion(
+                    conn, date, criterion, market=market, price_band=band
+                )
                 for criterion in CRITERIA
+                for band in bands
             ]
         )
         return (
@@ -101,17 +122,29 @@ async def get_analytics_frequencies(
     ticker: str,
     period: Optional[int] = 25,
     market: str = DEFAULT_MARKET,
+    price_band: Optional[str] = None,
 ):
     try:
         market = normalize_market(market)
         past_date = get_past_date(period, date)
         epoch_past_date = get_epoch(past_date)
         epoch_date = get_epoch(date)
+        band_filter = (
+            {"price_band": price_band}
+            if price_band is not None
+            else {
+                "$or": [
+                    {"price_band": None},
+                    {"price_band": {"$exists": False}},
+                ]
+            }
+        )
         pipeline = [
             {
                 "$match": {
                     "criterion": criterion,
                     **market_mongo_filter(market),
+                    **band_filter,
                 }
             },
             {

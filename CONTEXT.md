@@ -23,6 +23,9 @@
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
 | **Price band** | One of four close-price ranges for Micro screening: `lte5`, `5to10`, `10to20`, `20to50` |
 | **Micro screening** | Filter analytics rows by EOD close before top-20 sort |
+| **Band tracking** | Cron upserts top-20 tickers into Mongo `tracking` per `(date, criterion, market, price_band)` — unbanded (`price_band` null) plus each of the four bands; forward-only, no backfill |
+| **Standard frequency** | T-N appearance string from unbanded tracking (docs with `price_band` null or field absent); used when list reads omit `price_band` |
+| **Micro frequency** | Same T-N semantics as Standard, but counted only within the active price band's tracking docs |
 | **Deploy revision** | Full git SHA exposed on `/healthz` and `/readyz` as `commit`; resolved from `HEROKU_SLUG_COMMIT` → `SOURCE_VERSION` → `git rev-parse HEAD` → `"unknown"` |
 
 Run instructions: `tests/README.md`.
