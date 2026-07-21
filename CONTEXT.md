@@ -19,6 +19,8 @@
 | **MarketDataProvider** | Protocol for exchange-specific OHLCV + ticker universe fetch |
 | **LastCompletedSession** | Latest EOD bar date available from the market data provider for a **Market** |
 | **PriorCompletedSession** | Trading session immediately before **LastCompletedSession** (not calendar yesterday) |
+| **Cron probe** | Slim scheduled preflight: resolves latest sessions for US and TO, checks `is_session_published`, then emits GitHub Actions `needs_work` without ticker-universe fan-out |
+| **Dense EOD schedule** | GitHub Actions runs every 30 minutes from 20:00 through 03:00 UTC; full ingest runs only when Cron probe reports work (or an explicit `target_date` is dispatched) |
 | **PolygonUSProvider** | US implementation wrapping Polygon.io |
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
 | **Price band** | One of four close-price ranges for Micro screening: `lte5`, `5to10`, `10to20`, `20to50` |

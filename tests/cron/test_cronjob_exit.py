@@ -19,8 +19,8 @@ def _reset_cron_failed():
 
 @pytest.mark.asyncio
 async def test_cronjob_sets_failed_flag_on_run_crud_ops_error(monkeypatch):
-    async def resolve_dates_stub(conn, market):
-        del conn
+    async def unpublished_dates_stub(pool, market):
+        del pool, market
         return ["2024-06-03"]
 
     async def run_crud_fail(*args, **kwargs):
@@ -39,7 +39,7 @@ async def test_cronjob_sets_failed_flag_on_run_crud_ops_error(monkeypatch):
     monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "get_mongo_database", _noop_async)
     monkeypatch.setattr(cronjob.mongo_storage_monitor, "run_monitor", _noop_async)
-    monkeypatch.setattr(cronjob, "resolve_ingest_dates_for_market", resolve_dates_stub)
+    monkeypatch.setattr(cronjob, "unpublished_session_dates", unpublished_dates_stub)
     monkeypatch.setattr(cronjob, "run_crud_ops", run_crud_fail)
     monkeypatch.setattr(cronjob, "notify_developer", notify_stub)
     monkeypatch.setattr(cronjob, "clear_ticker_universe_cache", lambda: None)
@@ -50,6 +50,29 @@ async def test_cronjob_sets_failed_flag_on_run_crud_ops_error(monkeypatch):
     assert cronjob.cron_failed() is True
     assert len(notified) >= 1
     assert "AtlasError" in notified[0]["body"] or "quota" in notified[0]["body"]
+
+
+@pytest.mark.asyncio
+async def test_cronjob_skips_market_when_latest_sessions_are_published(monkeypatch):
+    async def no_work(pool, market):
+        del pool, market
+        return []
+
+    async def run_crud_unexpected(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("published market must not ingest")
+
+    monkeypatch.setattr(cronjob, "connect_postgres", _noop_async)
+    monkeypatch.setattr(cronjob, "close_postgres", _noop_async)
+    monkeypatch.setattr(cronjob, "get_postgres_pool", _noop_async)
+    monkeypatch.setattr(cronjob.mongo_storage_monitor, "run_monitor", _noop_async)
+    monkeypatch.setattr(cronjob, "unpublished_session_dates", no_work)
+    monkeypatch.setattr(cronjob, "run_crud_ops", run_crud_unexpected)
+    monkeypatch.setattr(cronjob, "clear_ticker_universe_cache", lambda: None)
+
+    await cronjob.cronjob(markets=["US"])
+
+    assert not cronjob.cron_failed()
 
 
 @pytest.mark.asyncio

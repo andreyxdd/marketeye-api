@@ -29,7 +29,7 @@ from utils.handle_validation import validate_date_string
 from utils.handle_external_apis import clear_ticker_universe_cache
 import services.analytics_service as analytics_service
 import services.publish_service as publish_service
-from services.cron_dates import resolve_ingest_dates_for_market
+from services.cron_dates import unpublished_session_dates
 import scripts.mongo_storage_monitor as mongo_storage_monitor
 
 try:
@@ -230,20 +230,19 @@ async def cronjob(markets=None, report: Optional[CronRunReport] = None):
             market = normalize_market(market)
             tz = MARKETS[market]["timezone"]
 
-            await connect_mongo()
-            conn = await get_mongo_database()
             try:
-                target_dates = await resolve_ingest_dates_for_market(conn, market)
+                target_dates = await unpublished_session_dates(pg_pool, market)
             except Exception as probe_error:  # pylint: disable=broad-except
                 print(
                     f"cronjob.py: session probe failed for {market} ({tz}): {probe_error}"
                 )
                 report.record(market, "n/a", "session_probe", probe_error)
                 continue
-            finally:
-                await close_mongo()
 
             print(f"Market {market} ({tz}) session dates: {target_dates}")
+            if not target_dates:
+                print(f"Market {market}: all latest sessions already published; skipping")
+                continue
 
             for curr_date in target_dates:
                 date_start = time()

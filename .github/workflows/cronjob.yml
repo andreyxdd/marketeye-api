@@ -2,10 +2,14 @@ name: cronjob
 
 on:
   schedule:
-    - cron: "00 21 * * *"
-    - cron: "00 23 * * *"
-    - cron: "30 00 * * *" # 12:30 AM UTC
-    - cron: "00 02 * * *" # 2:00 AM UTC
+    - cron: "00,30 20 * * *"
+    - cron: "00,30 21 * * *"
+    - cron: "00,30 22 * * *"
+    - cron: "00,30 23 * * *"
+    - cron: "00,30 0 * * *"
+    - cron: "00,30 1 * * *"
+    - cron: "00,30 2 * * *"
+    - cron: "00 3 * * *"
   workflow_dispatch:
     inputs:
       target_date:
@@ -15,10 +19,74 @@ on:
 
 concurrency:
   group: read_markets-${{ github.event_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  job:
+  probe:
+    runs-on: ubuntu-latest
+
+    environment: marketeye-api
+
+    env:
+      API_KEY: ${{ secrets.API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+      MI_BASE_URL: ${{ secrets.MI_BASE_URL }}
+      MI_SP500_CODE: ${{ secrets.MI_SP500_CODE }}
+      MI_SP500_DATASET: ${{ secrets.MI_SP500_DATASET }}
+      MI_VIX_CODE: ${{ secrets.MI_VIX_CODE }}
+      MI_VIX_DATASET: ${{ secrets.MI_VIX_DATASET }}
+      MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      PING_URL: ${{ secrets.PING_URL }}
+      QUANDL_API_KEY: ${{ secrets.QUANDL_API_KEY }}
+      QUANDL_RATE_LIMIT: ${{ secrets.QUANDL_RATE_LIMIT }}
+      QUANDL_SLEEP_MINUTES: ${{ secrets.QUANDL_SLEEP_MINUTES }}
+      USER_AGENT: ${{ secrets.USER_AGENT }}
+      DATE_TO_SCRAPE: ${{ secrets.DATE_TO_SCRAPE }}
+      YAHOO_BASE_FCF_URL: ${{ secrets.YAHOO_BASE_FCF_URL }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
+      REDIS_URI: ${{ secrets.REDIS_URI }}
+      REDISCLOUD_URL: ${{ secrets.REDIS_URI }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Checkout repository content
+        uses: actions/checkout@v2
+
+      - name: Setup Python Version
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Set up cache for probe dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-probe-${{ hashFiles('requirements-probe.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-probe-
+
+      - name: Install probe dependencies
+        run: pip install -r requirements-probe.txt
+
+      - name: Check unpublished sessions
+        id: check
+        run: |
+          if [ -n "${{ inputs.target_date }}" ]; then
+            echo "needs_work=true" >> "$GITHUB_OUTPUT"
+          else
+            python scripts/cron_probe.py
+          fi
+
+    outputs:
+      needs_work: ${{ steps.check.outputs.needs_work }}
+
+  ingest:
+    needs: probe
+    if: needs.probe.outputs.needs_work == 'true'
     runs-on: ubuntu-latest
 
     environment: marketeye-api
