@@ -19,8 +19,8 @@ async def _tickers_stub(conn, date, market="US"):
 async def test_cronjob_continues_after_run_crud_ops_failure(monkeypatch):
     calls = []
 
-    async def resolve_dates_stub(conn, market):
-        del conn
+    async def unpublished_dates_stub(pool, market):
+        del pool, market
         return ["2024-06-03"]
 
     async def run_crud_stub(
@@ -43,7 +43,7 @@ async def test_cronjob_continues_after_run_crud_ops_failure(monkeypatch):
     monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "get_mongo_database", _noop_async)
     monkeypatch.setattr(cronjob.mongo_storage_monitor, "run_monitor", _noop_async)
-    monkeypatch.setattr(cronjob, "resolve_ingest_dates_for_market", resolve_dates_stub)
+    monkeypatch.setattr(cronjob, "unpublished_session_dates", unpublished_dates_stub)
     monkeypatch.setattr(cronjob, "run_crud_ops", run_crud_stub)
     monkeypatch.setattr(cronjob, "notify_developer", lambda **kwargs: None)
     monkeypatch.setattr(cronjob, "clear_ticker_universe_cache", lambda: None)
