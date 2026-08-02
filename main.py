@@ -39,10 +39,6 @@ tags_metadata = [
         "description": "Endpoints to report issues.",
     },
     {
-        "name": "Bounce",
-        "description": "Endpoints to read data processed with bounce algorithm.",
-    },
-    {
         "name": "Tests",
         "description": "Some endpoints for internal tests",
     },
