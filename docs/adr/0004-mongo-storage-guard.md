@@ -21,7 +21,7 @@ Constraints:
 
 2. **Publish enrichment** — Cron `publish_day` passes `include_mentions=False`, stubbing US mention fields to zero (same as TO) to avoid scrapes reads during publish.
 
-3. **Emergency monitor** — `scripts/mongo_storage_monitor.py` checks `dbStats` ratio against `MONGO_STORAGE_LIMIT_BYTES`. At ratio >= 0.85, notify developer; if not `--check-only`, repeatedly prune Mongo analytics+tracking for the globally oldest `published_dates` session (all markets) until ratio <= 0.70.
+3. **Emergency monitor** — `scripts/mongo_storage_monitor.py` checks `dbStats` billable size as `dataSize + indexSize` (Atlas free/flex quota; do not use `totalSize`) against `MONGO_STORAGE_LIMIT_BYTES`. At ratio >= 0.85, notify developer; if not `--check-only`, repeatedly prune Mongo analytics+tracking for the globally oldest `published_dates` session (all markets) until ratio <= 0.70. Stop if the same session date would be pruned again or ratio does not drop.
 
 4. **Cron startup** — After Postgres connect, run the Mongo storage monitor before per-market ingest.
 

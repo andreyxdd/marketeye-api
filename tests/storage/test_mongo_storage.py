@@ -7,16 +7,17 @@ from db.crud import mongo_storage
 
 
 @pytest.mark.asyncio
-async def test_get_mongo_storage_ratio_uses_data_size(monkeypatch):
+async def test_get_mongo_storage_ratio_sums_data_and_index_size(monkeypatch):
     class DbStub:
         async def command(self, name):
             assert name == "dbStats"
-            return {"dataSize": 256, "totalSize": 512}
+            # totalSize must be ignored — Atlas free/flex bills data+index only
+            return {"dataSize": 256, "indexSize": 256, "totalSize": 999}
 
     conn = {MONGO_DB_NAME: DbStub()}
     size_bytes, ratio = await mongo_storage.get_mongo_storage_ratio(conn, 512)
-    assert size_bytes == 256
-    assert ratio == 0.5
+    assert size_bytes == 512
+    assert ratio == 1.0
 
 
 @pytest.mark.asyncio

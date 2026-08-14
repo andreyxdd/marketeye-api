@@ -16,7 +16,8 @@ async def get_mongo_storage_ratio(
     storage_limit_bytes: int,
 ) -> tuple[int, float]:
     stats = await conn[MONGO_DB_NAME].command("dbStats")
-    size_bytes = int(stats.get("dataSize") or stats.get("totalSize") or 0)
+    # Atlas free/flex quota is dataSize + indexSize; totalSize is not the billable metric.
+    size_bytes = int(stats.get("dataSize") or 0) + int(stats.get("indexSize") or 0)
     ratio = float(size_bytes) / float(storage_limit_bytes)
     return size_bytes, ratio
 

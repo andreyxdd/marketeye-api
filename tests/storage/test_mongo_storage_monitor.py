@@ -138,3 +138,50 @@ async def test_mongo_storage_monitor_prunes_until_target(monkeypatch):
     assert calls["notify"] == 1
     assert result["pruned_dates"] == ["2024-01-01", "2024-01-02"]
     assert result["ratio"] == 0.69
+
+
+@pytest.mark.asyncio
+async def test_mongo_storage_monitor_stops_on_duplicate_prune_date(monkeypatch):
+    """Same oldest published date reappears → exit loop (no hang)."""
+    calls = {"notify": 0, "prune": 0}
+    # First re-check after prune drops; stay above target so loop continues.
+    ratios = iter([(1000, 0.90), (900, 0.85)])
+
+    async def ratio_stub(conn, limit):
+        del conn, limit
+        return next(ratios)
+
+    async def prune_stub(pool, conn):
+        del pool, conn
+        calls["prune"] += 1
+        return "2024-01-01"
+
+    async def pool_stub():
+        return object()
+
+    async def mongo_stub():
+        return object()
+
+    monkeypatch.setattr(mongo_storage_monitor, "connect_postgres", _noop_async)
+    monkeypatch.setattr(mongo_storage_monitor, "close_postgres", _noop_async)
+    monkeypatch.setattr(mongo_storage_monitor, "connect_mongo", _noop_async)
+    monkeypatch.setattr(mongo_storage_monitor, "close_mongo", _noop_async)
+    monkeypatch.setattr(mongo_storage_monitor, "get_postgres_pool", pool_stub)
+    monkeypatch.setattr(mongo_storage_monitor, "get_mongo_database", mongo_stub)
+    monkeypatch.setattr(mongo_storage_monitor, "get_mongo_storage_ratio", ratio_stub)
+    monkeypatch.setattr(
+        mongo_storage_monitor,
+        "prune_oldest_published_mongo_session",
+        prune_stub,
+    )
+    monkeypatch.setattr(
+        mongo_storage_monitor,
+        "notify_developer",
+        lambda **kwargs: calls.__setitem__("notify", calls["notify"] + 1),
+    )
+
+    result = await mongo_storage_monitor.run_monitor(check_only=False)
+    assert calls["notify"] == 1
+    assert calls["prune"] == 2
+    assert result["pruned_dates"] == ["2024-01-01"]
+    assert result["ratio"] == 0.85

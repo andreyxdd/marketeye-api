@@ -69,7 +69,15 @@ async def run_monitor(check_only: bool = False, manage_connections: bool = True)
             pruned_date = await prune_oldest_published_mongo_session(pool, conn)
             if pruned_date is None:
                 break
+            # Same oldest row again (or no ratio drop) means prune cannot progress.
+            if pruned_date in result["pruned_dates"]:
+                print(
+                    "mongo_storage_monitor: stopping; duplicate prune date"
+                    f" session_date={pruned_date}; ratio={ratio:.4f}"
+                )
+                break
             result["pruned_dates"].append(pruned_date)
+            prev_ratio = ratio
             size_bytes, ratio = await get_mongo_storage_ratio(conn, MONGO_STORAGE_LIMIT_BYTES)
             result["size_bytes"] = size_bytes
             result["ratio"] = ratio
@@ -77,6 +85,12 @@ async def run_monitor(check_only: bool = False, manage_connections: bool = True)
                 "mongo_storage_monitor: pruned"
                 f" session_date={pruned_date}; ratio={ratio:.4f}"
             )
+            if ratio >= prev_ratio:
+                print(
+                    "mongo_storage_monitor: stopping; ratio unchanged after prune"
+                    f" session_date={pruned_date}; ratio={ratio:.4f}"
+                )
+                break
 
         return result
     finally:
