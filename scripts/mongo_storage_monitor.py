@@ -83,11 +83,11 @@ async def run_monitor(check_only: bool = False, manage_connections: bool = True)
                 f" session_date={pruned_date}; ratio={ratio:.4f}"
             )
             if ratio >= prev_ratio:
+                # Empty/no-op dates stay in pruned_dates so next iteration skips them.
                 print(
-                    "mongo_storage_monitor: stopping; ratio unchanged after prune"
+                    "mongo_storage_monitor: ratio unchanged after prune; continuing"
                     f" session_date={pruned_date}; ratio={ratio:.4f}"
                 )
-                break
 
         return result
     finally:
