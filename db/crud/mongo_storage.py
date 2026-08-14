@@ -1,5 +1,6 @@
 """Mongo storage ratio and published-gated prune helpers."""
 
+import datetime
 from typing import Iterable, Optional
 
 import asyncpg
@@ -49,7 +50,10 @@ async def prune_oldest_published_mongo_session(
     conn: AsyncIOMotorClient,
     exclude_dates: Optional[Iterable[str]] = None,
 ) -> Optional[str]:
-    excluded = list(exclude_dates) if exclude_dates else []
+    # asyncpg date[] rejects ISO strings; bind real date objects.
+    excluded = (
+        [datetime.date.fromisoformat(d) for d in exclude_dates] if exclude_dates else []
+    )
     async with pool.acquire() as pg_conn:
         if excluded:
             # PG row stays after Mongo prune; exclude already-pruned dates so loop advances.

@@ -120,3 +120,33 @@ def test_main_exits_nonzero_when_cron_failed(monkeypatch):
 
     assert exc_info.value.code == 1
     assert exit_codes == [1]
+
+
+@pytest.mark.asyncio
+async def test_cronjob_records_mongo_monitor_failure_in_report(monkeypatch):
+    async def monitor_fail(*args, **kwargs):
+        del args, kwargs
+        raise RuntimeError("invalid input for query argument $1: expected date, got str")
+
+    async def unpublished_unexpected(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("markets must not run after monitor failure")
+
+    report = cronjob.CronRunReport()
+
+    monkeypatch.setattr(cronjob, "connect_postgres", _noop_async)
+    monkeypatch.setattr(cronjob, "close_postgres", _noop_async)
+    monkeypatch.setattr(cronjob, "get_postgres_pool", _noop_async)
+    monkeypatch.setattr(cronjob.mongo_storage_monitor, "run_monitor", monitor_fail)
+    monkeypatch.setattr(cronjob, "unpublished_session_dates", unpublished_unexpected)
+    monkeypatch.setattr(cronjob, "notify_developer", lambda **kwargs: None)
+    monkeypatch.setattr(cronjob, "clear_ticker_universe_cache", lambda: None)
+
+    cronjob.reset_cron_failed()
+    await cronjob.cronjob(markets=["US"], report=report)
+
+    assert report.has_errors()
+    assert any(item.phase == "mongo_monitor" for item in report.errors)
+    assert "no recorded phase errors" not in report.summary_text()
+    assert "mongo_monitor" in report.summary_text()
+    assert cronjob.cron_failed() is True

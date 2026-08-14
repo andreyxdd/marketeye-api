@@ -1,5 +1,7 @@
 """Unit tests for Mongo storage prune helpers."""
 
+from datetime import date
+
 import pytest
 
 from core.settings import MONGO_DB_NAME
@@ -131,7 +133,10 @@ async def test_prune_oldest_skips_exclude_dates(monkeypatch):
     )
     assert result == "2024-01-03"
     assert fetch_args
-    assert "2024-01-02" in fetch_args[0][1][0]
+    bound_exclude = fetch_args[0][1][0]
+    assert bound_exclude == [date(2024, 1, 2)]
+    assert all(isinstance(d, date) for d in bound_exclude)
+    assert not any(isinstance(d, str) for d in bound_exclude)
 
 
 @pytest.mark.asyncio

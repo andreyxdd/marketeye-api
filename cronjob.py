@@ -224,51 +224,60 @@ async def cronjob(markets=None, report: Optional[CronRunReport] = None):
     try:
         await connect_postgres()
         pg_pool = await get_postgres_pool()
-        await mongo_storage_monitor.run_monitor(manage_connections=False)
-        for market in markets_to_run:
-            market_start = time()
-            market = normalize_market(market)
-            tz = MARKETS[market]["timezone"]
+        try:
+            await mongo_storage_monitor.run_monitor(manage_connections=False)
+        except Exception as monitor_error:  # pylint: disable=broad-except
+            print(f"cronjob.py: mongo storage monitor failed: {monitor_error}")
+            report.record("n/a", "n/a", "mongo_monitor", monitor_error)
+        else:
+            for market in markets_to_run:
+                market_start = time()
+                market = normalize_market(market)
+                tz = MARKETS[market]["timezone"]
 
-            try:
-                target_dates = await unpublished_session_dates(pg_pool, market)
-            except Exception as probe_error:  # pylint: disable=broad-except
-                print(
-                    f"cronjob.py: session probe failed for {market} ({tz}): {probe_error}"
-                )
-                report.record(market, "n/a", "session_probe", probe_error)
-                continue
-
-            print(f"Market {market} ({tz}) session dates: {target_dates}")
-            if not target_dates:
-                print(f"Market {market}: all latest sessions already published; skipping")
-                continue
-
-            for curr_date in target_dates:
-                date_start = time()
-                validate_date_string(curr_date)
-                past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
                 try:
-                    msg = await run_crud_ops(
-                        curr_date,
-                        past_date,
-                        market=market,
-                        pg_pool=pg_pool,
-                        report=report,
+                    target_dates = await unpublished_session_dates(pg_pool, market)
+                except Exception as probe_error:  # pylint: disable=broad-except
+                    print(
+                        f"cronjob.py: session probe failed for {market} ({tz}): {probe_error}"
                     )
-                except Exception as ops_error:  # pylint: disable=broad-except
-                    report.record(market, curr_date, "run_crud_ops", ops_error)
-                    print(f"run_crud_ops failed for {market} {curr_date}: {ops_error}")
-                else:
-                    print(msg)
-                print(
-                    f"Market {market} date {curr_date} finished in "
-                    f"{round(time() - date_start, 2)} seconds"
-                )
+                    report.record(market, "n/a", "session_probe", probe_error)
+                    continue
 
-            market_elapsed = round(time() - market_start, 2)
-            market_timings.append((market, market_elapsed))
-            print(f"Market {market} total: {market_elapsed} seconds")
+                print(f"Market {market} ({tz}) session dates: {target_dates}")
+                if not target_dates:
+                    print(
+                        f"Market {market}: all latest sessions already published; skipping"
+                    )
+                    continue
+
+                for curr_date in target_dates:
+                    date_start = time()
+                    validate_date_string(curr_date)
+                    past_date = get_past_date(MONGO_HOT_WINDOW_DAYS, curr_date)
+                    try:
+                        msg = await run_crud_ops(
+                            curr_date,
+                            past_date,
+                            market=market,
+                            pg_pool=pg_pool,
+                            report=report,
+                        )
+                    except Exception as ops_error:  # pylint: disable=broad-except
+                        report.record(market, curr_date, "run_crud_ops", ops_error)
+                        print(
+                            f"run_crud_ops failed for {market} {curr_date}: {ops_error}"
+                        )
+                    else:
+                        print(msg)
+                    print(
+                        f"Market {market} date {curr_date} finished in "
+                        f"{round(time() - date_start, 2)} seconds"
+                    )
+
+                market_elapsed = round(time() - market_start, 2)
+                market_timings.append((market, market_elapsed))
+                print(f"Market {market} total: {market_elapsed} seconds")
 
     except Exception as e:  # pylint: disable=W0703
         print("cronjob.py: Something went wrong.")
