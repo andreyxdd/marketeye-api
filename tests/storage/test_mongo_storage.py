@@ -71,8 +71,8 @@ async def test_prune_oldest_published_mongo_session_all_markets(monkeypatch):
     calls = []
 
     class PgConnStub:
-        async def fetchrow(self, query):
-            del query
+        async def fetchrow(self, query, *args):
+            del query, args
             return {"session_date": __import__("datetime").date(2024, 1, 2)}
 
     class PoolStub:
@@ -95,3 +95,72 @@ async def test_prune_oldest_published_mongo_session_all_markets(monkeypatch):
     result = await mongo_storage.prune_oldest_published_mongo_session(PoolStub(), object())
     assert result == "2024-01-02"
     assert calls == [("2024-01-02", "US"), ("2024-01-02", "TO")]
+
+
+@pytest.mark.asyncio
+async def test_prune_oldest_skips_exclude_dates(monkeypatch):
+    """Oldest published date in exclude set → pick next oldest."""
+    fetch_args = []
+
+    class PgConnStub:
+        async def fetchrow(self, query, *args):
+            fetch_args.append((query, args))
+            assert "<> ALL" in query or "NOT IN" in query.upper() or "= ANY" in query
+            return {"session_date": __import__("datetime").date(2024, 1, 3)}
+
+    class PoolStub:
+        def acquire(self):
+            return self
+
+        async def __aenter__(self):
+            return PgConnStub()
+
+        async def __aexit__(self, *args):
+            del args
+
+    async def prune_session_stub(conn, date, market):
+        del conn, date, market
+
+    monkeypatch.setattr(mongo_storage, "list_markets", lambda: ["US"])
+    monkeypatch.setattr(mongo_storage, "prune_mongo_session_date", prune_session_stub)
+
+    result = await mongo_storage.prune_oldest_published_mongo_session(
+        PoolStub(),
+        object(),
+        exclude_dates=["2024-01-02"],
+    )
+    assert result == "2024-01-03"
+    assert fetch_args
+    assert "2024-01-02" in fetch_args[0][1][0]
+
+
+@pytest.mark.asyncio
+async def test_prune_oldest_returns_none_when_all_excluded(monkeypatch):
+    class PgConnStub:
+        async def fetchrow(self, query, *args):
+            del query, args
+            return None
+
+    class PoolStub:
+        def acquire(self):
+            return self
+
+        async def __aenter__(self):
+            return PgConnStub()
+
+        async def __aexit__(self, *args):
+            del args
+
+    async def prune_session_stub(conn, date, market):
+        del conn, date, market
+        raise AssertionError("must not prune when no date left")
+
+    monkeypatch.setattr(mongo_storage, "list_markets", lambda: ["US"])
+    monkeypatch.setattr(mongo_storage, "prune_mongo_session_date", prune_session_stub)
+
+    result = await mongo_storage.prune_oldest_published_mongo_session(
+        PoolStub(),
+        object(),
+        exclude_dates=["2024-01-01", "2024-01-02"],
+    )
+    assert result is None

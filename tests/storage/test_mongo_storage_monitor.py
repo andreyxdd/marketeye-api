@@ -100,14 +100,16 @@ async def test_mongo_storage_monitor_check_only_alerts_without_prune(monkeypatch
 async def test_mongo_storage_monitor_prunes_until_target(monkeypatch):
     calls = {"notify": 0}
     ratios = iter([(1000, 0.90), (900, 0.80), (700, 0.69)])
+    prune_calls = []
     pruned = iter(["2024-01-01", "2024-01-02"])
 
     async def ratio_stub(conn, limit):
         del conn, limit
         return next(ratios)
 
-    async def prune_stub(pool, conn):
+    async def prune_stub(pool, conn, exclude_dates=None):
         del pool, conn
+        prune_calls.append(list(exclude_dates or []))
         return next(pruned)
 
     async def pool_stub():
@@ -138,23 +140,29 @@ async def test_mongo_storage_monitor_prunes_until_target(monkeypatch):
     assert calls["notify"] == 1
     assert result["pruned_dates"] == ["2024-01-01", "2024-01-02"]
     assert result["ratio"] == 0.69
+    assert prune_calls == [[], ["2024-01-01"]]
 
 
 @pytest.mark.asyncio
-async def test_mongo_storage_monitor_stops_on_duplicate_prune_date(monkeypatch):
-    """Same oldest published date reappears → exit loop (no hang)."""
+async def test_mongo_storage_monitor_passes_exclude_and_stops_on_none(monkeypatch):
+    """After prune, next call excludes pruned dates; None → stop (no duplicate hang)."""
     calls = {"notify": 0, "prune": 0}
-    # First re-check after prune drops; stay above target so loop continues.
+    # Stay above target after first prune so loop asks for next date.
     ratios = iter([(1000, 0.90), (900, 0.85)])
+    prune_calls = []
 
     async def ratio_stub(conn, limit):
         del conn, limit
         return next(ratios)
 
-    async def prune_stub(pool, conn):
+    async def prune_stub(pool, conn, exclude_dates=None):
         del pool, conn
         calls["prune"] += 1
-        return "2024-01-01"
+        exclude = list(exclude_dates or [])
+        prune_calls.append(exclude)
+        if not exclude:
+            return "2024-01-01"
+        return None
 
     async def pool_stub():
         return object()
@@ -183,5 +191,6 @@ async def test_mongo_storage_monitor_stops_on_duplicate_prune_date(monkeypatch):
     result = await mongo_storage_monitor.run_monitor(check_only=False)
     assert calls["notify"] == 1
     assert calls["prune"] == 2
+    assert prune_calls == [[], ["2024-01-01"]]
     assert result["pruned_dates"] == ["2024-01-01"]
     assert result["ratio"] == 0.85

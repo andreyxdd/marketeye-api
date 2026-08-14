@@ -1,6 +1,6 @@
 """Mongo storage ratio and published-gated prune helpers."""
 
-from typing import Optional
+from typing import Iterable, Optional
 
 import asyncpg
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -47,16 +47,31 @@ async def prune_mongo_if_published(
 async def prune_oldest_published_mongo_session(
     pool: asyncpg.Pool,
     conn: AsyncIOMotorClient,
+    exclude_dates: Optional[Iterable[str]] = None,
 ) -> Optional[str]:
+    excluded = list(exclude_dates) if exclude_dates else []
     async with pool.acquire() as pg_conn:
-        row = await pg_conn.fetchrow(
-            """
-            SELECT session_date
-            FROM published_dates
-            ORDER BY session_date ASC
-            LIMIT 1
-            """
-        )
+        if excluded:
+            # PG row stays after Mongo prune; exclude already-pruned dates so loop advances.
+            row = await pg_conn.fetchrow(
+                """
+                SELECT session_date
+                FROM published_dates
+                WHERE session_date <> ALL($1::date[])
+                ORDER BY session_date ASC
+                LIMIT 1
+                """,
+                excluded,
+            )
+        else:
+            row = await pg_conn.fetchrow(
+                """
+                SELECT session_date
+                FROM published_dates
+                ORDER BY session_date ASC
+                LIMIT 1
+                """
+            )
         if row is None:
             return None
         session_date = row["session_date"]
