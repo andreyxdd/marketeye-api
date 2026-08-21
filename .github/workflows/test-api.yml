@@ -30,6 +30,5 @@ jobs:
           PING_URL: ${{ secrets.PING_URL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
           EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
         run: python test-api.py

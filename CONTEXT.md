@@ -6,7 +6,7 @@
 | **AnalyticsService** | Orchestration module for ticker/list/market routes and cron ingest |
 | **Calc workspace** | MongoDB hot compute store; rolling delete before ingest for published dates outside the 70-day window |
 | **Postgres serving archive** | Hybrid read-model (`published_dates`, `published_artifacts`, `published_tickers`) used for cold reads |
-| **OHLCV bar store** | PostgreSQL cache of normalized EOD bars keyed by `(market, ticker, session_date)`; write-through front for Polygon/EODHD; distinct from **Postgres serving archive** |
+| **OHLCV bar store** | PostgreSQL cache of normalized EOD bars keyed by `(market, ticker, session_date)`; write-through front for EODHD; distinct from **Postgres serving archive** |
 | **Storage prune** | At PostgreSQL usage >=85%, alert developer and delete oldest `published_dates` until <=70% (no Drive cold archive) |
 | **Mongo storage guard** | At Mongo usage >=85%, alert developer and delete Mongo hot data for oldest published session (all markets) until <=70%; never deletes Postgres rows |
 | **Enrichment policy** | Per-market rules for attaching extras (US: FCF/mentions on hot reads; TO: OHLCV indicators only). Cron publish stubs US mentions to zero |
@@ -21,7 +21,7 @@
 | **PriorCompletedSession** | Trading session immediately before **LastCompletedSession** (not calendar yesterday) |
 | **Cron probe** | Slim scheduled preflight: resolves latest sessions for US and TO, checks `is_session_published`, then emits GitHub Actions `needs_work` without ticker-universe fan-out |
 | **Dense EOD schedule** | GitHub Actions runs every 30 minutes from 20:00 through 03:00 UTC; full ingest runs only when Cron probe reports work (or an explicit `target_date` is dispatched) |
-| **PolygonUSProvider** | US implementation wrapping Polygon.io |
+| **EodhdUSProvider** | US implementation wrapping EODHD (`.US`, NYSE+NASDAQ) |
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
 | **Price band** | One of four close-price ranges for Micro screening: `lte5`, `5to10`, `10to20`, `20to50` |
 | **Micro screening** | Filter analytics rows by EOD close before top-20 sort |
