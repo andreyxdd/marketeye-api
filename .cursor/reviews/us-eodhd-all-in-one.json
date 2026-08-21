@@ -1,0 +1,12 @@
+{
+  "plan_slug": "us-eodhd-all-in-one",
+  "status": "PASS",
+  "rounds": 2,
+  "reviewers": {
+    "bugbot": {"status": "PASS", "notes": "no bugs after 516a995"},
+    "security": {"status": "PASS", "notes": "no medium+"},
+    "ponytail": {"status": "PASS", "notes": "advisory shrink/yagni only"}
+  },
+  "exec_branch": "andx/exec-us-eodhd-all-in-one-20260821-080156",
+  "head": "516a995"
+}
