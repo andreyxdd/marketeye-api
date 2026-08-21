@@ -10,7 +10,7 @@ async def test_get_analytics_lists_by_criterion_to_market(client, monkeypatch):
         lambda *args, **kwargs: {"mfi": 50.0},
     )
     monkeypatch.setattr(
-        "services.analytics_service.get_quarterly_free_cash_flow_polygon",
+        "services.analytics_service.get_quarterly_free_cash_flow_eodhd",
         lambda *args, **kwargs: "",
     )
 

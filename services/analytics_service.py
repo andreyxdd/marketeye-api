@@ -20,7 +20,7 @@ from utils.price_bands import resolve_price_band
 from utils.handle_external_apis import (
     get_market_sp500,
     get_market_vixs,
-    get_quarterly_free_cash_flow_polygon,
+    get_quarterly_free_cash_flow_eodhd,
     get_ticker_analytics as external_get_ticker_analytics,
     get_ticker_extra_analytics as external_get_ticker_extra_analytics,
     get_ticker_base_analytics as external_get_ticker_base_analytics,
@@ -66,7 +66,7 @@ async def enrich_ticker_row(
             **base_row,
             **external_get_ticker_extra_analytics(ticker, date, market=market),
             **mentions,
-            "fcf": get_quarterly_free_cash_flow_polygon(ticker, get_last_quater_date(date)),
+            "fcf": get_quarterly_free_cash_flow_eodhd(ticker, get_last_quater_date(date)),
             "frequencies": await get_analytics_frequencies(
                 conn, date, criterion, ticker, market=market, price_band=price_band
             ),
@@ -127,7 +127,7 @@ async def get_ticker_analytics_response_hot(
         return {
             **external_get_ticker_analytics(ticker, date, 45, 15, market=market),
             **mentions,
-            "fcf": get_quarterly_free_cash_flow_polygon(ticker, last_quater_limit_date),
+            "fcf": get_quarterly_free_cash_flow_eodhd(ticker, last_quater_limit_date),
             "frequencies": await get_analytics_frequencies(
                 conn, date, criterion, ticker, market=market
             ),
@@ -371,7 +371,7 @@ def get_free_cash_flow(ticker: str, date: str, market: str = DEFAULT_MARKET):
     if market != "US":
         return ""
     last_quater_limit_date = get_last_quater_date(date)
-    return get_quarterly_free_cash_flow_polygon(ticker, last_quater_limit_date)
+    return get_quarterly_free_cash_flow_eodhd(ticker, last_quater_limit_date)
 
 
 async def ingest_base_analytics_for_market(

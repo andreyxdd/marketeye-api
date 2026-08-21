@@ -20,7 +20,7 @@ from tests.helpers.stubs import (
 def _apply_stubs(recorder):
     analytics_service.external_get_ticker_analytics = stub_get_ticker_analytics
     analytics_service.external_get_ticker_extra_analytics = stub_get_ticker_extra_analytics
-    analytics_service.get_quarterly_free_cash_flow_polygon = stub_get_fcf
+    analytics_service.get_quarterly_free_cash_flow_eodhd = stub_get_fcf
     analytics_service.get_market_sp500 = stub_get_market_sp500
     analytics_service.get_market_vixs = stub_get_market_vixs
 

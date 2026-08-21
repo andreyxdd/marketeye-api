@@ -1,0 +1,32 @@
+{
+  "cases": [
+    {
+      "ticker": "AAPL",
+      "date_quarter": "2024-03-31",
+      "report_date": "2024-03-30",
+      "ocf": 22690000000,
+      "formatted": "22.69B"
+    },
+    {
+      "ticker": "MSFT",
+      "date_quarter": "2024-03-31",
+      "report_date": "2024-03-31",
+      "ocf": 18835000000,
+      "formatted": "18.84B"
+    },
+    {
+      "ticker": "GOOG",
+      "date_quarter": "2024-03-31",
+      "report_date": "2024-03-31",
+      "ocf": 28850000,
+      "formatted": "28.85M"
+    },
+    {
+      "ticker": "SMALL",
+      "date_quarter": "2024-03-31",
+      "report_date": "2024-03-31",
+      "ocf": 12500,
+      "formatted": "12.50K"
+    }
+  ]
+}

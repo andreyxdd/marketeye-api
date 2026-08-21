@@ -45,7 +45,7 @@ def apply_external_stubs(monkeypatch):
     )
     monkeypatch.setattr(
         external,
-        "get_quarterly_free_cash_flow_polygon",
+        "get_quarterly_free_cash_flow_eodhd",
         stub_get_fcf,
     )
     monkeypatch.setattr(external, "get_market_sp500", stub_get_market_sp500)

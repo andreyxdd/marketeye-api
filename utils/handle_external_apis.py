@@ -26,7 +26,7 @@ from utils.handle_calculations import (
     get_ema_n,
 )
 from core.settings import (
-    POLYGON_API_KEY,
+    EODHD_API_KEY,
     QUANDL_API_KEY,
     MI_BASE_URL,
     MI_SP500_CODE,
@@ -430,31 +430,47 @@ def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
 
     return None
 
-def get_quarterly_free_cash_flow_polygon(ticker: str, date_quarter: str) -> str:
-    url = "https://api.polygon.io/vX/reference/financials"
+def get_quarterly_free_cash_flow_eodhd(ticker: str, date_quarter: str) -> str:
+    """US product `fcf` field: EODHD operating cash flow → format_number_short."""
+    url = f"https://eodhd.com/api/fundamentals/{ticker.upper()}.US"
     params = {
-        "ticker": ticker,
-        "period_of_report_date.lte": date_quarter,
-        "timeframe": "quarterly",
-        "order": "desc",
-        "limit": 1,
-        "sort": "filing_date",
-        "apiKey": POLYGON_API_KEY
+        "api_token": EODHD_API_KEY,
+        "fmt": "json",
+        "filter": "Financials::Cash_Flow::quarterly",
     }
-
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=60)
     response.raise_for_status()
     data = response.json()
 
-    try:
-        results = data["results"]
-        if not results:
-            return "N/A"
+    quarterly = data
+    if isinstance(data, dict):
+        sample = next(iter(data.values()), {})
+        if not isinstance(sample, dict) or "totalCashFromOperatingActivities" not in sample:
+            quarterly = (
+                data.get("quarterly")
+                or data.get("Cash_Flow", {}).get("quarterly")
+                or data
+            )
 
-        cash_flow = results[0]["financials"]["cash_flow_statement"]
-        fcf = cash_flow["net_cash_flow_from_operating_activities"]["value"]
-        return format_number_short(fcf)
-    except (KeyError, IndexError, TypeError):
+    if not isinstance(quarterly, dict) or not quarterly:
+        return "N/A"
+
+    try:
+        eligible = []
+        for key, entry in quarterly.items():
+            if not isinstance(entry, dict):
+                continue
+            report_date = entry.get("date") or key
+            if report_date and report_date <= date_quarter:
+                eligible.append((report_date, entry))
+        if not eligible:
+            return "N/A"
+        eligible.sort(key=lambda item: item[0], reverse=True)
+        ocf_raw = eligible[0][1].get("totalCashFromOperatingActivities")
+        if ocf_raw is None:
+            return "N/A"
+        return format_number_short(float(ocf_raw))
+    except (KeyError, TypeError, ValueError):
         return "N/A"
 
 def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int = 10):
