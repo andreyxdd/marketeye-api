@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+import requests
 
 from utils.handle_calculations import format_number_short
 from utils.handle_external_apis import get_quarterly_free_cash_flow_eodhd
@@ -49,3 +50,17 @@ def test_eodhd_fcf_matches_polygon_era_formatted(case, monkeypatch):
         get_quarterly_free_cash_flow_eodhd(case["ticker"], case["date_quarter"])
         == case["formatted"]
     )
+
+
+def test_eodhd_fcf_http_error_returns_na(monkeypatch):
+    response = MagicMock()
+    response.raise_for_status.side_effect = requests.HTTPError(
+        "429 Client Error: Too Many Requests"
+    )
+
+    monkeypatch.setattr(
+        "utils.handle_external_apis.requests.get",
+        lambda *a, **k: response,
+    )
+
+    assert get_quarterly_free_cash_flow_eodhd("AAPL", "2024-03-31") == "N/A"

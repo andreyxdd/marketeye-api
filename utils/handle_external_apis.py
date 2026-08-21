@@ -432,30 +432,30 @@ def get_quaterly_free_cash_flow(ticker: str, date_quater: str) -> str:
 
 def get_quarterly_free_cash_flow_eodhd(ticker: str, date_quarter: str) -> str:
     """US product `fcf` field: EODHD operating cash flow → format_number_short."""
-    url = f"https://eodhd.com/api/fundamentals/{ticker.upper()}.US"
-    params = {
-        "api_token": EODHD_API_KEY,
-        "fmt": "json",
-        "filter": "Financials::Cash_Flow::quarterly",
-    }
-    response = requests.get(url, params=params, timeout=60)
-    response.raise_for_status()
-    data = response.json()
-
-    quarterly = data
-    if isinstance(data, dict):
-        sample = next(iter(data.values()), {})
-        if not isinstance(sample, dict) or "totalCashFromOperatingActivities" not in sample:
-            quarterly = (
-                data.get("quarterly")
-                or data.get("Cash_Flow", {}).get("quarterly")
-                or data
-            )
-
-    if not isinstance(quarterly, dict) or not quarterly:
-        return "N/A"
-
     try:
+        url = f"https://eodhd.com/api/fundamentals/{ticker.upper()}.US"
+        params = {
+            "api_token": EODHD_API_KEY,
+            "fmt": "json",
+            "filter": "Financials::Cash_Flow::quarterly",
+        }
+        response = requests.get(url, params=params, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+
+        quarterly = data
+        if isinstance(data, dict):
+            sample = next(iter(data.values()), {})
+            if not isinstance(sample, dict) or "totalCashFromOperatingActivities" not in sample:
+                quarterly = (
+                    data.get("quarterly")
+                    or data.get("Cash_Flow", {}).get("quarterly")
+                    or data
+                )
+
+        if not isinstance(quarterly, dict) or not quarterly:
+            return "N/A"
+
         eligible = []
         for key, entry in quarterly.items():
             if not isinstance(entry, dict):
@@ -470,7 +470,7 @@ def get_quarterly_free_cash_flow_eodhd(ticker: str, date_quarter: str) -> str:
         if ocf_raw is None:
             return "N/A"
         return format_number_short(float(ocf_raw))
-    except (KeyError, TypeError, ValueError):
+    except (RequestException, KeyError, TypeError, ValueError, AttributeError):
         return "N/A"
 
 def cache_quaterly_free_cash_flow(tickers: List[str], date: str, rate_limit: int = 10):
