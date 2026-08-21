@@ -81,3 +81,39 @@ def test_eodhd_us_fetch_ticker_universe_nyse_nasdaq(eodhd_us_provider, monkeypat
 def test_eodhd_us_probe_ticker_is_spy(eodhd_us_provider):
     assert eodhd_us_provider.probe_ticker == "SPY"
     assert eodhd_us_provider.market == "US"
+
+
+def test_eodhd_us_universe_rejects_dict_json(eodhd_us_provider, monkeypatch):
+    response = MagicMock()
+    response.status_code = 200
+    response.json.return_value = {"error": "Unauthorized", "code": 401}
+
+    monkeypatch.setattr(
+        "providers.eodhd_us.EodhdUSProvider._http_get", lambda *a, **k: response
+    )
+
+    with pytest.raises(ValueError, match=r"NYSE"):
+        eodhd_us_provider.fetch_ticker_universe(FIXTURE_DATE)
+
+
+def test_eodhd_us_universe_skips_non_dict_items(eodhd_us_provider, monkeypatch):
+    responses = {
+        "NYSE": [{"Code": "IBM", "Type": "Common Stock"}, "bad-row", None],
+        "NASDAQ": [{"Code": "AAPL", "Type": "Common Stock"}],
+    }
+
+    def fake_http_get(self, url, **kwargs):
+        del self, kwargs
+        response = MagicMock()
+        response.status_code = 200
+        for exchange, payload in responses.items():
+            if f"/exchange-symbol-list/{exchange}" in url:
+                response.json.return_value = payload
+                return response
+        raise AssertionError(f"unexpected url: {url}")
+
+    monkeypatch.setattr(
+        "providers.eodhd_us.EodhdUSProvider._http_get", fake_http_get
+    )
+
+    assert eodhd_us_provider.fetch_ticker_universe(FIXTURE_DATE) == ["IBM", "AAPL"]

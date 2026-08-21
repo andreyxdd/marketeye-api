@@ -70,3 +70,30 @@ def test_eodhd_to_fetch_ticker_universe(eodhd_to_provider, monkeypatch):
 
     tickers = eodhd_to_provider.fetch_ticker_universe(FIXTURE_DATE)
     assert tickers == ["SHOP", "RY"]
+
+
+def test_eodhd_to_universe_rejects_dict_json(eodhd_to_provider, monkeypatch):
+    response = MagicMock()
+    response.status_code = 200
+    response.json.return_value = {"message": "rate limited", "errors": []}
+    monkeypatch.setattr(
+        "providers.eodhd_to.EodhdTOProvider._http_get", lambda *a, **k: response
+    )
+
+    with pytest.raises(ValueError, match=r"TO"):
+        eodhd_to_provider.fetch_ticker_universe(FIXTURE_DATE)
+
+
+def test_eodhd_to_universe_skips_non_dict_items(eodhd_to_provider, monkeypatch):
+    response = MagicMock()
+    response.status_code = 200
+    response.json.return_value = [
+        {"Code": "SHOP", "Type": "Common Stock"},
+        "not-a-dict",
+        42,
+    ]
+    monkeypatch.setattr(
+        "providers.eodhd_to.EodhdTOProvider._http_get", lambda *a, **k: response
+    )
+
+    assert eodhd_to_provider.fetch_ticker_universe(FIXTURE_DATE) == ["SHOP"]

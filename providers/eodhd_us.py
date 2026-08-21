@@ -37,7 +37,14 @@ class EodhdUSProvider(EodhdTOProvider):
                 break
 
             data = response.json()
+            if not isinstance(data, list):
+                raise ValueError(
+                    f"providers/eodhd_us.py fetch_ticker_universe: "
+                    f"expected list from {exchange}, got {type(data).__name__}: {data!r}"
+                )
             for item in data:
+                if not isinstance(item, dict):
+                    continue
                 code = item.get("Code") or item.get("code")
                 asset_type = (item.get("Type") or item.get("type") or "").lower()
                 if not code:
