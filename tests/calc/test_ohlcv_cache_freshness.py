@@ -5,10 +5,10 @@ from datetime import date, timedelta
 import pandas as pd
 
 from db.crud.ohlcv_bars import BarRow
-from providers.polygon_us import PolygonUSProvider
+from providers.eodhd_us import EodhdUSProvider
 
 
-class _CacheHitProvider(PolygonUSProvider):
+class _CacheHitProvider(EodhdUSProvider):
     def _fetch_ohlcv_from_api(self, ticker, date, offset_n_days, actual_offset_n_days, utc_dates):
         raise AssertionError("API should run when cache lacks requested session date")
 

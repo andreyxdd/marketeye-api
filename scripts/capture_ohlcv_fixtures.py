@@ -2,7 +2,7 @@
 """
 Build OHLCV + golden calc fixtures.
 
-Reads POLYGON_API_KEY from repo-root `.env`. Uses Polygon when the key returns
+Reads EODHD_API_KEY from repo-root `.env`. Uses EODHD when the key returns
 enough bars (>= MIN_BARS); otherwise keeps existing fixture files or synthetic bars.
 """
 
@@ -11,7 +11,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,10 +33,6 @@ MARKET_TICKERS = {
     "TO": ["SHOP", "RY", "TD"],
 }
 
-POLYGON_SYMBOL_ALIASES = {
-    "GOOG": "GOOGL",
-}
-
 MIN_BARS = 50
 MAX_FETCH_ATTEMPTS = 5
 
@@ -55,7 +51,7 @@ GOLDEN_FIELDS = [
 ]
 
 
-def synthetic_polygon_payload(ticker: str, end_date: str, days: int = 100) -> dict:
+def synthetic_eodhd_payload(ticker: str, end_date: str, days: int = 100) -> list:
     tickers = CALC_TICKERS
     end = datetime.strptime(end_date, "%Y-%m-%d")
     results = []
@@ -64,22 +60,19 @@ def synthetic_polygon_payload(ticker: str, end_date: str, days: int = 100) -> di
     while len(results) < days:
         if cursor.weekday() < 5:
             price *= 1.001 if len(results) % 2 == 0 else 0.999
-            day_utc = datetime(
-                cursor.year, cursor.month, cursor.day, 12, 0, 0, tzinfo=timezone.utc
-            )
-            ts = int(day_utc.timestamp() * 1000)
             results.append(
                 {
-                    "t": ts,
-                    "o": round(price * 0.995, 4),
-                    "h": round(price * 1.01, 4),
-                    "l": round(price * 0.99, 4),
-                    "c": round(price, 4),
-                    "v": 1_000_000 + len(results) * 1000,
+                    "date": cursor.strftime("%Y-%m-%d"),
+                    "open": round(price * 0.995, 4),
+                    "high": round(price * 1.01, 4),
+                    "low": round(price * 0.99, 4),
+                    "close": round(price, 4),
+                    "volume": 1_000_000 + len(results) * 1000,
                 }
             )
         cursor -= timedelta(days=1)
-    return {"results": results}
+    results.sort(key=lambda row: row["date"])
+    return results
 
 
 def _load_existing_payload(ticker: str):
@@ -87,24 +80,29 @@ def _load_existing_payload(ticker: str):
     if not path.exists():
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if len(payload.get("results") or []) >= MIN_BARS:
+    if isinstance(payload, list) and len(payload) >= MIN_BARS:
         return payload
     return None
 
 
-def fetch_polygon_payload(ticker: str, end_date: str) -> dict:
-    api_key = os.getenv("POLYGON_API_KEY")
-    if not api_key or api_key in {"test", "test-polygon-key"}:
-        existing = _load_existing_payload(ticker)
-        return existing or synthetic_polygon_payload(ticker, end_date)
+def _eod_symbol(ticker: str, market: str) -> str:
+    suffix = "US" if market == "US" else market
+    return f"{ticker.upper()}.{suffix}"
 
-    polygon_symbol = POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
+
+def fetch_eodhd_payload(ticker: str, end_date: str, market: str = "US") -> list:
+    api_key = os.getenv("EODHD_API_KEY")
+    if not api_key or api_key in {"test", "test-eodhd-key"}:
+        existing = _load_existing_payload(ticker)
+        return existing or synthetic_eodhd_payload(ticker, end_date)
+
     end = datetime.strptime(end_date, "%Y-%m-%d")
     start = end - timedelta(days=120)
+    symbol = _eod_symbol(ticker, market)
     url = (
-        f"https://api.polygon.io/v2/aggs/ticker/{polygon_symbol}/range/1/day/"
-        f"{start.strftime('%Y-%m-%d')}/{end.strftime('%Y-%m-%d')}"
-        f"?adjusted=true&sort=desc&limit=50000&apiKey={api_key}"
+        f"https://eodhd.com/api/eod/{symbol}"
+        f"?from={start.strftime('%Y-%m-%d')}&to={end.strftime('%Y-%m-%d')}"
+        f"&period=d&fmt=json&api_token={api_key}"
     )
 
     for attempt in range(1, MAX_FETCH_ATTEMPTS + 1):
@@ -115,36 +113,35 @@ def fetch_polygon_payload(ticker: str, end_date: str) -> dict:
                 continue
             response.raise_for_status()
             payload = response.json()
-            if payload.get("status") != "OK":
-                raise requests.RequestException(payload.get("error") or payload.get("status"))
-            results = payload.get("results") or []
-            if len(results) >= MIN_BARS:
-                print(f"Polygon: {ticker} ({polygon_symbol}) -> {len(results)} bars")
+            if not isinstance(payload, list):
+                raise requests.RequestException(f"unexpected payload type: {type(payload)}")
+            if len(payload) >= MIN_BARS:
+                print(f"EODHD: {ticker} ({symbol}) -> {len(payload)} bars")
                 return payload
             print(
-                f"warning: Polygon returned {len(results)} bars for {ticker} "
+                f"warning: EODHD returned {len(payload)} bars for {ticker} "
                 f"(need {MIN_BARS}); keeping existing/synthetic fallback"
             )
             break
         except requests.RequestException as exc:
             message = str(exc).replace(api_key, "***")
             print(
-                f"warning: Polygon fetch attempt {attempt}/{MAX_FETCH_ATTEMPTS} "
+                f"warning: EODHD fetch attempt {attempt}/{MAX_FETCH_ATTEMPTS} "
                 f"failed for {ticker}: {message}"
             )
             time.sleep(min(2**attempt, 10))
 
     existing = _load_existing_payload(ticker)
     if existing:
-        print(f"keeping existing fixture for {ticker} ({len(existing['results'])} bars)")
+        print(f"keeping existing fixture for {ticker} ({len(existing)} bars)")
         return existing
-    return synthetic_polygon_payload(ticker, end_date)
+    return synthetic_eodhd_payload(ticker, end_date)
 
 
-def mock_get(url, *args, **kwargs):
+def mock_http_get(self, url, *args, **kwargs):
+    del self, args, kwargs
     for ticker in CALC_TICKERS:
-        polygon_symbol = POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
-        if f"/ticker/{polygon_symbol}/" in url or f"/ticker/{ticker.upper()}/" in url:
+        if f"/eod/{ticker.upper()}.US" in url:
             payload = json.loads((OHLCV_DIR / f"{ticker}.json").read_text())
             mock_response = requests.Response()
             mock_response.status_code = 200
@@ -175,12 +172,12 @@ def main() -> None:
     GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
 
     for ticker in tickers:
-        payload = fetch_polygon_payload(ticker, FIXTURE_DATE)
+        payload = fetch_eodhd_payload(ticker, FIXTURE_DATE, market=market)
         (OHLCV_DIR / f"{ticker}.json").write_text(
             json.dumps(payload, indent=2), encoding="utf-8"
         )
 
-    with patch("providers.polygon_us.requests.get", side_effect=mock_get):
+    with patch("providers.eodhd_us.EodhdUSProvider._http_get", side_effect=mock_http_get):
         for ticker in tickers:
             golden = build_golden(ticker)
             (GOLDEN_DIR / f"{ticker.lower()}_{FIXTURE_DATE}.json").write_text(

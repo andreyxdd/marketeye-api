@@ -14,11 +14,7 @@ OHLCV_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "ohlcv"
 
 def _aapl_ohlcv_dataframe() -> pd.DataFrame:
     payload = json.loads((OHLCV_DIR / "AAPL.json").read_text(encoding="utf-8"))
-    df = pd.DataFrame(payload["results"])
-    df["date"] = pd.to_datetime(df["t"], unit="ms").dt.strftime("%Y-%m-%d")
-    df = df.rename(
-        columns={"o": "open", "h": "high", "l": "low", "c": "close", "v": "volume"}
-    )
+    df = pd.DataFrame(payload)
     df["ticker"] = "AAPL"
     return df[["date", "open", "high", "low", "close", "volume", "ticker"]]
 

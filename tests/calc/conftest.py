@@ -1,4 +1,4 @@
-"""Polygon HTTP mocking for calculation tests."""
+"""EODHD HTTP mocking for US calculation tests."""
 
 import json
 from pathlib import Path
@@ -12,19 +12,16 @@ OHLCV_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "ohlcv"
 
 
 @pytest.fixture(autouse=True)
-def mock_polygon_requests(monkeypatch):
+def mock_eodhd_us_requests(monkeypatch):
     def fake_http_get(self, url, *args, **kwargs):
         del self, args, kwargs
-        from providers.polygon_us import POLYGON_SYMBOL_ALIASES
-
         for ticker in CALC_TICKERS:
-            polygon_symbol = POLYGON_SYMBOL_ALIASES.get(ticker.upper(), ticker.upper())
-            if f"/ticker/{polygon_symbol}/" in url or f"/ticker/{ticker.upper()}/" in url:
+            if f"/eod/{ticker.upper()}.US" in url:
                 payload = json.loads((OHLCV_DIR / f"{ticker}.json").read_text())
                 response = requests.Response()
                 response.status_code = 200
                 response._content = json.dumps(payload).encode("utf-8")
                 return response
-        raise AssertionError(f"unexpected polygon URL: {url}")
+        raise AssertionError(f"unexpected eodhd URL: {url}")
 
-    monkeypatch.setattr("providers.polygon_us.PolygonUSProvider._http_get", fake_http_get)
+    monkeypatch.setattr("providers.eodhd_us.EodhdUSProvider._http_get", fake_http_get)

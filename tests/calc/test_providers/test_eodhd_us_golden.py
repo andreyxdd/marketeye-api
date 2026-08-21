@@ -1,9 +1,11 @@
+"""EodhdUSProvider golden / fixture / cache tests."""
+
 import json
 from pathlib import Path
 
 import pytest
 
-from providers.polygon_us import PolygonUSProvider
+from providers.eodhd_us import EodhdUSProvider
 from tests.helpers.constants import CALC_TICKERS, FIXTURE_DATE
 
 GOLDEN_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "golden"
@@ -16,30 +18,34 @@ def _load_golden(ticker: str) -> dict:
 
 
 @pytest.fixture
-def polygon_us_provider():
-    return PolygonUSProvider()
+def eodhd_us_provider():
+    return EodhdUSProvider()
 
 
 @pytest.mark.parametrize("ticker", CALC_TICKERS)
-def test_polygon_us_provider_matches_golden(ticker, polygon_us_provider, mock_polygon_requests):
-    del mock_polygon_requests
+def test_eodhd_us_provider_matches_golden(
+    ticker, eodhd_us_provider, mock_eodhd_us_requests
+):
+    del mock_eodhd_us_requests
     golden = _load_golden(ticker)
-    analytics = polygon_us_provider.fetch_ticker_analytics(ticker, FIXTURE_DATE)
+    analytics = eodhd_us_provider.fetch_ticker_analytics(ticker, FIXTURE_DATE)
     for field, expected in golden.items():
         assert field in analytics
         assert analytics[field] == pytest.approx(expected, rel=1e-6, abs=1e-6)
 
 
-def test_polygon_us_fetch_ohlcv_from_fixtures(polygon_us_provider, mock_polygon_requests):
-    del mock_polygon_requests
-    df = polygon_us_provider.fetch_ohlcv("AAPL", FIXTURE_DATE, offset_n_days=85, actual_offset_n_days=50)
+def test_eodhd_us_fetch_ohlcv_from_fixtures(eodhd_us_provider, mock_eodhd_us_requests):
+    del mock_eodhd_us_requests
+    df = eodhd_us_provider.fetch_ohlcv(
+        "AAPL", FIXTURE_DATE, offset_n_days=85, actual_offset_n_days=50
+    )
     assert not df.empty
     payload = json.loads((OHLCV_DIR / "AAPL.json").read_text(encoding="utf-8"))
     assert len(df) >= 50
-    assert len(df) == len(payload["results"])
+    assert len(df) == len(payload)
 
 
-def test_polygon_us_cache_hit_skips_http(monkeypatch, postgres_pool):
+def test_eodhd_us_cache_hit_skips_http(monkeypatch, postgres_pool):
     del postgres_pool
     monkeypatch.delenv("OHLCV_CACHE_DISABLED", raising=False)
     import core.settings as settings_module
@@ -51,10 +57,9 @@ def test_polygon_us_cache_hit_skips_http(monkeypatch, postgres_pool):
     from db.crud.ohlcv_bars import BarRow, upsert_bars
 
     end = date.fromisoformat(FIXTURE_DATE)
-    start = end - timedelta(days=85)
     rows = [
         BarRow(
-            session_date=start + timedelta(days=offset),
+            session_date=end - timedelta(days=offset),
             open=100.0,
             high=101.0,
             low=99.0,
@@ -72,10 +77,16 @@ def test_polygon_us_cache_hit_skips_http(monkeypatch, postgres_pool):
         calls["http"] += 1
         raise AssertionError("HTTP should not be called on cache hit")
 
-    monkeypatch.setattr("providers.polygon_us.PolygonUSProvider._http_get", fail_http)
+    monkeypatch.setattr("providers.eodhd_us.EodhdUSProvider._http_get", fail_http)
+    monkeypatch.setattr("providers.eodhd_to.EodhdTOProvider._http_get", fail_http)
 
-    provider = PolygonUSProvider()
+    provider = EodhdUSProvider()
     df = provider.fetch_ohlcv("AAPL", FIXTURE_DATE, offset_n_days=85, actual_offset_n_days=50)
     assert not df.empty
     assert len(df) >= 50
     assert calls["http"] == 0
+
+
+def test_eodhd_us_goog_uses_bare_symbol_no_googl_alias(eodhd_us_provider):
+    """EODHD lists GOOG.US; Polygon-era GOOG→GOOGL alias not required."""
+    assert eodhd_us_provider._eod_symbol("GOOG") == "GOOG.US"
