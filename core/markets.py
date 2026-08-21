@@ -11,9 +11,9 @@ class MarketConfig(TypedDict):
 
 MARKETS: dict[str, MarketConfig] = {
     "US": {
-        "provider": "polygon",
+        "provider": "eodhd",
         "timezone": "America/New_York",
-        "eodhd_exchange": None,
+        "eodhd_exchange": "US",
     },
     "TO": {
         "provider": "eodhd",

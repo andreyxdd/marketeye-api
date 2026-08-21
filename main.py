@@ -49,7 +49,7 @@ app = FastAPI(
     title="Market-Eye API",
     version=VERSION,
     # pylint: disable=C0301
-    description="**Market-Eye API** provides methods for computing technical indicators of individual stocks (_e.g. MACD, EMAs, MFI, etc._) as well as indicators describing the market as a whole (_e.g. CVI, VIX, etc._). EOD data for US equities is fetched from Polygon.io; Toronto (TO) data from EODHD. Markets: _US_ (NASDAQ/NYSE) and _TO_ (Toronto Stock Exchange). The API includes a scraping bot for US news mentions and methods for sorting analytics by criteria.",
+    description="**Market-Eye API** provides methods for computing technical indicators of individual stocks (_e.g. MACD, EMAs, MFI, etc._) as well as indicators describing the market as a whole (_e.g. CVI, VIX, etc._). EOD data for US (NYSE/NASDAQ) and Toronto (TO) equities is fetched from EODHD. Markets: _US_ and _TO_. The API includes a scraping bot for US news mentions and methods for sorting analytics by criteria.",
     contact={
         "name": "Andrei Volkov",
         "email": "volkov@ualberta.ca",

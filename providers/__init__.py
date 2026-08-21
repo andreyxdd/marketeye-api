@@ -2,9 +2,9 @@
 
 from providers.base import MarketDataProvider
 from providers.eodhd_to import EodhdTOProvider
-from providers.polygon_us import PolygonUSProvider
+from providers.eodhd_us import EodhdUSProvider
 
-_DEFAULT_US_PROVIDER = PolygonUSProvider()
+_DEFAULT_US_PROVIDER = EodhdUSProvider()
 _DEFAULT_TO_PROVIDER = EodhdTOProvider()
 
 _PROVIDERS: dict[str, MarketDataProvider] = {
