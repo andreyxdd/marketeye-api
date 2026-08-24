@@ -1,6 +1,7 @@
 """CRUD helpers for PostgreSQL published read-model archive."""
 
 import json
+import math
 from datetime import date as date_type
 from typing import Optional
 
@@ -14,6 +15,21 @@ def _decode_payload(payload):
     if isinstance(payload, str):
         return json.loads(payload)
     return payload
+
+
+def _json_safe(value):
+    """Coerce non-finite floats before Postgres jsonb insert."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+def _dumps_payload(payload: dict) -> str:
+    return json.dumps(_json_safe(payload))
 
 
 def _to_date(date_value):
@@ -70,7 +86,7 @@ async def upsert_artifact(
             _to_date(date_string),
             market,
             artifact_key,
-            json.dumps(payload),
+            _dumps_payload(payload),
         )
 
 
@@ -94,7 +110,7 @@ async def upsert_ticker_payload(
             _to_date(date_string),
             market,
             ticker,
-            json.dumps(payload),
+            _dumps_payload(payload),
         )
 
 

@@ -308,15 +308,20 @@ def get_slope_normalized(array_x: List[float], array_y: List[float]) -> float:
     if len(array_x) != len(array_y):
         raise Exception("Passed arrays hould be of the same size")
 
-    # converting array to pandas.dataframe to normalize them
     df = DataFrame(array_x, columns=["x"])
     df["y"] = DataFrame(array_y)
-    normalized_df = (df - df.min()) / (df.max() - df.min())
+    span = df.max() - df.min()
+    # ponytail: flat Y => no slope; 0.5 is neutral per docstring
+    if span["y"] == 0:
+        return 0.5
+    normalized_df = (df - df.min()) / span.replace(0, 1)
 
-    # linear regression object
     lin_reg_result = linregress(normalized_df["x"], normalized_df["y"])
+    slope = lin_reg_result.slope
+    if slope != slope:  # NaN
+        return 0.5
 
-    return 1 / (1 + exp(-lin_reg_result.slope))  # computing fraction
+    return 1 / (1 + exp(-slope))
 
 def format_number_short(n: float) -> str:
     if n >= 1_000_000_000:

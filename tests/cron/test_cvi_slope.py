@@ -1,5 +1,7 @@
 """CVI slope tests for paired adv/dec aggregation."""
 
+import math
+
 import pytest
 
 from core.settings import MONGO_DB_NAME
@@ -38,6 +40,7 @@ async def test_cvi_slope_handles_adv_only_day(mongo_client):
 
         slope = await get_normalazied_cvi_slope(mongo_client, FIXTURE_DATE)
         assert isinstance(slope, float)
+        assert math.isfinite(slope)
     finally:
         await collection.delete_many({"date": epoch, "market": "US"})
         if prior:
