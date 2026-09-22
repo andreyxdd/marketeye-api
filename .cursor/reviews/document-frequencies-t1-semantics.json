@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/document-frequencies-t1-semantics.plan.md",
+  "target_branch": "main",
+  "head_sha": "87387ceae24e00e220b367eba2c8cd217d9465dd",
+  "reviewed_at": "2026-09-22T07:17:47Z",
+  "verdict": "PASS",
+  "findings": [
+    {
+      "id": "glossary-impl-coupling",
+      "severity": "low",
+      "location": "CONTEXT.md:32",
+      "finding": "T-N row mentions get_analytics_frequencies and $lt; advisory durability note only",
+      "reviewers": ["ponytail-review"]
+    }
+  ]
+}
