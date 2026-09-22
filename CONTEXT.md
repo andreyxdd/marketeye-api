@@ -27,8 +27,9 @@
 | **Micro screening** | Filter analytics rows by EOD close before top-20 sort |
 | **Band tracking** | Cron upserts top-20 tickers into Mongo `tracking` per `(date, criterion, market, price_band)` — unbanded (`price_band` null) plus each of the four bands; ongoing days via cron; historical gaps filled by one-shot **band-frequency backfill** |
 | **Band-frequency backfill** | Ops script `scripts/backfill_band_tracking.py` replays `put_top_tickers` then `publish_day` over recent published sessions (default US+TO, 15 trading days) so Micro frequencies exist for cold reads |
-| **Standard frequency** | T-N appearance string from unbanded tracking (docs with `price_band` null or field absent); used when list reads omit `price_band` |
+| **Standard frequency** | T-N appearance string from unbanded tracking (docs with `price_band` null or field absent); used when list reads omit `price_band`. See **T-N / Frequencies** for index meaning |
 | **Micro frequency** | Same T-N semantics as Standard, but counted only within the active price band's tracking docs |
+| **T-N / Frequencies** | T-1 = most recent *prior* tracking session relative to the viewed date (not the viewed date itself). Built in `get_analytics_frequencies` (`db/crud/tracking.py`) with Mongo `$lt` on `date`, so membership on the viewed date’s top-20 does not appear as T-1. Even-only strings (e.g. T-2, T-4, …) can reflect real alternating prior-session membership, not an index bug |
 | **Deploy revision** | Full git SHA exposed on `/healthz` and `/readyz` as `commit`; resolved from `HEROKU_SLUG_COMMIT` → `SOURCE_VERSION` → `git rev-parse HEAD` → `"unknown"` |
 
 Run instructions: `tests/README.md`.
