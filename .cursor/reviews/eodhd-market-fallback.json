@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/eodhd-market-fallback.plan.md",
+  "target_branch": "main",
+  "head_sha": "e2c6160cfdb428083ae1d06d6637cdbe1c632e45",
+  "reviewed_at": "2026-09-22T07:18:03Z",
+  "verdict": "PASS",
+  "findings": [
+    {
+      "id": "eodhd-token-in-errors-fixed",
+      "severity": "medium",
+      "location": "utils/handle_external_apis.py:_fetch_eodhd_index_closes",
+      "finding": "Round-1 credential leak in EODHD exception URLs; fixed via params= and redacted errors (e2c6160)",
+      "confidence": "confirmed",
+      "reviewers": ["bugbot", "security-review"]
+    }
+  ]
+}
