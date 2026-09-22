@@ -55,6 +55,29 @@ def clear_ticker_universe_cache() -> None:
 
 MI_REQUEST_TIMEOUT_SECONDS = 30
 MI_MAX_ATTEMPTS = 3
+EODHD_EOD_BASE_URL = "https://eodhd.com/api/eod"
+EODHD_SP500_INDEX = "GSPC.INDX"
+EODHD_VIX_INDEX = "VIX.INDX"
+
+
+def _fetch_eodhd_index_closes(symbol: str, from_date: str, to_date: str) -> list:
+    """Fetch chronological EOD closes for an EODHD index symbol."""
+    url = (
+        f"{EODHD_EOD_BASE_URL}/{symbol}"
+        f"?from={from_date}&to={to_date}&period=d&fmt=json&api_token={EODHD_API_KEY}"
+    )
+    response = requests.get(url, timeout=60)
+    if response.status_code != 200:
+        raise Exception(
+            "EODHD index EOD request failed "
+            f"with the code {response.status_code} ({symbol}). \nRequest string is: {url}"
+        )
+    bars = response.json()
+    if not isinstance(bars, list) or not bars:
+        raise Exception(
+            f"EODHD index EOD returned empty bars ({symbol}). \nRequest string is: {url}"
+        )
+    return [float(bar["close"]) for bar in bars]
 
 
 def _market_insider_headers() -> dict:
@@ -228,9 +251,8 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
     Returns:
         float: Given date's market's S&P500
     """
+    offset_date = get_past_date(actual_offset_n_days, date)
     try:
-        offset_date = get_past_date(actual_offset_n_days, date)
-
         request = (
             f"{MI_BASE_URL}/"
             + f"{MI_SP500_CODE}/"
@@ -241,11 +263,23 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
         response = _market_insider_request(request, "S&P")
 
         return response.json()[0]["Close"]  # only value for the provided date
-    except Exception as e:
-        print("Error message:", e)
-        raise Exception(
-            "utils/handle_external_apis.py, def get_market_sp500 reported an error"
-        ) from e
+    except Exception as mi_error:
+        print(
+            "Markets Insider S&P500 failed; falling back to EODHD "
+            f"({EODHD_SP500_INDEX}): {mi_error}"
+        )
+        try:
+            closes = _fetch_eodhd_index_closes(EODHD_SP500_INDEX, offset_date, date)
+            print(
+                f"EODHD fallback used for SP500 ({EODHD_SP500_INDEX}) on {date}"
+            )
+            return closes[-1]
+        except Exception as eodhd_error:
+            print("Error message:", mi_error)
+            print("EODHD SP500 fallback also failed:", eodhd_error)
+            raise Exception(
+                "utils/handle_external_apis.py, def get_market_sp500 reported an error"
+            ) from eodhd_error
 
 
 @cache.use_cache()
@@ -276,9 +310,8 @@ def get_market_vixs(
             VIX_50days_EMA - 50-day average
         }
     """
+    offset_date = get_past_date(offset_n_days, date)
     try:
-        offset_date = get_past_date(offset_n_days, date)
-
         request = (
             f"{MI_BASE_URL}/"
             + f"{MI_VIX_CODE}/"
@@ -302,11 +335,33 @@ def get_market_vixs(
                 0
             ],  # reversing the dataseries and getting the first-row value
         }
-    except Exception as e:
-        print("Error message:", e)
-        raise Exception(
-            "utils/handle_external_apis.py, def get_market_vixs reported an error"
-        ) from e
+    except Exception as mi_error:
+        print(
+            "Markets Insider VIX failed; falling back to EODHD "
+            f"({EODHD_VIX_INDEX}): {mi_error}"
+        )
+        try:
+            closes = _fetch_eodhd_index_closes(EODHD_VIX_INDEX, offset_date, date)
+            if len(closes) < 3:
+                raise Exception(
+                    f"EODHD VIX fallback needs at least 3 closes, got {len(closes)}"
+                )
+            close_series = pd.Series(closes)
+            print(f"EODHD fallback used for VIX ({EODHD_VIX_INDEX}) on {date}")
+            return {
+                "VIX": closes[-1],
+                "VIX1": closes[-2],
+                "VIX2": closes[-3],
+                "VIX_50days_EMA": float(
+                    get_ema_n(close_series, actual_offset_n_days).iloc[-1]
+                ),
+            }
+        except Exception as eodhd_error:
+            print("Error message:", mi_error)
+            print("EODHD VIX fallback also failed:", eodhd_error)
+            raise Exception(
+                "utils/handle_external_apis.py, def get_market_vixs reported an error"
+            ) from eodhd_error
 
 def get_tickers(date: str, market: str = DEFAULT_MARKET) -> list:
     try:
