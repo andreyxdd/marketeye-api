@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from requests.exceptions import RequestException
 
 from utils import handle_external_apis as external
 
@@ -22,13 +23,13 @@ def test_fetch_eodhd_index_closes_helper_returns_chronological_closes(monkeypatc
     response = MagicMock(status_code=200)
     response.json.return_value = _eodhd_bars([10.0, 11.0, 12.5])
 
-    def fake_get(url, timeout=None):
-        assert "GSPC.INDX" in url
-        assert "from=2024-01-01" in url
-        assert "to=2024-01-03" in url
-        assert "period=d" in url
-        assert "fmt=json" in url
-        assert "api_token=" in url
+    def fake_get(url, params=None, timeout=None):
+        assert url == "https://eodhd.com/api/eod/GSPC.INDX"
+        assert params["from"] == "2024-01-01"
+        assert params["to"] == "2024-01-03"
+        assert params["period"] == "d"
+        assert params["fmt"] == "json"
+        assert "api_token" in params
         return response
 
     monkeypatch.setattr(external.requests, "get", fake_get)
@@ -38,20 +39,54 @@ def test_fetch_eodhd_index_closes_helper_returns_chronological_closes(monkeypatc
 
 
 def test_fetch_eodhd_index_closes_helper_raises_on_non_200(monkeypatch):
+    secret = "test-eodhd-secret-do-not-leak"
+    monkeypatch.setattr(external, "EODHD_API_KEY", secret)
     response = MagicMock(status_code=500, text="boom")
     monkeypatch.setattr(external.requests, "get", lambda *a, **k: response)
 
-    with pytest.raises(Exception, match="500"):
+    with pytest.raises(Exception, match="500") as exc_info:
         external._fetch_eodhd_index_closes("VIX.INDX", "2024-01-01", "2024-01-03")
+    err = str(exc_info.value)
+    assert "api_token=" not in err
+    assert secret not in err
+    assert "VIX.INDX" in err
+    assert "from=2024-01-01" in err
+    assert "to=2024-01-03" in err
 
 
 def test_fetch_eodhd_index_closes_helper_raises_on_empty_bars(monkeypatch):
+    secret = "test-eodhd-secret-do-not-leak"
+    monkeypatch.setattr(external, "EODHD_API_KEY", secret)
     response = MagicMock(status_code=200)
     response.json.return_value = []
     monkeypatch.setattr(external.requests, "get", lambda *a, **k: response)
 
-    with pytest.raises(Exception, match="empty"):
+    with pytest.raises(Exception, match="empty") as exc_info:
         external._fetch_eodhd_index_closes("VIX.INDX", "2024-01-01", "2024-01-03")
+    err = str(exc_info.value)
+    assert "api_token=" not in err
+    assert secret not in err
+
+
+def test_fetch_eodhd_index_closes_helper_error_omits_api_token(monkeypatch):
+    secret = "leaky-token-value-xyz"
+    monkeypatch.setattr(external, "EODHD_API_KEY", secret)
+
+    def boom(*args, **kwargs):
+        del args, kwargs
+        raise RequestException(
+            f"HTTPSConnectionPool: https://eodhd.com/api/eod/GSPC.INDX"
+            f"?api_token={secret}&from=2024-01-01"
+        )
+
+    monkeypatch.setattr(external.requests, "get", boom)
+
+    with pytest.raises(Exception) as exc_info:
+        external._fetch_eodhd_index_closes("GSPC.INDX", "2024-01-01", "2024-01-03")
+    err = str(exc_info.value)
+    assert "api_token=" not in err
+    assert secret not in err
+    assert exc_info.value.__cause__ is None
 
 
 def test_get_market_sp500_falls_back_to_eodhd_when_mi_fails(

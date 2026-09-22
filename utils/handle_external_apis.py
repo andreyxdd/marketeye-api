@@ -62,20 +62,31 @@ EODHD_VIX_INDEX = "VIX.INDX"
 
 def _fetch_eodhd_index_closes(symbol: str, from_date: str, to_date: str) -> list:
     """Fetch chronological EOD closes for an EODHD index symbol."""
-    url = (
-        f"{EODHD_EOD_BASE_URL}/{symbol}"
-        f"?from={from_date}&to={to_date}&period=d&fmt=json&api_token={EODHD_API_KEY}"
-    )
-    response = requests.get(url, timeout=60)
+    url = f"{EODHD_EOD_BASE_URL}/{symbol}"
+    params = {
+        "from": from_date,
+        "to": to_date,
+        "period": "d",
+        "fmt": "json",
+        "api_token": EODHD_API_KEY,
+    }
+    try:
+        response = requests.get(url, params=params, timeout=60)
+    except RequestException:
+        raise Exception(
+            f"EODHD index EOD request failed ({symbol}) "
+            f"from={from_date} to={to_date}"
+        ) from None
     if response.status_code != 200:
         raise Exception(
-            "EODHD index EOD request failed "
-            f"with the code {response.status_code} ({symbol}). \nRequest string is: {url}"
+            f"EODHD index EOD request failed with code {response.status_code} "
+            f"({symbol}) from={from_date} to={to_date}"
         )
     bars = response.json()
     if not isinstance(bars, list) or not bars:
         raise Exception(
-            f"EODHD index EOD returned empty bars ({symbol}). \nRequest string is: {url}"
+            f"EODHD index EOD returned empty bars ({symbol}) "
+            f"from={from_date} to={to_date}"
         )
     return [float(bar["close"]) for bar in bars]
 
@@ -276,7 +287,10 @@ def get_market_sp500(date: str, actual_offset_n_days: Optional[int] = 50):
             return closes[-1]
         except Exception as eodhd_error:
             print("Error message:", mi_error)
-            print("EODHD SP500 fallback also failed:", eodhd_error)
+            print(
+                f"EODHD SP500 fallback also failed ({EODHD_SP500_INDEX}) "
+                f"from={offset_date} to={date}"
+            )
             raise Exception(
                 "utils/handle_external_apis.py, def get_market_sp500 reported an error"
             ) from eodhd_error
@@ -358,7 +372,10 @@ def get_market_vixs(
             }
         except Exception as eodhd_error:
             print("Error message:", mi_error)
-            print("EODHD VIX fallback also failed:", eodhd_error)
+            print(
+                f"EODHD VIX fallback also failed ({EODHD_VIX_INDEX}) "
+                f"from={offset_date} to={date}"
+            )
             raise Exception(
                 "utils/handle_external_apis.py, def get_market_vixs reported an error"
             ) from eodhd_error
