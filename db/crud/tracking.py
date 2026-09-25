@@ -30,6 +30,21 @@ def _format_db_error(context: str, exc: Exception) -> str:
     return message
 
 
+def _merge_filters(*parts: dict) -> dict:
+    """Combine Mongo filter dicts without clobbering duplicate keys like ``$or``.
+
+    Spreading two dicts that both use ``$or`` (US market legacy + unbanded
+    price_band) drops the first ``$or``. Always wrap multiple nonempty parts
+    in ``$and``.
+    """
+    nonempty = [p for p in parts if p]
+    if not nonempty:
+        return {}
+    if len(nonempty) == 1:
+        return nonempty[0]
+    return {"$and": nonempty}
+
+
 async def put_top_tickers_by_criterion(
     conn: AsyncIOMotorClient,
     date: str,
@@ -143,8 +158,7 @@ async def get_analytics_frequencies(
             {
                 "$match": {
                     "criterion": criterion,
-                    **market_mongo_filter(market),
-                    **band_filter,
+                    **_merge_filters(market_mongo_filter(market), band_filter),
                 }
             },
             {

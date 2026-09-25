@@ -34,6 +34,7 @@ from core.settings import MONGO_DB_NAME
 from db.crud.tracking import (
     CRITERIA,
     MONGO_TRACKING_COLLECTION,
+    _merge_filters,
     get_analytics_frequencies,
 )
 from db.mongodb import close as close_mongo
@@ -94,8 +95,7 @@ async def fetch_prior_tracking(
         {
             "$match": {
                 "criterion": criterion,
-                **market_mongo_filter(market),
-                **_band_filter(price_band),
+                **_merge_filters(market_mongo_filter(market), _band_filter(price_band)),
             }
         },
         {"$match": {"date": {"$gt": epoch_past, "$lt": epoch_date}}},
@@ -119,8 +119,7 @@ async def ticker_on_session(
     query = {
         "date": epoch_date,
         "criterion": criterion,
-        **market_mongo_filter(market),
-        **_band_filter(price_band),
+        **_merge_filters(market_mongo_filter(market), _band_filter(price_band)),
     }
     docs = (
         await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION]
@@ -206,8 +205,9 @@ async def find_even_only_samples(
                 query = {
                     "date": epoch,
                     "criterion": criterion,
-                    **market_mongo_filter(market),
-                    **_band_filter(price_band),
+                    **_merge_filters(
+                        market_mongo_filter(market), _band_filter(price_band)
+                    ),
                 }
                 docs = (
                     await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION]

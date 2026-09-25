@@ -37,7 +37,10 @@ async def test_get_analytics_frequencies_matches_price_band(monkeypatch):
     )
     assert freqs == "T-1"
     match0 = pipelines[0][0]["$match"]
-    assert match0["price_band"] == "lte5"
+    assert match0["$and"] == [
+        {"market": "US"},
+        {"price_band": "lte5"},
+    ]
 
 
 @pytest.mark.asyncio
@@ -70,7 +73,13 @@ async def test_get_analytics_frequencies_unbanded_matches_null_or_absent(monkeyp
         conn, "2024-06-01", "macd", "AAPL", market="US", price_band=None
     )
     match0 = pipelines[0][0]["$match"]
-    assert match0["$or"] == [
-        {"price_band": None},
-        {"price_band": {"$exists": False}},
+    # market + unbanded band both may use $or; merge keeps both under $and
+    assert match0["$and"] == [
+        {"market": "US"},
+        {
+            "$or": [
+                {"price_band": None},
+                {"price_band": {"$exists": False}},
+            ]
+        },
     ]
