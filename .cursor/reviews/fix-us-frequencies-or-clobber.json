@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/fix-us-frequencies-or-clobber.plan.md",
+  "target_branch": "main",
+  "head_sha": "7fb2430075fb907ea35aef4fd3d08adf28ae1a4a",
+  "reviewed_at": "2026-09-25T04:51:36Z",
+  "verdict": "PASS",
+  "findings": [
+    {
+      "id": "test-harness-heavy",
+      "severity": "low",
+      "location": "tests/cron/test_tracking_frequencies_market_filter.py",
+      "finding": "Ponytail advisory: fake-Mongo harness heavier than shape assert; deferred",
+      "reviewers": ["ponytail-review"]
+    }
+  ]
+}
