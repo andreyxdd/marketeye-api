@@ -1,6 +1,7 @@
 """Tests for cron ingest date resolution."""
 
 import threading
+import types
 
 import pytest
 
@@ -78,12 +79,12 @@ async def test_resolve_ingest_dates_raises_when_no_last_session(mongo_client, mo
 
 
 def _thread_recording_provider(threads):
-    def resolve_session_dates(self, date):
-        del self, date
+    def resolve_session_dates(date):
+        del date
         threads.append(threading.current_thread())
         return ("2024-06-03", "2024-05-31")
 
-    return type("StubProvider", (), {"resolve_session_dates": resolve_session_dates})()
+    return types.SimpleNamespace(resolve_session_dates=resolve_session_dates)
 
 
 @pytest.mark.asyncio

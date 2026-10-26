@@ -102,44 +102,11 @@ async def test_run_crud_ops_ingest_failure_skips_publish(monkeypatch):
 @pytest.mark.asyncio
 async def test_run_crud_ops_publish_failure_keeps_ingest_message(monkeypatch):
     report = cronjob.CronRunReport()
+    calls = _stub_publish_deps(monkeypatch, [RuntimeError("publish failed")])
 
-    async def get_db_stub():
-        return object()
+    message = await _run_us(report)
 
-    async def ingest_stub(conn, date, market="US"):
-        del conn, date, market
-        return "ingested"
-
-    async def track_stub(conn, date, market="US"):
-        del conn, date, market
-        return "tracked"
-
-    async def publish_fail(conn, pool, date, market="US", include_mentions=False):
-        del conn, pool, date, market, include_mentions
-        raise RuntimeError("publish failed")
-
-    monkeypatch.setattr(cronjob, "connect_mongo", _noop_async)
-    monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
-    monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
-    monkeypatch.setattr(cronjob, "is_session_published", _noop_async)
-    monkeypatch.setattr(cronjob, "get_analytics_tickers", _tickers_stub)
-    monkeypatch.setattr(
-        cronjob.analytics_service,
-        "ingest_base_analytics_for_market",
-        ingest_stub,
-    )
-    monkeypatch.setattr(cronjob, "put_top_tickers", track_stub)
-    monkeypatch.setattr(cronjob.publish_service, "publish_day", publish_fail)
-    monkeypatch.setattr(cronjob, "notify_developer", lambda **kwargs: None)
-
-    message = await cronjob.run_crud_ops(
-        "2024-06-03",
-        "2024-03-04",
-        "US",
-        pg_pool=object(),
-        report=report,
-    )
-
+    assert calls["publish"] == 1
     assert "ingested" in message
     assert "tracked" in message
     assert "publish_service.publish_day failed" in message
@@ -223,17 +190,5 @@ async def test_run_crud_ops_publish_records_one_error_when_retry_fails(monkeypat
     message = await _run_us(report)
 
     assert calls["publish"] == 2
-    assert [e.phase for e in report.errors] == ["publish"]
-    assert "publish_service.publish_day failed" in message
-
-
-@pytest.mark.asyncio
-async def test_run_crud_ops_publish_does_not_retry_other_errors(monkeypatch):
-    report = cronjob.CronRunReport()
-    calls = _stub_publish_deps(monkeypatch, [RuntimeError("publish failed")])
-
-    message = await _run_us(report)
-
-    assert calls["publish"] == 1
     assert [e.phase for e in report.errors] == ["publish"]
     assert "publish_service.publish_day failed" in message
