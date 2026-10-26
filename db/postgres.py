@@ -35,7 +35,9 @@ async def connect():
         raise RuntimeError("DATABASE_URL is not configured")
 
     dsn = normalize_database_url(DATABASE_URL)
-    db.pool = await asyncpg.create_pool(dsn=dsn, min_size=1, max_size=10)
+    db.pool = await asyncpg.create_pool(
+        dsn=dsn, min_size=1, max_size=10, command_timeout=60
+    )
     return db.pool
 
 

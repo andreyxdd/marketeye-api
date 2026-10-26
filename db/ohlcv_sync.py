@@ -33,6 +33,15 @@ def get_ohlcv_sync_pool() -> Optional[ConnectionPool]:
             conninfo=dsn,
             min_size=1,
             max_size=OHLCV_SYNC_POOL_MAX_SIZE,
+            kwargs={
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 3,
+                "tcp_user_timeout": 30000,
+                "connect_timeout": 10,
+            },
+            check=ConnectionPool.check_connection,
             open=True,
         )
         return _pool
