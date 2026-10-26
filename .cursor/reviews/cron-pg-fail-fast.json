@@ -1,0 +1,58 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/cron-pg-fail-fast.plan.md",
+  "target_branch": "main",
+  "base_sha": "219bb2e4adc107f04a4492c32b69c8a1c0a35671",
+  "head_sha": "f69193ca2aa1d1b89bcc151f6d15cb92c29a8c09",
+  "reviewed_at": "2026-10-26T04:27:42Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {
+      "id": "asyncpg-no-tcp-keepalive",
+      "status": "confirmed",
+      "severity": "medium",
+      "resolution": "deferred",
+      "location": "db/postgres.py:38",
+      "finding": "asyncpg pool has no TCP keepalive/tcp_user_timeout; dead connection bounded only by command_timeout=60 plus one publish retry",
+      "reviewers": ["bugbot"]
+    },
+    {
+      "id": "duplicate-no-retry-test",
+      "status": "confirmed",
+      "severity": "medium",
+      "resolution": "fixed",
+      "location": "tests/cron/test_cron_partial_failure.py:103",
+      "finding": "RuntimeError no-retry test duplicated existing publish-failure test; merged with calls==1 assert",
+      "reviewers": ["ponytail-review"]
+    },
+    {
+      "id": "type-stub-provider",
+      "status": "confirmed",
+      "severity": "medium",
+      "resolution": "fixed",
+      "location": "tests/cron/test_cron_dates.py:80",
+      "finding": "type()-built provider stub replaced with types.SimpleNamespace",
+      "reviewers": ["ponytail-review"]
+    },
+    {
+      "id": "publish-call-duplicated",
+      "status": "confirmed",
+      "severity": "low",
+      "resolution": "deferred",
+      "location": "cronjob.py:133",
+      "finding": "publish_day call written twice in retry helper; functools.partial would dedupe",
+      "reviewers": ["ponytail-review"]
+    },
+    {
+      "id": "merged-test-phase-assert",
+      "status": "confirmed",
+      "severity": "low",
+      "resolution": "deferred",
+      "location": "tests/cron/test_cron_partial_failure.py:113",
+      "finding": "merged publish-failure test checks has_errors() not exact ['publish'] phase list; phase covered by retry-fails test",
+      "reviewers": ["ponytail-review", "bugbot"]
+    }
+  ]
+}
