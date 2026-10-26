@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from time import time
+import asyncpg
 from core.markets import MARKETS, list_markets, normalize_market
 from core.settings import MONGO_HOT_WINDOW_DAYS
 from db.crud.analytics import get_analytics_tickers
@@ -39,6 +40,13 @@ except ImportError:
 
 
 _cron_failed = False
+
+_PUBLISH_RETRY_ERRORS = (
+    asyncpg.PostgresConnectionError,
+    asyncpg.InterfaceError,
+    OSError,
+    asyncio.TimeoutError,
+)
 
 
 @dataclass
@@ -122,6 +130,17 @@ def _format_publish_message(publish_result: dict) -> str:
     return base
 
 
+async def _publish_day_with_retry(conn, pg_pool, date_to_insert: str, market: str) -> dict:
+    try:
+        return await publish_service.publish_day(
+            conn, pg_pool, date_to_insert, market=market, include_mentions=False
+        )
+    except _PUBLISH_RETRY_ERRORS:
+        return await publish_service.publish_day(
+            conn, pg_pool, date_to_insert, market=market, include_mentions=False
+        )
+
+
 async def run_crud_ops(
     date_to_insert: str,
     date_to_remove: str,
@@ -175,12 +194,8 @@ async def run_crud_ops(
             return "\n\n".join(msgs)
 
         try:
-            publish_result = await publish_service.publish_day(
-                conn,
-                pg_pool,
-                date_to_insert,
-                market=market,
-                include_mentions=False,
+            publish_result = await _publish_day_with_retry(
+                conn, pg_pool, date_to_insert, market
             )
             for phase_error in publish_result.get("phase_errors") or []:
                 report.record(market, date_to_insert, "market_analytics", phase_error)
