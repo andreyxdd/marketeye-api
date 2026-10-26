@@ -1,5 +1,6 @@
 """Cron ingest date resolution and session probing."""
 
+import asyncio
 from typing import List
 
 from core.markets import MARKETS, normalize_market
@@ -21,7 +22,9 @@ async def unpublished_session_dates(pool, market: str) -> List[str]:
     tz = MARKETS[market]["timezone"]
     calendar_end = get_today_utc_date_in_timezone(tz)
     provider = get_market_data_provider(market)
-    last_session, prior_session = provider.resolve_session_dates(calendar_end)
+    last_session, prior_session = await asyncio.to_thread(
+        provider.resolve_session_dates, calendar_end
+    )
     if not last_session:
         raise ValueError(
             f"services/cron_dates: could not resolve LastCompletedSession for {market}"
@@ -54,7 +57,9 @@ async def resolve_ingest_dates_for_market(
     calendar_end = get_today_utc_date_in_timezone(tz)
     provider = get_market_data_provider(market)
 
-    last_session, prior_session = provider.resolve_session_dates(calendar_end)
+    last_session, prior_session = await asyncio.to_thread(
+        provider.resolve_session_dates, calendar_end
+    )
     if not last_session:
         raise ValueError(
             f"services/cron_dates: could not resolve LastCompletedSession for {market}"

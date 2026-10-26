@@ -1,8 +1,13 @@
 """Tests for cron ingest date resolution."""
 
+import threading
+
 import pytest
 
-from services.cron_dates import resolve_ingest_dates_for_market
+from services.cron_dates import (
+    resolve_ingest_dates_for_market,
+    unpublished_session_dates,
+)
 
 
 @pytest.mark.asyncio
@@ -70,3 +75,54 @@ async def test_resolve_ingest_dates_raises_when_no_last_session(mongo_client, mo
 
     with pytest.raises(ValueError, match="LastCompletedSession"):
         await resolve_ingest_dates_for_market(mongo_client, "US")
+
+
+def _thread_recording_provider(threads):
+    def resolve_session_dates(self, date):
+        del self, date
+        threads.append(threading.current_thread())
+        return ("2024-06-03", "2024-05-31")
+
+    return type("StubProvider", (), {"resolve_session_dates": resolve_session_dates})()
+
+
+@pytest.mark.asyncio
+async def test_resolve_ingest_dates_probes_sessions_off_event_loop(monkeypatch):
+    threads = []
+
+    async def fake_missing(conn, date, market="US"):
+        del conn, date, market
+        return ["AAPL"]
+
+    monkeypatch.setattr("services.cron_dates.get_missing_tickers", fake_missing)
+    monkeypatch.setattr(
+        "services.cron_dates.get_market_data_provider",
+        lambda market="US": _thread_recording_provider(threads),
+    )
+
+    dates = await resolve_ingest_dates_for_market(None, "US")
+
+    assert dates == ["2024-06-03", "2024-05-31"]
+    assert len(threads) == 1
+    assert threads[0] is not threading.main_thread()
+
+
+@pytest.mark.asyncio
+async def test_unpublished_session_dates_probes_sessions_off_event_loop(monkeypatch):
+    threads = []
+
+    async def fake_published(pool, date, market):
+        del pool, market
+        return date == "2024-05-31"
+
+    monkeypatch.setattr("services.cron_dates.is_session_published", fake_published)
+    monkeypatch.setattr(
+        "services.cron_dates.get_market_data_provider",
+        lambda market="US": _thread_recording_provider(threads),
+    )
+
+    dates = await unpublished_session_dates(None, "US")
+
+    assert dates == ["2024-06-03"]
+    assert len(threads) == 1
+    assert threads[0] is not threading.main_thread()
