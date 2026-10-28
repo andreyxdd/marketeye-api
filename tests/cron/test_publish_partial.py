@@ -14,6 +14,15 @@ async def _noop_async(*args, **kwargs):
     return None
 
 
+@pytest.fixture(autouse=True)
+def _stock_bounce_stub(monkeypatch):
+    async def publish_stub(conn, pool, date):
+        del conn, pool, date
+        return {"coverage": "exact"}
+
+    monkeypatch.setattr(publish_service, "publish_us_session", publish_stub)
+
+
 @pytest.mark.asyncio
 async def test_publish_day_skips_market_analytics_but_publishes_lists(monkeypatch):
     upserts = {"artifacts": [], "tickers": []}

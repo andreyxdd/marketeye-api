@@ -50,7 +50,7 @@ async def test_prune_mongo_if_published_only_when_published(monkeypatch):
         del conn, date, market
         calls["pruned"] += 1
 
-    monkeypatch.setattr(mongo_storage, "is_session_published", published_stub)
+    monkeypatch.setattr(mongo_storage, "is_archive_complete", published_stub)
     monkeypatch.setattr(mongo_storage, "prune_mongo_session_date", prune_stub)
 
     result = await mongo_storage.prune_mongo_if_published(object(), object(), "2024-03-04", "US")
@@ -61,7 +61,7 @@ async def test_prune_mongo_if_published_only_when_published(monkeypatch):
         del pool, date, market
         return True
 
-    monkeypatch.setattr(mongo_storage, "is_session_published", published_true_stub)
+    monkeypatch.setattr(mongo_storage, "is_archive_complete", published_true_stub)
 
     result = await mongo_storage.prune_mongo_if_published(object(), object(), "2024-03-04", "US")
     assert result is True
@@ -92,6 +92,11 @@ async def test_prune_oldest_published_mongo_session_all_markets(monkeypatch):
         calls.append((date, market))
 
     monkeypatch.setattr(mongo_storage, "list_markets", lambda: ["US", "TO"])
+    async def archive_complete_stub(pool, date, market):
+        del pool, date, market
+        return True
+
+    monkeypatch.setattr(mongo_storage, "is_archive_complete", archive_complete_stub)
     monkeypatch.setattr(mongo_storage, "prune_mongo_session_date", prune_session_stub)
 
     result = await mongo_storage.prune_oldest_published_mongo_session(PoolStub(), object())
@@ -124,6 +129,11 @@ async def test_prune_oldest_skips_exclude_dates(monkeypatch):
         del conn, date, market
 
     monkeypatch.setattr(mongo_storage, "list_markets", lambda: ["US"])
+    async def archive_complete_stub(pool, date, market):
+        del pool, date, market
+        return True
+
+    monkeypatch.setattr(mongo_storage, "is_archive_complete", archive_complete_stub)
     monkeypatch.setattr(mongo_storage, "prune_mongo_session_date", prune_session_stub)
 
     result = await mongo_storage.prune_oldest_published_mongo_session(
@@ -161,6 +171,11 @@ async def test_prune_oldest_returns_none_when_all_excluded(monkeypatch):
         raise AssertionError("must not prune when no date left")
 
     monkeypatch.setattr(mongo_storage, "list_markets", lambda: ["US"])
+    async def archive_complete_stub(pool, date, market):
+        del pool, date, market
+        return True
+
+    monkeypatch.setattr(mongo_storage, "is_archive_complete", archive_complete_stub)
     monkeypatch.setattr(mongo_storage, "prune_mongo_session_date", prune_session_stub)
 
     result = await mongo_storage.prune_oldest_published_mongo_session(

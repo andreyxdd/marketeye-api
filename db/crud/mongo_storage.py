@@ -9,7 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from core.markets import list_markets, normalize_market
 from core.settings import MONGO_DB_NAME
 from db.crud.analytics import remove_base_analytics
-from db.crud.published_archive import is_session_published
+from db.crud.published_archive import is_archive_complete
 
 
 async def get_mongo_storage_ratio(
@@ -39,7 +39,7 @@ async def prune_mongo_if_published(
     date: str,
     market: str,
 ) -> bool:
-    if not await is_session_published(pool, date, market):
+    if not await is_archive_complete(pool, date, market):
         return False
     await prune_mongo_session_date(conn, date, market)
     return True
@@ -82,5 +82,6 @@ async def prune_oldest_published_mongo_session(
 
     date_string = session_date.isoformat()
     for market in list_markets():
-        await prune_mongo_session_date(conn, date_string, market)
+        if await is_archive_complete(pool, date_string, market):
+            await prune_mongo_session_date(conn, date_string, market)
     return date_string

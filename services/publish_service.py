@@ -14,6 +14,7 @@ from db.crud.published_archive import (
     upsert_ticker_payload,
 )
 from db.crud.tracking import CRITERIA
+from services.stock_bounce.publication import publish_us_session
 from utils.price_bands import PRICE_BANDS
 
 
@@ -55,6 +56,11 @@ async def publish_day(
         except Exception as market_error:  # pylint: disable=broad-except
             skipped_artifacts.append(MARKET_ARTIFACT_KEY)
             phase_errors.append(f"market_analytics: {market_error}")
+        try:
+            await publish_us_session(conn, pool, date)
+        except Exception as bounce_error:  # pylint: disable=broad-except
+            skipped_artifacts.append("stock_bounce:v1")
+            phase_errors.append(f"stock_bounce: {bounce_error}")
 
     for price_band in PRICE_BANDS_TO_PUBLISH:
         by_criteria_payload = await analytics_service.get_analytics_lists_by_criteria_hot(

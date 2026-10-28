@@ -17,7 +17,7 @@ from core.markets import MARKETS, list_markets, normalize_market
 from core.settings import MONGO_HOT_WINDOW_DAYS
 from db.crud.analytics import get_analytics_tickers
 from db.crud.tracking import put_top_tickers
-from db.crud.published_archive import is_session_published
+from db.crud.published_archive import is_archive_complete
 from db.crud.mongo_storage import prune_mongo_session_date
 from db.mongodb import connect as connect_mongo, get_database as get_mongo_database, close as close_mongo
 from db.postgres import connect as connect_postgres, get_pool as get_postgres_pool, close as close_postgres
@@ -156,7 +156,7 @@ async def run_crud_ops(
     await connect_mongo()
     conn = await get_mongo_database()
     try:
-        if pg_pool is not None and await is_session_published(
+        if pg_pool is not None and await is_archive_complete(
             pg_pool, date_to_remove, market
         ):
             try:
@@ -186,7 +186,7 @@ async def run_crud_ops(
         tickers_in_mongo = await get_analytics_tickers(
             conn, date_to_insert, market=market
         )
-        if not tickers_in_mongo:
+        if not tickers_in_mongo and market != "US":
             msgs.append(
                 "Skipping publish_service.publish_day:"
                 f" no ticker analytics for {market} on {date_to_insert}"
@@ -198,7 +198,12 @@ async def run_crud_ops(
                 conn, pg_pool, date_to_insert, market
             )
             for phase_error in publish_result.get("phase_errors") or []:
-                report.record(market, date_to_insert, "market_analytics", phase_error)
+                phase = (
+                    "stock_bounce"
+                    if phase_error.startswith("stock_bounce:")
+                    else "market_analytics"
+                )
+                report.record(market, date_to_insert, phase, phase_error)
             msgs.append(_format_publish_message(publish_result))
         except Exception as publish_error:  # pylint: disable=broad-except
             report.record(market, date_to_insert, "publish", publish_error)

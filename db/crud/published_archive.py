@@ -47,6 +47,7 @@ def build_criterion_artifact_key(criterion: str, price_band: Optional[str]) -> s
 
 
 MARKET_ARTIFACT_KEY = "market_analytics"
+STOCK_BOUNCE_ARTIFACT_KEY = "stock_bounce:v1"
 
 
 async def upsert_published_date(
@@ -246,6 +247,32 @@ async def is_session_published(
             _to_date(date),
             market,
             MARKET_ARTIFACT_KEY,
+        )
+    return row is not None
+
+
+async def is_archive_complete(
+    pool: asyncpg.Pool, date: str, market: str = DEFAULT_MARKET
+) -> bool:
+    market = normalize_market(market)
+    if not await is_session_published(pool, date, market):
+        return False
+    if market != "US":
+        return True
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT 1
+            FROM published_artifacts
+            WHERE session_date = $1
+              AND market = $2
+              AND artifact_key = $3
+              AND payload->'coverage'->>'status' IN ('exact', 'degraded')
+              AND payload->>'schema_version' = '1'
+            """,
+            _to_date(date),
+            market,
+            STOCK_BOUNCE_ARTIFACT_KEY,
         )
     return row is not None
 

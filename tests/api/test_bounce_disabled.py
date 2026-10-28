@@ -1,14 +1,15 @@
-"""Bounce HTTP API is intentionally unmounted (legacy bounce app)."""
+"""Only the versioned StockBounce API is mounted; legacy get_* routes stay disabled."""
 
 from api import router
-from main import tags_metadata
 
 
-def test_bounce_router_not_mounted():
+def test_legacy_bounce_router_not_mounted():
     paths = [getattr(route, "path", "") or "" for route in router.routes]
     assert not any(path.startswith("/bounce") for path in paths)
+    assert not any("get_bounce_stocks" in path for path in paths)
 
 
-def test_openapi_tags_omit_bounce():
-    names = {tag.get("name") for tag in tags_metadata}
-    assert "Bounce" not in names
+def test_stock_bounce_v1_router_is_mounted():
+    paths = [getattr(route, "path", "") or "" for route in router.routes]
+    assert "/stock-bounce/v1/sessions" in paths
+    assert "/stock-bounce/v1/results" in paths

@@ -70,7 +70,7 @@ async def test_run_crud_ops_ingest_failure_skips_publish(monkeypatch):
     monkeypatch.setattr(cronjob, "connect_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
-    monkeypatch.setattr(cronjob, "is_session_published", _noop_async)
+    monkeypatch.setattr(cronjob, "is_archive_complete", _noop_async)
     monkeypatch.setattr(
         cronjob.analytics_service,
         "ingest_base_analytics_for_market",
@@ -138,7 +138,7 @@ def _stub_publish_deps(monkeypatch, publish_errors):
     monkeypatch.setattr(cronjob, "connect_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "get_mongo_database", get_db_stub)
-    monkeypatch.setattr(cronjob, "is_session_published", _noop_async)
+    monkeypatch.setattr(cronjob, "is_archive_complete", _noop_async)
     monkeypatch.setattr(cronjob, "get_analytics_tickers", _tickers_stub)
     monkeypatch.setattr(
         cronjob.analytics_service,

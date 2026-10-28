@@ -8,7 +8,9 @@
 | **Postgres serving archive** | Hybrid read-model (`published_dates`, `published_artifacts`, `published_tickers`) used for cold reads |
 | **OHLCV bar store** | PostgreSQL cache of normalized EOD bars keyed by `(market, ticker, session_date)`; write-through front for EODHD; distinct from **Postgres serving archive** |
 | **Storage prune** | At PostgreSQL usage >=85%, alert developer and delete oldest `published_dates` until <=70% (no Drive cold archive) |
-| **Mongo storage guard** | At Mongo usage >=85%, alert developer and delete Mongo hot data for oldest published session (all markets) until <=70%; never deletes Postgres rows |
+| **Mongo storage guard** | At Mongo usage >=85%, alert developer and delete oldest eligible Mongo hot data per market until <=70%; never deletes Postgres rows. US requires analytics and `stock_bounce:v1`; TO keeps existing requirements. Cron uses the same invariant. |
+| **StockBounce archive** | Canonical full-universe `stock_bounce:v1` JSONB snapshots for recent and every retained published US session. API v1 reads are archive-first and never call EODHD. See `docs/adr/0007-stock-bounce-archive.md`. |
+| **StockBounce backfill** | `scripts/backfill_stock_bounce.py` supports dry-run/apply/resume with per-run target and ticker-range checkpoints. Degraded coverage means archived tickers plus current EODHD universe. Deploy publication/prune protection first; see `docs/handoff/stock-bounce-backfill.md`. |
 | **Enrichment policy** | Per-market rules for attaching extras (US: FCF/mentions on hot reads; TO: OHLCV indicators only). Cron publish stubs US mentions to zero |
 | **FixtureTradingDay** | Frozen session date for tests (`2024-06-03`) |
 | **Fixture tickers** | Fixed US symbol set in Mongo seed (50 large-cap names) |
