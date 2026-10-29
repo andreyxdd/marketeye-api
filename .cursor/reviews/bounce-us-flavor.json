@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": "../marketeye-client/.cursor/plans/bounce-us-flavor.plan.md",
+  "target_branch": "main",
+  "base_sha": "ed918a5d9b8995c1073185d0bbcca6d9ea9b6506",
+  "head_sha": "e98aea3a503629b7864d516ad529cba547caedde",
+  "reviewed_at": "2026-10-29T10:07:21Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {"id":"stock-bounce-legacy-vector-parity","status":"confirmed","severity":"high","resolution":"fixed","location":"services/stock_bounce/semantics.py:36","finding":"Vector construction initially diverged from legacy ordering and target-bar semantics","reviewers":["bugbot","spec"]},
+    {"id":"stock-bounce-cron-requeue","status":"confirmed","severity":"high","resolution":"fixed","location":"services/cron_dates.py:39","finding":"Generic publication suppressed scheduled retry after StockBounce publication failure","reviewers":["bugbot","spec"]},
+    {"id":"stock-bounce-snapshot-completeness","status":"confirmed","severity":"high","resolution":"fixed","location":"db/crud/published_archive.py:263","finding":"Malformed or empty snapshots could satisfy prune and session readiness","reviewers":["spec"]},
+    {"id":"stock-bounce-structured-422","status":"confirmed","severity":"medium","resolution":"fixed","location":"api/endpoints/stock_bounce.py:68","finding":"FastAPI validation responses did not use the documented structured detail envelope","reviewers":["ux-api"]},
+    {"id":"stock-bounce-backfill-credentialed-error-report","status":"needs_validation","resolution":"fixed","location":"services/stock_bounce/adapters.py:63","finding":"Provider errors could retain credentialed URLs in CLI output and stored reports","blockers":["Log/report reader ACLs are not source-visible"],"validation_plan":"Dummy failure tests assert generated reports and output contain no credential; owner should still confirm production reader ACLs","reviewers":["security"]},
+    {"id":"stock-bounce-sessions-unbounded-archive-scan","status":"confirmed","severity":"medium","resolution":"fixed","location":"services/stock_bounce/reads.py:48","finding":"Session pagination could scan the full remaining archive within one request","reviewers":["bugbot","security","ux-api"]},
+    {"id":"stock-bounce-non-object-snapshot-error","status":"confirmed","severity":"medium","resolution":"fixed","location":"services/stock_bounce/reads.py:109","finding":"Non-object snapshots raised before validation and mapped to 503 instead of 409","reviewers":["spec","ux-api"]},
+    {"id":"stock-bounce-declared-universe-duplication","status":"confirmed","severity":"medium","resolution":"fixed","location":"services/stock_bounce/semantics.py:73","finding":"Declared universe count duplicated derivable row and exclusion counts","reviewers":["ponytail"]},
+    {"id":"stock-bounce-discarded-force-parameter","status":"confirmed","severity":"medium","resolution":"fixed","location":"services/stock_bounce/adapters.py:102","finding":"Store target listing accepted and discarded a force parameter","reviewers":["ponytail","audit"]},
+    {"id":"stock-bounce-unused-semantics-facade","status":"confirmed","severity":"medium","resolution":"fixed","location":"services/stock_bounce/__init__.py:1","finding":"Unused package-root semantics re-export facade","reviewers":["audit"]},
+    {"id":"stock-bounce-single-use-date-wrapper","status":"confirmed","severity":"medium","resolution":"fixed","location":"services/stock_bounce/backfill.py:18","finding":"Single-use date conversion wrapper added unnecessary indirection","reviewers":["audit"]}
+  ]
+}
