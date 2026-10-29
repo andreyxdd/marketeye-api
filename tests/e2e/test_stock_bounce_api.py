@@ -132,3 +132,27 @@ async def test_missing_not_ready_and_no_match_responses(client, postgres_pool):
     )
     assert no_match.status_code == 200
     assert no_match.json()["rows"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("malformed", [7, ["not", "a", "snapshot"]])
+async def test_results_treats_non_object_snapshot_as_not_ready(
+    client, postgres_pool, malformed
+):
+    await truncate_published_tables(postgres_pool)
+    await upsert_published_date(postgres_pool, "2024-01-19", market="US")
+    await upsert_artifact(
+        postgres_pool,
+        "2024-01-19",
+        STOCK_BOUNCE_ARTIFACT_KEY,
+        malformed,
+        market="US",
+    )
+
+    response = await client.get(
+        "/api/stock-bounce/v1/results",
+        params={"api_key": FIXTURE_API_KEY, "date": "2024-01-19", "period": 1},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "BOUNCE_SESSION_NOT_READY"

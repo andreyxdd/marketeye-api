@@ -42,30 +42,41 @@ def _decode_cursor(cursor: str) -> str:
 
 async def list_sessions(pool, cursor=None, limit=200) -> dict:
     after = _decode_cursor(cursor) if cursor else None
-    async with pool.acquire() as conn:
-        records = await conn.fetch(
-            """
-            SELECT session_date, payload
-            FROM published_artifacts
-            WHERE market = 'US' AND artifact_key = $1
-              AND ($2::date IS NULL OR session_date > $2::date)
-            ORDER BY session_date ASC
-            """,
-            STOCK_BOUNCE_ARTIFACT_KEY,
-            date.fromisoformat(after) if after else None,
-        )
+    batch_size = max(limit + 1, 10)
     valid_dates = []
-    for record in records:
-        snapshot = record["payload"]
-        if isinstance(snapshot, str):
-            snapshot = json.loads(snapshot)
-        try:
-            validate_snapshot(snapshot)
-        except (KeyError, TypeError, ValueError):
-            continue
-        session_date = record["session_date"].isoformat()
-        if snapshot["date"] == session_date:
-            valid_dates.append(session_date)
+    async with pool.acquire() as conn:
+        while len(valid_dates) < limit + 1:
+            records = await conn.fetch(
+                """
+                SELECT session_date, payload
+                FROM published_artifacts
+                WHERE market = 'US' AND artifact_key = $1
+                  AND ($2::date IS NULL OR session_date > $2::date)
+                ORDER BY session_date ASC
+                LIMIT $3
+                """,
+                STOCK_BOUNCE_ARTIFACT_KEY,
+                date.fromisoformat(after) if after else None,
+                batch_size,
+            )
+            if not records:
+                break
+            for record in records:
+                snapshot = record["payload"]
+                try:
+                    if isinstance(snapshot, str):
+                        snapshot = json.loads(snapshot)
+                    validate_snapshot(snapshot)
+                except (KeyError, TypeError, ValueError):
+                    continue
+                session_date = record["session_date"].isoformat()
+                if snapshot["date"] == session_date:
+                    valid_dates.append(session_date)
+                    if len(valid_dates) == limit + 1:
+                        break
+            after = records[-1]["session_date"].isoformat()
+            if len(records) < batch_size:
+                break
     page = valid_dates[:limit]
     items = [
         {"epoch": get_epoch(date_string), "date_string": date_string}
@@ -106,6 +117,8 @@ async def evaluate_session(
             f"StockBounce publication is incomplete for US {date_string}",
         )
     try:
+        if not isinstance(snapshot, dict):
+            raise ValueError("snapshot must be a JSON object")
         if snapshot.get("date") != date_string:
             raise ValueError("snapshot session date does not match artifact key")
         return evaluate(
