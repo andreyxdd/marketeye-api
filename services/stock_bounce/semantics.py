@@ -34,9 +34,9 @@ def build_stock_bounce_analytics(bars: Iterable[dict]) -> dict:
     if len(ordered) < 19:
         raise ValueError("StockBounce requires a target bar and 18 preceding trading bars")
     target = ordered[-1]
-    previous = ordered[-19:-1]
-    changes = [_change(bar) for bar in previous]
-    bounce = [sum(changes[index:]) for index in range(18)]
+    trailing = ordered[-19:]
+    changes = [_change(bar) for bar in trailing]
+    bounce = [sum(changes[-length:]) for length in range(2, 20)]
     return {
         "ticker": str(target["ticker"]).upper(),
         "open": float(target["open"]),
@@ -48,18 +48,22 @@ def build_stock_bounce_analytics(bars: Iterable[dict]) -> dict:
 
 
 def _validate_row(row: dict) -> None:
+    if not isinstance(row, dict):
+        raise ValueError("StockBounce rows must be objects")
     required = ("ticker", "open", "close", "volume", "open_close_change_pct", "bounce")
     missing = [field for field in required if field not in row]
     if missing:
         raise ValueError(f"StockBounce row is missing fields: {', '.join(missing)}")
-    if len(row["bounce"]) != 18 or not all(
+    if not isinstance(row["ticker"], str) or not row["ticker"]:
+        raise ValueError("StockBounce row ticker is invalid")
+    if not isinstance(row["bounce"], list) or len(row["bounce"]) != 18 or not all(
         isinstance(value, (int, float)) and math.isfinite(value)
         for value in row["bounce"]
     ):
         raise ValueError(f"StockBounce row {row['ticker']} must have 18 finite bounce values")
     if not all(
         isinstance(row[field], (int, float)) and math.isfinite(row[field])
-        for field in ("open", "close", "open_close_change_pct")
+        for field in ("open", "close", "volume", "open_close_change_pct")
     ):
         raise ValueError(f"StockBounce row {row['ticker']} has invalid prices")
 
@@ -70,7 +74,6 @@ def build_snapshot(
     *,
     coverage: str = "exact",
     universe_provenance: str = "mongo_analytics",
-    declared_universe_count: Optional[int] = None,
     exclusions: Optional[list[dict]] = None,
 ) -> dict:
     materialized = sorted((dict(row) for row in rows), key=lambda row: row["ticker"])
@@ -82,13 +85,7 @@ def build_snapshot(
     for row in materialized:
         _validate_row(row)
     excluded = list(exclusions or [])
-    declared = (
-        len(materialized) + len(excluded)
-        if declared_universe_count is None
-        else declared_universe_count
-    )
-    if declared != len(materialized) + len(excluded):
-        raise ValueError("StockBounce coverage counts do not match snapshot rows")
+    declared = len(materialized) + len(excluded)
     if coverage not in ("exact", "degraded"):
         raise ValueError("StockBounce coverage must be exact or degraded")
     if coverage == "exact" and excluded:
@@ -109,15 +106,40 @@ def build_snapshot(
 
 
 def validate_snapshot(snapshot: dict) -> None:
+    if not isinstance(snapshot, dict):
+        raise ValueError("StockBounce snapshot must be an object")
     if snapshot.get("schema_version") != 1 or snapshot.get("market") != "US":
         raise ValueError("Unsupported StockBounce snapshot")
-    datetime.strptime(snapshot["date"], "%Y-%m-%d")
-    coverage = snapshot.get("coverage") or {}
-    if coverage.get("status") not in ("exact", "degraded"):
+    try:
+        datetime.strptime(snapshot["date"], "%Y-%m-%d")
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("StockBounce snapshot has an invalid session date") from error
+    rows = snapshot.get("rows")
+    coverage = snapshot.get("coverage")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("StockBounce snapshot requires non-empty rows")
+    if not isinstance(coverage, dict) or coverage.get("status") not in (
+        "exact",
+        "degraded",
+    ):
         raise ValueError("StockBounce snapshot has incomplete coverage metadata")
-    if coverage.get("row_count") != len(snapshot.get("rows") or []):
-        raise ValueError("StockBounce snapshot coverage row count is invalid")
-    for row in snapshot["rows"]:
+    if not isinstance(coverage.get("universe_provenance"), str) or not coverage[
+        "universe_provenance"
+    ]:
+        raise ValueError("StockBounce snapshot requires universe provenance")
+    exclusions = coverage.get("exclusions")
+    if not isinstance(exclusions, list):
+        raise ValueError("StockBounce snapshot exclusions are invalid")
+    counts = (coverage.get("row_count"), coverage.get("declared_universe_count"))
+    if any(isinstance(value, bool) or not isinstance(value, int) for value in counts):
+        raise ValueError("StockBounce snapshot coverage counts are invalid")
+    if coverage["row_count"] != len(rows) or coverage[
+        "declared_universe_count"
+    ] != len(rows) + len(exclusions):
+        raise ValueError("StockBounce snapshot coverage counts do not match rows")
+    if coverage["status"] == "exact" and exclusions:
+        raise ValueError("Exact StockBounce snapshots cannot contain exclusions")
+    for row in rows:
         _validate_row(row)
 
 

@@ -1,6 +1,7 @@
 """Archive-first StockBounce session and result reads."""
 
 import base64
+import json
 from datetime import date
 
 from db.crud.published_archive import (
@@ -44,31 +45,34 @@ async def list_sessions(pool, cursor=None, limit=200) -> dict:
     async with pool.acquire() as conn:
         records = await conn.fetch(
             """
-            SELECT session_date
+            SELECT session_date, payload
             FROM published_artifacts
             WHERE market = 'US' AND artifact_key = $1
-              AND payload->>'schema_version' = '1'
-              AND payload->'coverage'->>'status' IN ('exact', 'degraded')
               AND ($2::date IS NULL OR session_date > $2::date)
             ORDER BY session_date ASC
-            LIMIT $3
             """,
             STOCK_BOUNCE_ARTIFACT_KEY,
             date.fromisoformat(after) if after else None,
-            limit + 1,
         )
-    page = records[:limit]
+    valid_dates = []
+    for record in records:
+        snapshot = record["payload"]
+        if isinstance(snapshot, str):
+            snapshot = json.loads(snapshot)
+        try:
+            validate_snapshot(snapshot)
+        except (KeyError, TypeError, ValueError):
+            continue
+        session_date = record["session_date"].isoformat()
+        if snapshot["date"] == session_date:
+            valid_dates.append(session_date)
+    page = valid_dates[:limit]
     items = [
-        {
-            "epoch": get_epoch(record["session_date"].isoformat()),
-            "date_string": record["session_date"].isoformat(),
-        }
-        for record in page
+        {"epoch": get_epoch(date_string), "date_string": date_string}
+        for date_string in page
     ]
     next_cursor = (
-        _encode_cursor(page[-1]["session_date"].isoformat())
-        if len(records) > limit and page
-        else None
+        _encode_cursor(page[-1]) if len(valid_dates) > limit and page else None
     )
     return {"items": items, "next_cursor": next_cursor}
 
@@ -102,7 +106,8 @@ async def evaluate_session(
             f"StockBounce publication is incomplete for US {date_string}",
         )
     try:
-        validate_snapshot(snapshot)
+        if snapshot.get("date") != date_string:
+            raise ValueError("snapshot session date does not match artifact key")
         return evaluate(
             snapshot,
             period=period,

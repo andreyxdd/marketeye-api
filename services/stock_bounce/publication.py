@@ -32,9 +32,7 @@ async def publish_us_session(conn, pool, date_string: str) -> dict:
     if not expected:
         raise ValueError("StockBounce publication requires a declared US universe")
     snapshot = build_snapshot(
-        date_string,
-        [by_ticker[ticker] for ticker in sorted(expected)],
-        declared_universe_count=len(expected),
+        date_string, [by_ticker[ticker] for ticker in sorted(expected)]
     )
     await upsert_artifact(
         pool,

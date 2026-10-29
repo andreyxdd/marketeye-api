@@ -113,7 +113,7 @@ async def test_run_crud_ops_publish_failure_keeps_ingest_message(monkeypatch):
     assert report.has_errors()
 
 
-def _stub_publish_deps(monkeypatch, publish_errors):
+def _stub_publish_deps(monkeypatch, publish_errors, phase_errors=None):
     """Stub run_crud_ops deps; publish_day raises each error in turn, then succeeds."""
     calls = {"publish": 0}
 
@@ -133,7 +133,11 @@ def _stub_publish_deps(monkeypatch, publish_errors):
         calls["publish"] += 1
         if calls["publish"] <= len(publish_errors):
             raise publish_errors[calls["publish"] - 1]
-        return {"artifacts_written": 2, "tickers_written": 1}
+        return {
+            "artifacts_written": 2,
+            "tickers_written": 1,
+            "phase_errors": phase_errors or [],
+        }
 
     monkeypatch.setattr(cronjob, "connect_mongo", _noop_async)
     monkeypatch.setattr(cronjob, "close_mongo", _noop_async)
@@ -192,3 +196,19 @@ async def test_run_crud_ops_publish_records_one_error_when_retry_fails(monkeypat
     assert calls["publish"] == 2
     assert [e.phase for e in report.errors] == ["publish"]
     assert "publish_service.publish_day failed" in message
+
+
+@pytest.mark.asyncio
+async def test_run_crud_ops_records_bounce_phase_failure_for_requeue(monkeypatch):
+    cronjob.reset_cron_failed()
+    report = cronjob.CronRunReport()
+    _stub_publish_deps(
+        monkeypatch,
+        [],
+        phase_errors=["stock_bounce: temporary provider failure"],
+    )
+
+    await _run_us(report)
+
+    assert [error.phase for error in report.errors] == ["stock_bounce"]
+    assert cronjob.cron_failed() is True

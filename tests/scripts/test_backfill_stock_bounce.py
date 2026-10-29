@@ -26,8 +26,7 @@ class MemoryStore:
         self.runs[run_id] = {"status": "running"}
         return run_id
 
-    async def list_targets(self, force=False):
-        del force
+    async def list_targets(self):
         return [
             {
                 **target,
@@ -224,3 +223,52 @@ async def test_remote_range_retries_then_checkpoints_success():
     assert report["unpublished"] == []
     assert len(remote.calls) == 2
     assert len(store.ranges) == 1
+
+
+@pytest.mark.asyncio
+async def test_provider_range_error_redacts_credentials_from_report_and_output(capsys):
+    import json
+
+    class SecretFailure(RemoteAdapter):
+        async def fetch_range(self, ticker, start_date, end_date):
+            del ticker, start_date, end_date
+            raise RuntimeError(
+                "https://eodhd.example/eod/ABC.US?api_token=dummy-secret&fmt=json"
+            )
+
+    store = MemoryStore(make_targets("2024-01-20"))
+    runner = StockBounceBackfill(
+        store,
+        LocalAdapter({}),
+        SecretFailure({}, ["ABC"]),
+        retry_attempts=1,
+    )
+
+    report = await runner.run()
+    print(json.dumps(report))
+    print(report["errors"]["2024-01-20"])
+    output = capsys.readouterr()
+
+    assert "dummy-secret" not in json.dumps(report)
+    assert "dummy-secret" not in output.out
+    assert "dummy-secret" not in output.err
+    assert "REDACTED" in report["errors"]["2024-01-20"]
+
+
+@pytest.mark.asyncio
+async def test_universe_error_redacts_credentials_before_cli_exception(capsys):
+    class SecretUniverse(RemoteAdapter):
+        async def current_universe(self):
+            raise RuntimeError("request failed with api_key=dummy-secret")
+
+    store = MemoryStore(make_targets("2024-01-20"))
+    runner = StockBounceBackfill(store, LocalAdapter({}), SecretUniverse({}, []))
+
+    with pytest.raises(RuntimeError) as error:
+        await runner.run()
+    print(str(error.value))
+    output = capsys.readouterr()
+
+    assert "dummy-secret" not in str(error.value)
+    assert "dummy-secret" not in output.out
+    assert "dummy-secret" not in output.err

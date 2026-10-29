@@ -50,6 +50,32 @@ async def test_invalid_results_queries_return_422(params):
             params={"api_key": FIXTURE_API_KEY, **params},
         )
     assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert set(detail) == {"code", "message", "details"}
+    assert isinstance(detail["code"], str)
+    assert isinstance(detail["message"], str)
+    assert isinstance(detail["details"], dict)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("path", "params"),
+    [
+        ("/api/stock-bounce/v1/results", {"date": "2024-01-01"}),
+        ("/api/stock-bounce/v1/sessions", {"limit": 0}),
+        ("/api/stock-bounce/v1/sessions", {"limit": 501}),
+    ],
+)
+async def test_fastapi_validation_errors_use_documented_detail_shape(path, params):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            path, params={"api_key": FIXTURE_API_KEY, **params}
+        )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "INVALID_QUERY"
+    assert detail["message"]
+    assert isinstance(detail["details"].get("errors"), list)
 
 
 @pytest.mark.asyncio

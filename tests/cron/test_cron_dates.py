@@ -116,7 +116,7 @@ async def test_unpublished_session_dates_probes_sessions_off_event_loop(monkeypa
         del pool, market
         return date == "2024-05-31"
 
-    monkeypatch.setattr("services.cron_dates.is_session_published", fake_published)
+    monkeypatch.setattr("services.cron_dates.is_archive_complete", fake_published)
     monkeypatch.setattr(
         "services.cron_dates.get_market_data_provider",
         lambda market="US": _thread_recording_provider(threads),
@@ -127,3 +127,24 @@ async def test_unpublished_session_dates_probes_sessions_off_event_loop(monkeypa
     assert dates == ["2024-06-03"]
     assert len(threads) == 1
     assert threads[0] is not threading.main_thread()
+
+
+@pytest.mark.asyncio
+async def test_us_probe_requeues_until_bounce_complete_without_changing_to(monkeypatch):
+    async def archive_complete(pool, date, market):
+        del pool, date
+        return market == "TO"
+
+    monkeypatch.setattr("services.cron_dates.is_archive_complete", archive_complete)
+    monkeypatch.setattr(
+        "services.cron_dates.get_market_data_provider",
+        lambda market: types.SimpleNamespace(
+            resolve_session_dates=lambda date: ("2024-06-03", "2024-05-31")
+        ),
+    )
+
+    assert await unpublished_session_dates(None, "US") == [
+        "2024-06-03",
+        "2024-05-31",
+    ]
+    assert await unpublished_session_dates(None, "TO") == []

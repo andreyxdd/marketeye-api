@@ -259,22 +259,18 @@ async def is_archive_complete(
         return False
     if market != "US":
         return True
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            """
-            SELECT 1
-            FROM published_artifacts
-            WHERE session_date = $1
-              AND market = $2
-              AND artifact_key = $3
-              AND payload->'coverage'->>'status' IN ('exact', 'degraded')
-              AND payload->>'schema_version' = '1'
-            """,
-            _to_date(date),
-            market,
-            STOCK_BOUNCE_ARTIFACT_KEY,
-        )
-    return row is not None
+    from services.stock_bounce.semantics import validate_snapshot
+
+    snapshot = await get_artifact_payload(
+        pool, date, STOCK_BOUNCE_ARTIFACT_KEY, market=market
+    )
+    if snapshot is None:
+        return False
+    try:
+        validate_snapshot(snapshot)
+    except (KeyError, TypeError, ValueError):
+        return False
+    return snapshot["date"] == date
 
 
 async def get_latest_published_date(

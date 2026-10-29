@@ -3,9 +3,12 @@ MarketEye API v1
 """
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from core.settings import DEFAULT_ROUTE_STR
 from core.build_info import APP_VERSION
@@ -64,6 +67,22 @@ app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 app.include_router(health_router)
 app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, error: RequestValidationError):
+    if request.url.path.startswith("/api/stock-bounce/v1/"):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": {
+                    "code": "INVALID_QUERY",
+                    "message": "Invalid StockBounce query parameters",
+                    "details": {"errors": jsonable_encoder(error.errors())},
+                }
+            },
+        )
+    return await request_validation_exception_handler(request, error)
 
 
 @app.on_event("startup")

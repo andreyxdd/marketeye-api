@@ -22,7 +22,7 @@ async def test_needs_ingest_false_when_last_and_prior_are_published(monkeypatch)
         del pool, date, market
         return True
 
-    monkeypatch.setattr("services.cron_dates.is_session_published", published)
+    monkeypatch.setattr("services.cron_dates.is_archive_complete", published)
 
     assert not await needs_ingest(object(), "US")
 
@@ -44,6 +44,6 @@ async def test_needs_ingest_true_when_a_session_is_unpublished(monkeypatch):
         del pool, market
         return date == "2024-06-03"
 
-    monkeypatch.setattr("services.cron_dates.is_session_published", published)
+    monkeypatch.setattr("services.cron_dates.is_archive_complete", published)
 
     assert await needs_ingest(object(), "US")

@@ -3,11 +3,26 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Optional
 
+from core.settings import EODHD_API_KEY
+
 from .semantics import build_snapshot, build_stock_bounce_analytics
+
+
+def sanitize_provider_text(value) -> str:
+    text = str(value)
+    if EODHD_API_KEY:
+        text = text.replace(EODHD_API_KEY, "REDACTED")
+    return re.sub(
+        r"((?:api_token|api_key)=)[^&\s]+",
+        r"\1REDACTED",
+        text,
+        flags=re.IGNORECASE,
+    )
 
 
 @dataclass(frozen=True)
@@ -15,10 +30,6 @@ class LocalBarsResult:
     status: str
     bars: list[dict]
     error: Optional[str] = None
-
-
-def _date(value: str) -> date:
-    return date.fromisoformat(value)
 
 
 def _complete_history(bars: list[dict], target_date: str) -> bool:
@@ -48,7 +59,7 @@ class StockBounceBackfill:
             try:
                 return await self.remote_bars.fetch_range(ticker, start, end)
             except Exception as error:  # pylint: disable=broad-except
-                last_error = error
+                last_error = sanitize_provider_text(error)
                 if attempt + 1 < self.retry_attempts:
                     await asyncio.sleep(0.1 * (2**attempt))
         raise RuntimeError(f"EODHD range failed for {ticker} {start}..{end}: {last_error}")
@@ -60,7 +71,7 @@ class StockBounceBackfill:
         dry_run: bool = False,
         force: bool = False,
     ) -> dict:
-        targets = await self.store.list_targets(force=force)
+        targets = await self.store.list_targets()
         targets = [
             target
             for target in targets
@@ -90,7 +101,10 @@ class StockBounceBackfill:
             await self.store.finish_run(run_id, report)
             return report
 
-        start_date = (min(_date(value) for value in target_dates) - timedelta(days=120)).isoformat()
+        start_date = (
+            min(date.fromisoformat(value) for value in target_dates)
+            - timedelta(days=120)
+        ).isoformat()
         end_date = max(target_dates)
         local_cache = {}
         target_universes = {}
@@ -114,7 +128,10 @@ class StockBounceBackfill:
             if target_date in report["errors"]:
                 continue
             if remote_needed:
-                current = await self.remote_bars.current_universe()
+                try:
+                    current = await self.remote_bars.current_universe()
+                except Exception as error:  # pylint: disable=broad-except
+                    raise RuntimeError(sanitize_provider_text(error)) from None
                 target_universes[target_date] = sorted(set(archived) | set(current))
                 target_uses_remote.add(target_date)
             else:

@@ -4,7 +4,7 @@ import asyncio
 from typing import List
 
 from core.markets import MARKETS, normalize_market
-from db.crud.published_archive import is_session_published
+from db.crud.published_archive import is_archive_complete
 from utils.handle_datetimes import get_today_utc_date_in_timezone
 from providers import get_market_data_provider
 
@@ -36,7 +36,7 @@ async def unpublished_session_dates(pool, market: str) -> List[str]:
     return [
         date
         for date in dates
-        if not await is_session_published(pool, date, market)
+        if not await is_archive_complete(pool, date, market)
     ]
 
 

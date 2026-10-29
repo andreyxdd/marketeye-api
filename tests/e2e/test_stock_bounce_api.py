@@ -10,7 +10,10 @@ from db.crud.published_archive import (
     upsert_artifact,
     upsert_published_date,
 )
-from services.stock_bounce import build_snapshot, build_stock_bounce_analytics
+from services.stock_bounce.semantics import (
+    build_snapshot,
+    build_stock_bounce_analytics,
+)
 from tests.helpers.constants import FIXTURE_API_KEY
 
 
@@ -43,6 +46,14 @@ async def test_sessions_results_tracking_and_frequency_contract(client, postgres
         "2024-01-19",
         STOCK_BOUNCE_ARTIFACT_KEY,
         snapshot,
+        market="US",
+    )
+    await upsert_published_date(postgres_pool, "2024-01-18", market="US")
+    await upsert_artifact(
+        postgres_pool,
+        "2024-01-18",
+        STOCK_BOUNCE_ARTIFACT_KEY,
+        {"schema_version": 1, "rows": [], "coverage": {"status": "exact"}},
         market="US",
     )
 

@@ -99,8 +99,7 @@ class PostgresBackfillStore:
             )
         return run_id
 
-    async def list_targets(self, force=False):
-        del force
+    async def list_targets(self):
         async with self.pool.acquire() as conn:
             records = await conn.fetch(
                 """

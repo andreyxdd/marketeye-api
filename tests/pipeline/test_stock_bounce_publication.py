@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 
+import pandas as pd
 import pytest
 
 from db.crud.mongo_storage import prune_mongo_if_published
@@ -13,7 +14,11 @@ from db.crud.published_archive import (
     upsert_published_date,
     upsert_ticker_payload,
 )
-from services.stock_bounce import build_snapshot, build_stock_bounce_analytics, evaluate
+from services.stock_bounce.semantics import (
+    build_snapshot,
+    build_stock_bounce_analytics,
+    evaluate,
+)
 
 
 def _history(changes):
@@ -35,11 +40,26 @@ def _history(changes):
     return bars
 
 
-def test_legacy_bounce_vector_and_current_fields_are_literal_parity():
-    analytics = build_stock_bounce_analytics(_history([1] * 18 + [5]))
+def _legacy_bounce_oracle(bars):
+    df = pd.DataFrame(bars).sort_values(by="date")
+    changes = df[["open", "close"]].pct_change(axis=1)["close"]
+    return [
+        value * 100
+        for value in changes.iloc[::-1]
+        .cumsum()
+        .iloc[::-1]
+        .tolist()[-19:-1][::-1]
+    ]
 
+
+def test_legacy_bounce_vector_matches_original_pandas_algorithm():
+    bars = _history([1, -2, 3, 4, -5, 2, 1, -1, 6, 2, -3, 1, 4, -2, 2, 3, -1, 2, 5])
+    analytics = build_stock_bounce_analytics(bars)
+    legacy = _legacy_bounce_oracle(bars)
+
+    assert len(legacy) == 18
+    assert analytics["bounce"] == pytest.approx(legacy)
     assert analytics["open_close_change_pct"] == pytest.approx(5.0)
-    assert analytics["bounce"] == pytest.approx(list(range(18, 0, -1)))
     assert analytics["ticker"] == "ABC"
     assert analytics["volume"] == 1018
 
@@ -59,7 +79,7 @@ def test_snapshot_rejects_incomplete_vectors_and_publishes_full_universe():
 
 
 def test_screening_price_filter_long_period_order_and_frequencies():
-    selected = build_stock_bounce_analytics(_history([-1] * 18 + [5]))
+    selected = build_stock_bounce_analytics(_history([-2] * 18 + [5]))
     selected["ticker"] = "B"
     other = dict(selected)
     other["ticker"] = "A"
@@ -70,7 +90,9 @@ def test_screening_price_filter_long_period_order_and_frequencies():
 
     assert [row["ticker"] for row in result["rows"]] == ["A", "B"]
     assert result["rows"][0]["open_close_change_pct"] == pytest.approx(5.0)
-    assert result["rows"][0]["frequencies"] == "T-1, T-2, T-3, T-4, T-5, T-6, T-7, T-8, T-9, T-10, T-11, T-12, T-13, T-14, T-15, T-16, T-17"
+    assert result["rows"][0]["frequencies"] == ", ".join(
+        f"T-{period}" for period in range(3, 18)
+    )
 
 
 @pytest.mark.asyncio
@@ -96,10 +118,61 @@ async def test_us_archive_completeness_requires_bounce_but_to_does_not(postgres_
         postgres_pool,
         "2024-06-03",
         STOCK_BOUNCE_ARTIFACT_KEY,
-        {"schema_version": 1, "rows": [], "coverage": {"status": "exact"}},
+        build_snapshot(
+            "2024-06-03",
+            [build_stock_bounce_analytics(_history([1] * 18 + [5]))],
+        ),
         market="US",
     )
     assert await is_archive_complete(postgres_pool, "2024-06-03", "US")
+
+
+@pytest.mark.asyncio
+async def test_archive_completeness_rejects_malformed_empty_and_invalid_snapshots(
+    postgres_pool,
+):
+    import copy
+
+    valid = build_snapshot(
+        "2024-06-03",
+        [build_stock_bounce_analytics(_history([1] * 18 + [5]))],
+    )
+    invalid_snapshots = []
+    empty = copy.deepcopy(valid)
+    empty["rows"] = []
+    empty["coverage"].update(row_count=0, declared_universe_count=0)
+    invalid_snapshots.append(empty)
+    missing_count = copy.deepcopy(valid)
+    del missing_count["coverage"]["declared_universe_count"]
+    invalid_snapshots.append(missing_count)
+    wrong_count = copy.deepcopy(valid)
+    wrong_count["coverage"]["row_count"] = 2
+    invalid_snapshots.append(wrong_count)
+    invalid_row = copy.deepcopy(valid)
+    invalid_row["rows"][0]["bounce"] = invalid_row["rows"][0]["bounce"][:-1]
+    invalid_snapshots.append(invalid_row)
+
+    for index, snapshot in enumerate(invalid_snapshots):
+        date_string = f"2024-06-{10 + index:02d}"
+        await upsert_published_date(postgres_pool, date_string, market="US")
+        await upsert_ticker_payload(
+            postgres_pool, date_string, "ABC", {"ticker": "ABC"}, market="US"
+        )
+        await upsert_artifact(
+            postgres_pool,
+            date_string,
+            "market_analytics",
+            {"SP500": 1},
+            market="US",
+        )
+        await upsert_artifact(
+            postgres_pool,
+            date_string,
+            STOCK_BOUNCE_ARTIFACT_KEY,
+            snapshot,
+            market="US",
+        )
+        assert not await is_archive_complete(postgres_pool, date_string, "US")
 
 
 @pytest.mark.asyncio
