@@ -36,7 +36,7 @@ Query: optional opaque `cursor` and `limit` (default 200, maximum 500). Response
 }
 ```
 
-Items are ascending and include only complete `stock_bounce:v1` snapshots. The desktop loads all pages before enabling date selection.
+Items are ascending and include only complete `stock_bounce:v1` snapshots. The desktop loads all pages before enabling date selection. Each request scans at most 1,000 artifacts. When that budget limits progress, `next_cursor` marks the last scanned artifact and may accompany an empty `items` page; otherwise it marks the last returned valid session. Clients must continue whenever `next_cursor` is non-null.
 
 ### Screening results
 

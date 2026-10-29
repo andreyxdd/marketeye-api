@@ -40,12 +40,18 @@ def _decode_cursor(cursor: str) -> str:
         ) from error
 
 
+SCAN_ROW_BUDGET = 1000
+
+
 async def list_sessions(pool, cursor=None, limit=200) -> dict:
     after = _decode_cursor(cursor) if cursor else None
     batch_size = max(limit + 1, 10)
     valid_dates = []
+    scanned = 0
+    records = []
     async with pool.acquire() as conn:
-        while len(valid_dates) < limit + 1:
+        while len(valid_dates) < limit + 1 and scanned < SCAN_ROW_BUDGET:
+            current_batch = min(batch_size, SCAN_ROW_BUDGET - scanned)
             records = await conn.fetch(
                 """
                 SELECT session_date, payload
@@ -57,10 +63,11 @@ async def list_sessions(pool, cursor=None, limit=200) -> dict:
                 """,
                 STOCK_BOUNCE_ARTIFACT_KEY,
                 date.fromisoformat(after) if after else None,
-                batch_size,
+                current_batch,
             )
             if not records:
                 break
+            scanned += len(records)
             for record in records:
                 snapshot = record["payload"]
                 try:
@@ -75,16 +82,19 @@ async def list_sessions(pool, cursor=None, limit=200) -> dict:
                     if len(valid_dates) == limit + 1:
                         break
             after = records[-1]["session_date"].isoformat()
-            if len(records) < batch_size:
+            if len(records) < current_batch:
                 break
     page = valid_dates[:limit]
     items = [
         {"epoch": get_epoch(date_string), "date_string": date_string}
         for date_string in page
     ]
-    next_cursor = (
-        _encode_cursor(page[-1]) if len(valid_dates) > limit and page else None
-    )
+    if len(valid_dates) > limit and page:
+        next_cursor = _encode_cursor(page[-1])
+    elif scanned >= SCAN_ROW_BUDGET and records:
+        next_cursor = _encode_cursor(after)
+    else:
+        next_cursor = None
     return {"items": items, "next_cursor": next_cursor}
 
 

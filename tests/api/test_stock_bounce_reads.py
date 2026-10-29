@@ -98,3 +98,80 @@ async def test_sessions_fetch_bounded_batches_and_skip_trailing_invalid_artifact
     assert pool.connection.limits == [10, 10]
     assert len(validated) == 12
     assert _snapshot("2024-01-15") not in validated
+
+
+def _decode_cursor(cursor):
+    padding = "=" * (-len(cursor) % 4)
+    return base64.urlsafe_b64decode(cursor + padding).decode("ascii")
+
+
+def _records(valid_indexes, count=25):
+    start = date(2024, 1, 1)
+    return [
+        {
+            "session_date": start + timedelta(days=index),
+            "payload": (
+                _snapshot((start + timedelta(days=index)).isoformat())
+                if index in valid_indexes
+                else {}
+            ),
+        }
+        for index in range(count)
+    ]
+
+
+@pytest.mark.asyncio
+async def test_scan_budget_returns_empty_resumable_pages_then_normal_exhaustion(
+    monkeypatch,
+):
+    monkeypatch.setattr(reads, "SCAN_ROW_BUDGET", 10)
+    pool = FakePool(_records(set()))
+    validated = []
+    original_validate = reads.validate_snapshot
+
+    def counted_validate(snapshot):
+        validated.append(snapshot)
+        return original_validate(snapshot)
+
+    monkeypatch.setattr(reads, "validate_snapshot", counted_validate)
+
+    first = await reads.list_sessions(pool, limit=2)
+    assert first["items"] == []
+    assert _decode_cursor(first["next_cursor"]) == "2024-01-10"
+    assert len(validated) == 10
+
+    second = await reads.list_sessions(pool, cursor=first["next_cursor"], limit=2)
+    assert second["items"] == []
+    assert _decode_cursor(second["next_cursor"]) == "2024-01-20"
+    assert len(validated) == 20
+
+    third = await reads.list_sessions(pool, cursor=second["next_cursor"], limit=2)
+    assert third == {"items": [], "next_cursor": None}
+    assert len(validated) == 25
+    assert pool.connection.limits == [10, 10, 10]
+
+
+@pytest.mark.asyncio
+async def test_scan_budget_cursor_resumes_after_scanned_rows_without_gaps(
+    monkeypatch,
+):
+    monkeypatch.setattr(reads, "SCAN_ROW_BUDGET", 10)
+    pool = FakePool(_records({0, 9, 10, 11, 20}))
+
+    first = await reads.list_sessions(pool, limit=2)
+    assert [item["date_string"] for item in first["items"]] == [
+        "2024-01-01",
+        "2024-01-10",
+    ]
+    assert _decode_cursor(first["next_cursor"]) == "2024-01-10"
+
+    second = await reads.list_sessions(pool, cursor=first["next_cursor"], limit=2)
+    assert [item["date_string"] for item in second["items"]] == [
+        "2024-01-11",
+        "2024-01-12",
+    ]
+    assert _decode_cursor(second["next_cursor"]) == "2024-01-20"
+
+    third = await reads.list_sessions(pool, cursor=second["next_cursor"], limit=2)
+    assert [item["date_string"] for item in third["items"]] == ["2024-01-21"]
+    assert third["next_cursor"] is None
