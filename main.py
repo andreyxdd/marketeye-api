@@ -71,7 +71,7 @@ app.include_router(endpoint_router, prefix=DEFAULT_ROUTE_STR)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, error: RequestValidationError):
-    if request.url.path.startswith("/api/stock-bounce/v1/"):
+    if request.url.path.startswith(("/api/stock-bounce/v1/", "/api/stock-bounce/v2/")):
         return JSONResponse(
             status_code=422,
             content={

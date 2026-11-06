@@ -8,6 +8,7 @@ import pytest
 from db.crud.mongo_storage import prune_mongo_if_published
 from db.crud.published_archive import (
     STOCK_BOUNCE_ARTIFACT_KEY,
+    STOCK_BOUNCE_V2_ARTIFACT_KEY,
     get_artifact_payload,
     is_archive_complete,
     upsert_artifact,
@@ -19,6 +20,7 @@ from services.stock_bounce.semantics import (
     build_stock_bounce_analytics,
     evaluate,
 )
+from services.stock_bounce.semantics_v2 import build_snapshot_v2
 
 
 def _history(changes):
@@ -45,10 +47,7 @@ def _legacy_bounce_oracle(bars):
     changes = df[["open", "close"]].pct_change(axis=1)["close"]
     return [
         value * 100
-        for value in changes.iloc[::-1]
-        .cumsum()
-        .iloc[::-1]
-        .tolist()[-19:-1][::-1]
+        for value in changes.iloc[::-1].cumsum().iloc[::-1].tolist()[-19:-1][::-1]
     ]
 
 
@@ -121,6 +120,36 @@ async def test_us_archive_completeness_requires_bounce_but_to_does_not(postgres_
         build_snapshot(
             "2024-06-03",
             [build_stock_bounce_analytics(_history([1] * 18 + [5]))],
+        ),
+        market="US",
+    )
+    assert not await is_archive_complete(postgres_pool, "2024-06-03", "US")
+    await upsert_artifact(
+        postgres_pool,
+        "2024-06-03",
+        STOCK_BOUNCE_V2_ARTIFACT_KEY,
+        build_snapshot_v2(
+            "2024-06-03",
+            [
+                {
+                    "ticker": "ABC",
+                    "open": 100.0,
+                    "high": 110.0,
+                    "close": 105.0,
+                    "volume": 1000,
+                    "previous_all_time_high": 109.0,
+                    "universes": ["whole_market", "macd_history"],
+                }
+            ],
+            coverage={
+                universe: {
+                    "status": "exact",
+                    "universe_provenance": "fixture",
+                    "exclusions_count": 0,
+                }
+                for universe in ("whole_market", "macd_history")
+            },
+            max_lookback=0,
         ),
         market="US",
     )
@@ -232,7 +261,12 @@ async def test_daily_publisher_is_idempotent_and_publishes_ingested_rows(monkeyp
     assert len(writes) == 2
     assert writes[0][2] == writes[1][2]
     assert set(writes[0][2]["rows"][0]) == {
-        "ticker", "open", "close", "volume", "open_close_change_pct", "bounce"
+        "ticker",
+        "open",
+        "close",
+        "volume",
+        "open_close_change_pct",
+        "bounce",
     }
 
     empty = {MONGO_DB_NAME: {"analytics": Cursor([])}}

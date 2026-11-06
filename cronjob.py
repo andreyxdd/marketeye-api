@@ -19,8 +19,16 @@ from db.crud.analytics import get_analytics_tickers
 from db.crud.tracking import put_top_tickers
 from db.crud.published_archive import is_archive_complete
 from db.crud.mongo_storage import prune_mongo_session_date
-from db.mongodb import connect as connect_mongo, get_database as get_mongo_database, close as close_mongo
-from db.postgres import connect as connect_postgres, get_pool as get_postgres_pool, close as close_postgres
+from db.mongodb import (
+    connect as connect_mongo,
+    get_database as get_mongo_database,
+    close as close_mongo,
+)
+from db.postgres import (
+    connect as connect_postgres,
+    get_pool as get_postgres_pool,
+    close as close_postgres,
+)
 from utils.handle_telegram import notify_developer
 from utils.handle_datetimes import (
     get_past_date,
@@ -61,7 +69,9 @@ class CronPhaseError:
 class CronRunReport:
     errors: list[CronPhaseError] = field(default_factory=list)
 
-    def record(self, market: str, date: str, phase: str, error: Exception | str) -> None:
+    def record(
+        self, market: str, date: str, phase: str, error: Exception | str
+    ) -> None:
         message = str(error)
         self.errors.append(
             CronPhaseError(market=market, date=date, phase=phase, error=message)
@@ -86,9 +96,7 @@ class CronRunReport:
             return "Cron run completed with no recorded phase errors."
         lines = ["Cron run completed with errors:"]
         for item in self.errors:
-            lines.append(
-                f"- {item.market} {item.date} [{item.phase}]: {item.error}"
-            )
+            lines.append(f"- {item.market} {item.date} [{item.phase}]: {item.error}")
         return "\n".join(lines)
 
 
@@ -130,7 +138,9 @@ def _format_publish_message(publish_result: dict) -> str:
     return base
 
 
-async def _publish_day_with_retry(conn, pg_pool, date_to_insert: str, market: str) -> dict:
+async def _publish_day_with_retry(
+    conn, pg_pool, date_to_insert: str, market: str
+) -> dict:
     try:
         return await publish_service.publish_day(
             conn, pg_pool, date_to_insert, market=market, include_mentions=False
@@ -199,7 +209,9 @@ async def run_crud_ops(
             )
             for phase_error in publish_result.get("phase_errors") or []:
                 phase = (
-                    "stock_bounce"
+                    "stock_bounce_v2"
+                    if phase_error.startswith("stock_bounce:v2:")
+                    else "stock_bounce"
                     if phase_error.startswith("stock_bounce:")
                     else "market_analytics"
                 )
@@ -214,7 +226,9 @@ async def run_crud_ops(
         await close_mongo()
 
 
-async def _finalize_cron_run(report: CronRunReport, start_time: float, market_timings: list):
+async def _finalize_cron_run(
+    report: CronRunReport, start_time: float, market_timings: list
+):
     total_elapsed = round(time() - start_time, 2)
     print(f"\nAnalytics cronjob finished on {total_elapsed} seconds")
     if market_timings:
@@ -325,7 +339,9 @@ def _parse_args():
     return parser.parse_args()
 
 
-async def run_explicit_dates(dates, markets=None, report: Optional[CronRunReport] = None):
+async def run_explicit_dates(
+    dates, markets=None, report: Optional[CronRunReport] = None
+):
     markets_to_run = markets or list_markets()
     report = report or CronRunReport()
     start_time = time()

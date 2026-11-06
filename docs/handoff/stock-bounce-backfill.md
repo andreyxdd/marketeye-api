@@ -1,16 +1,22 @@
-# StockBounce backfill runbook
+# StockBounce v2 backfill runbook
 
-## Deploy first
+## Scope and release order
 
-Apply migrations, including `003_stock_bounce_backfill.sql`, and deploy daily publication plus the shared per-market prune guard before any historical apply. Do not run the all-history command against production until publication failures are visible in cron reporting and US Mongo cleanup is blocked until both analytics and `stock_bounce:v1` are durable.
+`scripts/backfill_stock_bounce.py` reconstructs `stock_bounce:v2` snapshots. It targets published US sessions in the 365-calendar-day window ending when the command starts. It does not alter v1 screening or v1 query authentication.
 
-## Dry-run
+Before an apply, deploy migrations through `004_stock_bounce_v2.sql` and the daily publishers. The v2 publisher requires durable high-watermark and split state established by the backfill; it never downloads full history in the daily or request path. US Mongo cleanup remains blocked until generic analytics, valid `stock_bounce:v1`, and valid `stock_bounce:v2` artifacts are durable. TO cleanup is unchanged.
+
+Live provider imports and production applies are post-deploy operational gates. Do not run them in CI or as part of local implementation verification.
+
+## Dry-run and storage gate
 
 ```bash
 python scripts/backfill_stock_bounce.py --dry-run
 ```
 
-The report lists retained published US target sessions and archived ticker count without fetching EODHD ranges or writing snapshots/checkpoints. Targets are the currently retained generic US publication set; history is not permanent and remains subject to PostgreSQL pruning.
+Dry-run reads local targets and storage statistics only. It performs no EODHD request and creates no run, checkpoint, bar, or snapshot. The report includes `since`, target sessions, ticker count, `current_bytes`, `projected_bytes`, `limit_bytes`, and current/projected components for `v1_v2_artifacts`, `bars`, `indexes`, and `checkpoints`.
+
+Apply refuses to create a run or fetch provider data when projected usage is greater than 70% of `PG_STORAGE_LIMIT_BYTES`. Reduce retained data or increase the configured limit after operational review; do not bypass the guard with `--force`.
 
 ## Apply and resume
 
@@ -20,14 +26,18 @@ python scripts/backfill_stock_bounce.py --resume-run-id RUN_ID
 python scripts/backfill_stock_bounce.py --force
 ```
 
-The runner reuses complete local OHLCV history where possible. Otherwise it combines archived tickers with the current EODHD universe, fetches one coalesced range per ticker across target sessions, and records run, target, and ticker-range checkpoints. Resume skips successful ranges and complete targets. `--force` reprocesses sessions that already have snapshots; use it only for deliberate reconstruction.
+The runner uses a fixed-size worker pool. For each required ticker it makes one coalesced full-history request through the latest target and one split-history request. Full histories exist in memory only in a worker and in a temporary per-range checkpoint. PostgreSQL retains only the bounded bars needed for up to 1,260 prior sessions plus the target window, explicit split events, compact high watermarks, memberships, and snapshots.
 
-Exact coverage requires complete archived-universe local evidence. Degraded coverage records `archived_tickers+current_eodhd_universe` provenance and is not point-in-time or survivorship-free. Rows lacking a target bar or 18 preceding trading bars are explicit coverage exclusions, never partial vectors. A session with no usable full-universe rows remains unpublished.
+A ticker is advanced chronologically so every target row receives the strict pre-T high on T's split-adjusted basis. Dividend-adjusted closes are not used. Estimated source universes and exclusions set the affected universe's coverage to `degraded`; the two coverage objects are independent.
 
-Inspect `published`, `unpublished`, `errors`, and each snapshot's coverage counts/provenance. The command exits nonzero with actionable per-session errors while any target is unpublished. Repeat resume until complete. A live all-history run is an operational acceptance step after local fixture/mocked-provider tests pass; it is not part of CI.
+Resume skips completed targets and reuses completed range payloads without provider refetching. Failed targets retain successful checkpoints for retry. A fully successful run deletes its bulky range payloads but retains the run/target summary and sets `checkpoints_removed=true`. `--force` deliberately reconstructs already complete snapshots and is not a storage-guard override.
 
-## Read and release gate
+Inspect `published`, `unpublished`, `errors`, storage bytes, and `checkpoints_removed`. The command exits nonzero while any target is unpublished or the storage guard refuses the apply. Provider credentials and credential-bearing URLs are redacted from reports and errors.
 
-Verify `/api/stock-bounce/v1/sessions` paginates every complete snapshot and `/api/stock-bounce/v1/results` handles recent and historical screens/tracking without EODHD calls. Valid no-match screens return 200 with empty rows. Known sessions without snapshots return 409; unknown sessions return 404.
+## Reads and retention
 
-After contract and existing-analytics parity checks, exercise the Windows StockBounce test-tag installer, blockmap, and `updates/bounce-us/latest.yml`. Confirm the four existing update feeds are unchanged before announcing the fifth flavor.
+Verify `/api/stock-bounce/v2/sessions` and `/api/stock-bounce/v2/results` using only `X-API-Key`. A result read uses one snapshot query and, for a nonempty snapshot, one set-based start/T-1 bar query. It never calls EODHD. Unknown sessions return 404, incomplete data returns 409, unsupported retained lookbacks return 422, and valid no-match requests return two empty lists.
+
+`max_lookback` is capped at 1,260 and calculated from the currently retained valid v2 session chain, not from provider history depth. PostgreSQL pruning therefore lowers supported coverage as old snapshots disappear. Existing published-date cascade and OHLCV pruning remain authoritative; high watermarks, splits, and membership state are reusable ticker-level evidence rather than full all-time bar archives.
+
+A live production backfill, real EODHD response validation, and the pre-release rotation/removal of the legacy embedded desktop credential remain manual release gates.

@@ -48,3 +48,102 @@ async def publish_us_session(conn, pool, date_string: str) -> dict:
         "rows": len(snapshot["rows"]),
         "coverage": "exact",
     }
+
+
+async def publish_us_session_v2(
+    conn, pool, date_string: str, history_store=None
+) -> dict:
+    """Publish a complete v2 snapshot using only incremental local high state."""
+    from db.crud.published_archive import STOCK_BOUNCE_V2_ARTIFACT_KEY
+    from .adapters import PostgresStockBounceHistoryStore
+    from .backfill import sanitize_provider_text
+    from .history import advance_high_watermark
+    from .semantics_v2 import UNIVERSES, build_snapshot_v2
+
+    store = history_store or PostgresStockBounceHistoryStore(pool)
+    cursor = conn[MONGO_DB_NAME]["analytics"].find(
+        {"date": get_epoch(date_string), **market_mongo_filter("US")}
+    )
+    analytics = await cursor.to_list(length=None)
+    if not analytics:
+        raise ValueError("StockBounce v2 publication requires US analytics rows")
+    whole = {str(row["ticker"]).upper() for row in analytics}
+    current_macd = {
+        str(row["ticker"]).upper() for row in analytics if row.get("macd") is not None
+    }
+    historical_macd = set(await store.list_macd_tickers(date_string))
+    macd = current_macd | historical_macd
+    tickers = sorted(whole | macd)
+    try:
+        bars = await store.load_bars(tickers, date_string)
+        watermarks = await store.load_watermarks(tickers)
+        splits = await store.load_splits(tickers, watermarks, date_string)
+        rows = []
+        advanced = {}
+        exclusions = {universe: 0 for universe in UNIVERSES}
+        for ticker in tickers:
+            membership = [
+                universe
+                for universe, members in (
+                    ("whole_market", whole),
+                    ("macd_history", macd),
+                )
+                if ticker in members
+            ]
+            bar = bars.get(ticker)
+            watermark = watermarks.get(ticker)
+            if bar is None or watermark is None:
+                for universe in membership:
+                    exclusions[universe] += 1
+                continue
+            previous, next_watermark = advance_high_watermark(
+                watermark, bar, splits.get(ticker, [])
+            )
+            if previous is None:
+                for universe in membership:
+                    exclusions[universe] += 1
+                continue
+            rows.append(
+                {
+                    "ticker": ticker,
+                    "open": float(bar["open"]),
+                    "high": float(bar["high"]),
+                    "close": float(bar["close"]),
+                    "volume": int(bar["volume"]),
+                    "previous_all_time_high": previous,
+                    "universes": membership,
+                }
+            )
+            advanced[ticker] = next_watermark
+        coverage = {
+            "whole_market": {
+                "status": "degraded" if exclusions["whole_market"] else "exact",
+                "universe_provenance": "mongo_analytics+local_ohlcv",
+                "exclusions_count": exclusions["whole_market"],
+            },
+            "macd_history": {
+                "status": "degraded" if exclusions["macd_history"] else "exact",
+                "universe_provenance": "recoverable_macd_membership",
+                "exclusions_count": exclusions["macd_history"],
+            },
+        }
+        if not rows:
+            raise ValueError(
+                "StockBounce v2 publication requires verified high history"
+            )
+        snapshot = build_snapshot_v2(
+            date_string,
+            rows,
+            coverage=coverage,
+            max_lookback=await store.max_lookback(date_string),
+        )
+        await store.publish(date_string, snapshot, advanced)
+    except Exception as error:
+        raise RuntimeError(sanitize_provider_text(error)) from None
+    return {
+        "date": date_string,
+        "market": "US",
+        "artifact_key": STOCK_BOUNCE_V2_ARTIFACT_KEY,
+        "rows": len(rows),
+        "coverage": {key: value["status"] for key, value in coverage.items()},
+    }
