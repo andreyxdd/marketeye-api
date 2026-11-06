@@ -9,10 +9,11 @@ from db.postgres import get_pool
 from services.stock_bounce import reads as stock_bounce_reads
 from services.stock_bounce.reads import StockBounceReadError
 from services.stock_bounce.semantics import PRICE_RANGES
-from utils.handle_validation import validate_api_key
+from utils.handle_validation import validate_api_key, validate_v2_api_key
 
 
 stock_bounce_router = APIRouter()
+stock_bounce_v2_router = APIRouter()
 _TICKER = re.compile(r"^[A-Z0-9][A-Z0-9.-]{0,19}$")
 
 
@@ -94,4 +95,32 @@ async def read_results(
         period=period,
         price_range=price_range,
         tickers=ticker_list,
+    )
+
+
+@stock_bounce_v2_router.get("/sessions", tags=["StockBounce"])
+async def read_sessions_v2(
+    cursor: str = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=500),
+    api_key: str = Depends(validate_v2_api_key),  # pylint: disable=unused-argument
+):
+    pool = await _call(get_pool)
+    return await _call(
+        stock_bounce_reads.list_sessions_v2, pool, cursor=cursor, limit=limit
+    )
+
+
+@stock_bounce_v2_router.get("/results", tags=["StockBounce"])
+async def read_results_v2(
+    date: str = Query(...),
+    lookback: int = Query(..., ge=1, le=1260),
+    api_key: str = Depends(validate_v2_api_key),  # pylint: disable=unused-argument
+):
+    date_string = _date(date)
+    pool = await _call(get_pool)
+    return await _call(
+        stock_bounce_reads.evaluate_session_v2,
+        pool,
+        date_string=date_string,
+        lookback=lookback,
     )

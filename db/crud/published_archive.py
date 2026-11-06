@@ -48,6 +48,7 @@ def build_criterion_artifact_key(criterion: str, price_band: Optional[str]) -> s
 
 MARKET_ARTIFACT_KEY = "market_analytics"
 STOCK_BOUNCE_ARTIFACT_KEY = "stock_bounce:v1"
+STOCK_BOUNCE_V2_ARTIFACT_KEY = "stock_bounce:v2"
 
 
 async def upsert_published_date(
@@ -270,7 +271,20 @@ async def is_archive_complete(
         validate_snapshot(snapshot)
     except (KeyError, TypeError, ValueError):
         return False
-    return snapshot["date"] == date
+    if snapshot["date"] != date:
+        return False
+    from services.stock_bounce.semantics_v2 import validate_snapshot_v2
+
+    snapshot_v2 = await get_artifact_payload(
+        pool, date, STOCK_BOUNCE_V2_ARTIFACT_KEY, market=market
+    )
+    if snapshot_v2 is None:
+        return False
+    try:
+        validate_snapshot_v2(snapshot_v2)
+    except (KeyError, TypeError, ValueError):
+        return False
+    return snapshot_v2["date"] == date
 
 
 async def get_latest_published_date(
@@ -319,9 +333,7 @@ async def prune_oldest_session_date(pool: asyncpg.Pool) -> Optional[str]:
         oldest_published = await conn.fetchval(
             "SELECT MIN(session_date) FROM published_dates"
         )
-        oldest_ohlcv = await conn.fetchval(
-            "SELECT MIN(session_date) FROM ohlcv_bars"
-        )
+        oldest_ohlcv = await conn.fetchval("SELECT MIN(session_date) FROM ohlcv_bars")
 
         if oldest_published is None and oldest_ohlcv is None:
             return None

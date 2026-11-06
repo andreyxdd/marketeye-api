@@ -21,6 +21,7 @@ def _stock_bounce_stub(monkeypatch):
         return {"coverage": "exact"}
 
     monkeypatch.setattr(publish_service, "publish_us_session", publish_stub)
+    monkeypatch.setattr(publish_service, "publish_us_session_v2", publish_stub)
 
 
 @pytest.mark.asyncio
@@ -31,7 +32,9 @@ async def test_publish_day_skips_market_analytics_but_publishes_lists(monkeypatc
         del conn, date
         raise RuntimeError("CVI failed")
 
-    async def lists_stub(conn, date, market="US", price_band=None, include_mentions=False):
+    async def lists_stub(
+        conn, date, market="US", price_band=None, include_mentions=False
+    ):
         del conn, date, market, price_band, include_mentions
         return {
             "by_one_day_avg_mf": [{"ticker": "AAPL"}],
@@ -110,7 +113,9 @@ async def test_publish_day_writes_market_analytics_when_mi_fails_eodhd_ok(
         del db, date
         return 0.12
 
-    async def lists_stub(conn, date, market="US", price_band=None, include_mentions=False):
+    async def lists_stub(
+        conn, date, market="US", price_band=None, include_mentions=False
+    ):
         del conn, date, market, price_band, include_mentions
         return {
             "by_one_day_avg_mf": [{"ticker": "AAPL"}],
@@ -160,7 +165,9 @@ async def test_publish_day_writes_market_analytics_when_mi_fails_eodhd_ok(
 
     assert publish_service.MARKET_ARTIFACT_KEY in upserts["artifacts"]
     assert publish_service.MARKET_ARTIFACT_KEY not in result["skipped_artifacts"]
-    assert not any(err.startswith("market_analytics:") for err in result["phase_errors"])
+    assert not any(
+        err.startswith("market_analytics:") for err in result["phase_errors"]
+    )
     assert upserts["market_payload"]["SP500"] == 4200.5
     assert upserts["market_payload"]["VIX"] == 55.0
     assert upserts["market_payload"]["normalazied_CVI_slope"] == 0.12
@@ -170,7 +177,9 @@ async def test_publish_day_writes_market_analytics_when_mi_fails_eodhd_ok(
 async def test_publish_day_skips_when_no_tickers(monkeypatch):
     upserts = {"artifacts": [], "tickers": []}
 
-    async def lists_empty(conn, date, market="US", price_band=None, include_mentions=False):
+    async def lists_empty(
+        conn, date, market="US", price_band=None, include_mentions=False
+    ):
         del conn, date, market, price_band, include_mentions
         return {
             "by_one_day_avg_mf": [],

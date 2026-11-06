@@ -14,7 +14,7 @@ from db.crud.published_archive import (
     upsert_ticker_payload,
 )
 from db.crud.tracking import CRITERIA
-from services.stock_bounce.publication import publish_us_session
+from services.stock_bounce.publication import publish_us_session, publish_us_session_v2
 from utils.price_bands import PRICE_BANDS
 
 
@@ -51,7 +51,9 @@ async def publish_day(
 
     if market == "US":
         try:
-            market_payload = await analytics_service.get_market_analytics_hot(conn, date)
+            market_payload = await analytics_service.get_market_analytics_hot(
+                conn, date
+            )
             artifact_writes.append((MARKET_ARTIFACT_KEY, market_payload))
         except Exception as market_error:  # pylint: disable=broad-except
             skipped_artifacts.append(MARKET_ARTIFACT_KEY)
@@ -61,14 +63,21 @@ async def publish_day(
         except Exception as bounce_error:  # pylint: disable=broad-except
             skipped_artifacts.append("stock_bounce:v1")
             phase_errors.append(f"stock_bounce: {bounce_error}")
+        try:
+            await publish_us_session_v2(conn, pool, date)
+        except Exception as bounce_v2_error:  # pylint: disable=broad-except
+            skipped_artifacts.append("stock_bounce:v2")
+            phase_errors.append(f"stock_bounce:v2: {bounce_v2_error}")
 
     for price_band in PRICE_BANDS_TO_PUBLISH:
-        by_criteria_payload = await analytics_service.get_analytics_lists_by_criteria_hot(
-            conn,
-            date,
-            market=market,
-            price_band=price_band,
-            include_mentions=include_mentions,
+        by_criteria_payload = (
+            await analytics_service.get_analytics_lists_by_criteria_hot(
+                conn,
+                date,
+                market=market,
+                price_band=price_band,
+                include_mentions=include_mentions,
+            )
         )
         artifact_writes.append(
             (build_lists_artifact_key(price_band), by_criteria_payload)

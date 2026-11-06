@@ -2,7 +2,9 @@
 Utilities methods to validate API calls
 """
 
-from fastapi import Query
+import hmac
+
+from fastapi import Header, Query
 from fastapi.exceptions import HTTPException
 from core.settings import API_KEY
 from core.markets import DEFAULT_MARKET, normalize_market
@@ -21,6 +23,31 @@ def validate_api_key(
     """
     if api_key != API_KEY:
         raise HTTPException(status_code=403, detail="Erreneous API key recieved.")
+
+
+def validate_v2_api_key(
+    x_api_key: str = Header(default=None, alias="X-API-Key"),
+):
+    """Authenticate v2 from a header without accepting query credentials."""
+    if x_api_key is None:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "API_KEY_REQUIRED",
+                "message": "X-API-Key header is required",
+                "details": {},
+            },
+        )
+    expected = str(API_KEY or "")
+    if not hmac.compare_digest(x_api_key.encode("utf-8"), expected.encode("utf-8")):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "INVALID_API_KEY",
+                "message": "API key is invalid",
+                "details": {},
+            },
+        )
 
 
 def validate_date_string(
