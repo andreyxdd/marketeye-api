@@ -98,10 +98,11 @@ def compute_base_analytics(df):
 
     res["date"] = bar_date_to_epoch_ms(df["date"].iloc[-1])
 
-    return {
-        **res,
-        "bounce": build_stock_bounce_analytics(df.to_dict("records"))["bounce"],
-    }
+    try:
+        res["bounce"] = build_stock_bounce_analytics(df.to_dict("records"))["bounce"]
+    except ZeroDivisionError:
+        pass  # zero-open bar: keep the ticker's other analytics, omit the bounce vector
+    return res
 
 
 def compute_extra_analytics(

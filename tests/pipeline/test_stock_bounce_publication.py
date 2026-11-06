@@ -196,7 +196,7 @@ async def test_prune_guard_uses_archive_completeness(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_daily_publisher_is_idempotent_and_refuses_partial_universe(monkeypatch):
+async def test_daily_publisher_is_idempotent_and_publishes_ingested_rows(monkeypatch):
     from core.settings import MONGO_DB_NAME
     from services.stock_bounce import publication
 
@@ -215,14 +215,14 @@ async def test_daily_publisher_is_idempotent_and_refuses_partial_universe(monkey
             del length
             return self.rows
 
-    conn = {MONGO_DB_NAME: {"analytics": Cursor([row])}}
+    zero_open = {**row, "ticker": "ZRO", "one_day_open_close_change": None}
+    conn = {MONGO_DB_NAME: {"analytics": Cursor([row, zero_open])}}
     writes = []
 
     async def upsert_stub(pool, date_string, key, payload, market):
         del pool
         writes.append((date_string, key, payload, market))
 
-    monkeypatch.setattr(publication, "get_tickers", lambda date, market: ["ABC"])
     monkeypatch.setattr(publication, "upsert_artifact", upsert_stub)
 
     first = await publication.publish_us_session(conn, object(), "2024-01-19")
@@ -231,8 +231,11 @@ async def test_daily_publisher_is_idempotent_and_refuses_partial_universe(monkey
     assert first["rows"] == second["rows"] == 1
     assert len(writes) == 2
     assert writes[0][2] == writes[1][2]
+    assert set(writes[0][2]["rows"][0]) == {
+        "ticker", "open", "close", "volume", "open_close_change_pct", "bounce"
+    }
 
-    monkeypatch.setattr(publication, "get_tickers", lambda date, market: ["ABC", "XYZ"])
-    with pytest.raises(ValueError, match="incomplete provider coverage"):
-        await publication.publish_us_session(conn, object(), "2024-01-19")
+    empty = {MONGO_DB_NAME: {"analytics": Cursor([])}}
+    with pytest.raises(ValueError, match="requires US analytics rows"):
+        await publication.publish_us_session(empty, object(), "2024-01-19")
     assert len(writes) == 2

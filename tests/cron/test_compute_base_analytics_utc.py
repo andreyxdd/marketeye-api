@@ -36,6 +36,14 @@ def test_compute_base_analytics_utc_timestamps():
     assert len(result["bounce"]) == 18
 
 
+def test_compute_base_analytics_zero_open_omits_bounce():
+    df = _utc_ohlcv_frame()
+    df.loc[df.index[-1], "open"] = 0.0
+    result = compute_base_analytics(df)
+    assert result["ticker"] == "HOT-U"
+    assert "bounce" not in result
+
+
 def test_compute_base_analytics_string_dates():
     df = _utc_ohlcv_frame()
     df["date"] = df["date"].dt.strftime("%Y-%m-%d")
