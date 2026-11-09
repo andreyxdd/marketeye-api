@@ -212,3 +212,18 @@ async def test_run_crud_ops_records_bounce_phase_failure_for_requeue(monkeypatch
 
     assert [error.phase for error in report.errors] == ["stock_bounce"]
     assert cronjob.cron_failed() is True
+
+
+@pytest.mark.asyncio
+async def test_run_crud_ops_classifies_v2_seed_failure_as_v2(monkeypatch):
+    cronjob.reset_cron_failed()
+    report = cronjob.CronRunReport()
+    _stub_publish_deps(
+        monkeypatch,
+        [],
+        phase_errors=["stock_bounce:v2-seed: request timed out"],
+    )
+
+    await _run_us(report)
+
+    assert [error.phase for error in report.errors] == ["stock_bounce_v2"]

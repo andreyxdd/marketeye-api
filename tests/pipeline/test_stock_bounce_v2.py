@@ -134,3 +134,10 @@ def test_nonnegative_lookback_and_missing_bars_are_excluded_without_partial_peri
     assert [row["ticker"] for row in result["whole_market"]["rows"]] == ["GOOD"]
     assert result["whole_market"]["coverage"]["exclusions_count"] == 1
     assert result["macd_history"]["coverage"]["exclusions_count"] == 0
+
+
+def test_legacy_snapshot_without_unseeded_count_preserves_unknown_coverage():
+    result = evaluate_v2(_snapshot([]), [], lookback=1)
+
+    assert result["whole_market"]["coverage"]["unseeded_count"] is None
+    assert result["macd_history"]["coverage"]["unseeded_count"] is None

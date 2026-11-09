@@ -105,8 +105,8 @@ def validate_snapshot_v2(snapshot: dict) -> None:
             or exclusions_count < 0
         ):
             raise ValueError("StockBounce v2 coverage exclusions_count is invalid")
-        unseeded_count = item.get("unseeded_count", 0)
-        if (
+        unseeded_count = item.get("unseeded_count")
+        if unseeded_count is not None and (
             isinstance(unseeded_count, bool)
             or not isinstance(unseeded_count, int)
             or not 0 <= unseeded_count <= exclusions_count
@@ -139,7 +139,7 @@ def _coverage(snapshot: dict, universe: str, exclusions: int) -> dict:
         "status": "degraded" if exclusions else source["status"],
         "universe_provenance": source["universe_provenance"],
         "exclusions_count": source["exclusions_count"] + exclusions,
-        "unseeded_count": source.get("unseeded_count", 0),
+        "unseeded_count": source.get("unseeded_count"),
     }
 
 

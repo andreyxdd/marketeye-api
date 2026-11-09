@@ -88,7 +88,7 @@ async def seed_us_session_v2(
     retry_attempts: int = 3,
     max_concurrency: int = 4,
 ) -> dict:
-    """Seed current analytics newcomers before the provider-independent publisher."""
+    """Seed analytics and persisted MACD newcomers before v2 publication."""
     from .adapters import EodhdStockBounceAdapter, PostgresStockBounceHistoryStore
 
     cursor = conn[MONGO_DB_NAME]["analytics"].find(
@@ -96,6 +96,7 @@ async def seed_us_session_v2(
     )
     analytics = await cursor.to_list(length=None)
     store = history_store or PostgresStockBounceHistoryStore(pool)
+    macd_tickers = await store.list_macd_tickers(date_string)
     provider = remote_bars or EodhdStockBounceAdapter()
     seeder = StockBounceSeederV2(
         store,
@@ -104,6 +105,6 @@ async def seed_us_session_v2(
         max_concurrency=max_concurrency,
     )
     return await seeder.run(
-        [row["ticker"] for row in analytics],
+        [row["ticker"] for row in analytics] + macd_tickers,
         date_string,
     )
