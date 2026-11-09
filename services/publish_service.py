@@ -69,6 +69,15 @@ async def publish_day(
             seeding_report = await seed_us_session_v2(conn, pool, date)
         except Exception as seed_error:  # pylint: disable=broad-except
             phase_errors.append(f"stock_bounce:v2-seed: {seed_error}")
+        if seeding_report and seeding_report["failed_count"] > 0:
+            failures = "; ".join(
+                f"{ticker}: {error}"
+                for ticker, error in sorted(seeding_report["errors"].items())
+            )
+            phase_errors.append(
+                "stock_bounce:v2-seed: "
+                f"failed_count={seeding_report['failed_count']}; {failures}"
+            )
         try:
             await publish_us_session_v2(conn, pool, date)
         except Exception as bounce_v2_error:  # pylint: disable=broad-except

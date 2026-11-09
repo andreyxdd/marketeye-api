@@ -508,6 +508,8 @@ async def test_bulk_split_failure_leaves_session_unpublished_and_retryable():
 
 @pytest.mark.asyncio
 async def test_eodhd_daily_splits_use_one_validated_bulk_request():
+    from unittest.mock import MagicMock
+
     from services.stock_bounce.adapters import EodhdStockBounceAdapter
 
     class _Response:
@@ -517,23 +519,18 @@ async def test_eodhd_daily_splits_use_one_validated_bulk_request():
         def json(self):
             return [{"code": "AAA", "date": "2024-01-19", "split": "2:1"}]
 
-    class _Provider:
-        def __init__(self):
-            self.urls = []
-
-        def _http_get(self, url):
-            self.urls.append(url)
-            return _Response()
-
-    provider = _Provider()
+    provider = MagicMock()
+    provider._http_get.return_value = _Response()
     rows = await EodhdStockBounceAdapter(provider).fetch_daily_splits("2024-01-19")
 
     assert rows == [{"code": "AAA", "date": "2024-01-19", "split": "2:1"}]
-    assert len(provider.urls) == 1
+    provider._http_get.assert_called_once()
+    request = provider._http_get.call_args
     assert (
         "/eod-bulk-last-day/US?type=splits&date=2024-01-19&fmt=json&api_token="
-        in provider.urls[0]
+        in request.args[0]
     )
+    assert request.kwargs == {"timeout": (10, 60)}
 
 
 @pytest.mark.asyncio
@@ -555,8 +552,8 @@ async def test_eodhd_daily_splits_reject_invalid_shape_or_substituted_date(paylo
             return payload
 
     class _Provider:
-        def _http_get(self, url):
-            del url
+        def _http_get(self, url, timeout=None):
+            del url, timeout
             return _Response()
 
     with pytest.raises(ValueError, match="invalid daily splits"):
