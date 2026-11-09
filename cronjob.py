@@ -210,7 +210,9 @@ async def run_crud_ops(
             for phase_error in publish_result.get("phase_errors") or []:
                 phase = (
                     "stock_bounce_v2"
-                    if phase_error.startswith("stock_bounce:v2:")
+                    if phase_error.startswith(
+                        ("stock_bounce:v2:", "stock_bounce:v2-seed:")
+                    )
                     else "stock_bounce"
                     if phase_error.startswith("stock_bounce:")
                     else "market_analytics"

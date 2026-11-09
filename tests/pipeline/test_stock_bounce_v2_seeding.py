@@ -46,9 +46,10 @@ def _mongo(tickers):
 
 
 class _SeedStore:
-    def __init__(self, bars, watermarks=None):
+    def __init__(self, bars, watermarks=None, macd=()):
         self.bars = list(bars)
         self.watermarks = copy.deepcopy(watermarks or {})
+        self.macd = list(macd)
         self.splits = {}
         self.snapshots = {}
         self.seed_calls = []
@@ -58,7 +59,7 @@ class _SeedStore:
 
     async def list_macd_tickers(self, before_date):
         del before_date
-        return []
+        return list(self.macd)
 
     async def load_bars(self, tickers, date_string):
         return {
@@ -379,3 +380,71 @@ async def test_postgres_seed_is_atomic_and_never_replaces_existing_watermark(
                 "DELETE FROM stock_bounce_v2_splits WHERE ticker = $1",
                 ticker,
             )
+
+
+@pytest.mark.asyncio
+async def test_unseeded_macd_member_retries_after_leaving_current_analytics():
+    bars = [
+        _bar("NEW", "2024-01-17", 100.0),
+        _bar("NEW", "2024-01-18", 110.0),
+        _bar("NEW", "2024-01-19", 120.0),
+    ]
+    store = _SeedStore(bars, macd=("NEW",))
+    provider = _HistoryProvider({"NEW": bars}, failures=("NEW",))
+
+    first = await seed_us_session_v2(
+        _mongo(["NEW"]),
+        object(),
+        "2024-01-18",
+        history_store=store,
+        remote_bars=provider,
+        retry_attempts=1,
+    )
+    provider.failures.remove("NEW")
+    second = await seed_us_session_v2(
+        _mongo([]),
+        object(),
+        "2024-01-19",
+        history_store=store,
+        remote_bars=provider,
+        retry_attempts=1,
+    )
+
+    assert first["failed_count"] == 1
+    assert second["candidates_count"] == 1
+    assert second["seeded_count"] == 1
+    assert second["failed_count"] == 0
+    assert store.watermarks["NEW"] == {"date": "2024-01-18", "high": 110.0}
+    assert [call[0] for call in provider.range_calls] == ["NEW", "NEW"]
+
+
+@pytest.mark.asyncio
+async def test_full_history_and_split_requests_set_connect_and_read_timeouts():
+    from services.stock_bounce.adapters import EodhdStockBounceAdapter
+
+    class _Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return []
+
+    class _Provider:
+        def __init__(self):
+            self.calls = []
+
+        def _http_get(self, url, **kwargs):
+            self.calls.append((url, kwargs))
+            return _Response()
+
+    provider = _Provider()
+    adapter = EodhdStockBounceAdapter(provider)
+    await adapter.fetch_range("NEW", None, "2024-01-19")
+    await adapter.fetch_splits("NEW")
+
+    assert len(provider.calls) == 2
+    assert "/eod/NEW.US" in provider.calls[0][0]
+    assert "/splits/NEW.US" in provider.calls[1][0]
+    for _, kwargs in provider.calls:
+        assert kwargs["timeout"] == (10, 60)
+        assert all(0 < value < float("inf") for value in kwargs["timeout"])

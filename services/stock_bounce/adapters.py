@@ -13,6 +13,7 @@ from providers.eodhd_us import EodhdUSProvider
 from .backfill import LocalBarsResult, StockBounceStorageLimitError
 
 CHECKPOINT_ESTIMATE_BYTES = 2 * 1024 * 1024
+EODHD_REQUEST_TIMEOUT = (10, 60)
 
 
 class PostgresLocalBarsAdapter:
@@ -67,7 +68,8 @@ class EodhdStockBounceAdapter:
             from_param = f"&from={start_date}" if start_date else ""
             response = self.provider._http_get(  # pylint: disable=protected-access
                 f"{EODHD_BASE_URL}/eod/{ticker}.US"
-                f"?to={end_date}{from_param}&api_token={EODHD_API_KEY}&fmt=json"
+                f"?to={end_date}{from_param}&api_token={EODHD_API_KEY}&fmt=json",
+                timeout=EODHD_REQUEST_TIMEOUT,
             )
             response.raise_for_status()
             payload = response.json()
@@ -96,7 +98,8 @@ class EodhdStockBounceAdapter:
             to_param = f"&to={end_date}" if end_date else ""
             response = self.provider._http_get(  # pylint: disable=protected-access
                 f"{EODHD_BASE_URL}/splits/{ticker}.US"
-                f"?api_token={EODHD_API_KEY}&fmt=json{from_param}{to_param}"
+                f"?api_token={EODHD_API_KEY}&fmt=json{from_param}{to_param}",
+                timeout=EODHD_REQUEST_TIMEOUT,
             )
             response.raise_for_status()
             payload = response.json()
