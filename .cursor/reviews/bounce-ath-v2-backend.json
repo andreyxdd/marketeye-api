@@ -1,0 +1,143 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/bounce-ath-v2-backend.plan.md",
+  "target_branch": "main",
+  "base_sha": "113b807be3ad1bf6569dedafdcda1386dc724d1d",
+  "head_sha": "24358916ddc4c05345b70ca68d4ec94669befcc8",
+  "reviewed_at": "2026-11-09T09:00:59.223Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {
+      "id": "adapters-py-daily-watermark-upserts-allow-older-sessions",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/stock_bounce/adapters.py:408",
+      "finding": "Daily watermark upserts allow older sessions to overwrite newer ATH state.",
+      "reviewers": [
+        "bugbot"
+      ]
+    },
+    {
+      "id": "adapters-py-fixed-2-mib-checkpoint-estimates-do",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/stock_bounce/adapters.py:557",
+      "finding": "Fixed 2 MiB checkpoint estimates do not bound the unbounded full-history payloads persisted by `record_range`, so apply can exceed the 70% storage guard.",
+      "reviewers": [
+        "security"
+      ]
+    },
+    {
+      "id": "adapters-py-every-v1-ticker-is-reconstructed-as",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/stock_bounce/adapters.py:476",
+      "finding": "Every v1 ticker is reconstructed as MACD-history without membership evidence (plan: step-3).",
+      "reviewers": [
+        "spec"
+      ],
+      "demoted_from": "high"
+    },
+    {
+      "id": "publication-py-daily-publication-never-acquires-new-split",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/stock_bounce/publication.py:81",
+      "finding": "Daily publication never acquires new split events (plan: step-2).",
+      "reviewers": [
+        "spec"
+      ],
+      "demoted_from": "high"
+    },
+    {
+      "id": "test-stock-bounce-v2-py-benchmark-omits-the",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "tests/performance/test_stock_bounce_v2.py:10",
+      "finding": "Benchmark omits the contracted database read path.",
+      "reviewers": [
+        "spec"
+      ]
+    },
+    {
+      "id": "adapters-py-step-3-requires-apply-to-reconstruct",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/stock_bounce/adapters.py:715",
+      "finding": "Step 3 requires apply to ‘reconstruct both universes with full-history new-high evidence’ and specifies refusal when the projection exceeds 70 percent of storage, not a per-ticker history-size ceiling. This new hard 1-MiB checkpoint bound rejects otherwise valid long-history tickers before their writes, preventing the required full-history backfill from completing for those tickers. (plan: step-3) `+        if checkpoint_bytes > MAX_CHECKPOINT_SERIALIZED_BYTES:`",
+      "reviewers": [
+        "spec"
+      ],
+      "demoted_from": "high"
+    },
+    {
+      "id": "adapters-py-step-3-requires-explicit-degraded-coverage",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/stock_bounce/adapters.py:555",
+      "finding": "Step 3 requires ‘explicit degraded coverage’ and truthful metadata. `macd_membership_evidence` becomes true when any prior analytics `by_macd` array or any membership row exists, even if other prior sessions have no membership evidence; the resulting partial union is then labeled exact rather than degraded. The added test covers only no evidence versus some evidence, so it passes without establishing complete membership reconstruction. (plan: step-3) `+                       ) AS macd_membership_evidence`",
+      "reviewers": [
+        "spec"
+      ]
+    },
+    {
+      "id": "publication-py-republishing-t-includes-t-in-its",
+      "status": "confirmed",
+      "severity": "high",
+      "location": "services/stock_bounce/publication.py:99",
+      "finding": "Republishing T includes T in its own previous high and breaks strict-new-high results.",
+      "reviewers": [
+        "bugbot",
+        "spec"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "publication-py-t-s-current-macd-symbols-are",
+      "status": "confirmed",
+      "severity": "high",
+      "location": "services/stock_bounce/publication.py:75",
+      "finding": "T’s current MACD symbols are incorrectly included in the T-1 historical universe.",
+      "reviewers": [
+        "bugbot",
+        "spec"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "stock-bounce-v2-empty-api-key-fail-open",
+      "status": "confirmed",
+      "severity": "high",
+      "location": "utils/handle_validation.py:41",
+      "finding": "`+    expected = str(API_KEY or \"\")` makes an unset/empty server key accept an empty X-API-Key, bypassing v2 authentication",
+      "reviewers": [
+        "security"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "adapters-py-backfill-reads-macd-membership-from-an",
+      "status": "confirmed",
+      "severity": "high",
+      "location": "services/stock_bounce/adapters.py:532",
+      "finding": "Backfill reads MACD membership from an artifact that never contains it.",
+      "reviewers": [
+        "bugbot"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "gitignore-plan-line-34-s-touch-list-like",
+      "status": "confirmed",
+      "severity": "high",
+      "location": ".gitignore:148",
+      "finding": "Plan line 34's `touch:` list (like the other step touch lists) does not include `.gitignore`, and no step requests a Git ignore-policy change. Adding `.andx/plans/` is therefore behavior-changing scope creep outside the plan boundary. (plan: step-1) `+.andx/plans/`",
+      "reviewers": [
+        "spec"
+      ],
+      "resolution": "fixed"
+    }
+  ]
+}
