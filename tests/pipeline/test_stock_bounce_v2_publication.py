@@ -456,6 +456,7 @@ async def test_watermark_at_or_after_target_is_excluded_with_degraded_coverage()
         "status": "degraded",
         "universe_provenance": "mongo_analytics+local_ohlcv",
         "exclusions_count": 1,
+        "unseeded_count": 0,
     }
     assert result["coverage"]["whole_market"] == "degraded"
     assert store.watermarks["AAA"] == {"date": "2024-01-19", "high": 120.0}

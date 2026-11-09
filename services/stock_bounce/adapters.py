@@ -462,6 +462,40 @@ class PostgresStockBounceHistoryStore:
                 ],
             )
 
+    async def seed(self, ticker, watermark, splits):
+        """Atomically persist newcomer state without replacing an existing watermark."""
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                if splits:
+                    await conn.executemany(
+                        """
+                        INSERT INTO stock_bounce_v2_splits(
+                            market, ticker, split_date, ratio
+                        ) VALUES('US', $1, $2, $3)
+                        ON CONFLICT(market, ticker, split_date) DO UPDATE SET
+                            ratio = EXCLUDED.ratio
+                        """,
+                        [
+                            (
+                                ticker,
+                                date.fromisoformat(split["date"]),
+                                split["ratio"],
+                            )
+                            for split in splits
+                        ],
+                    )
+                await conn.execute(
+                    """
+                    INSERT INTO stock_bounce_v2_high_watermarks(
+                        market, ticker, as_of_date, high
+                    ) VALUES('US', $1, $2, $3)
+                    ON CONFLICT(market, ticker) DO NOTHING
+                    """,
+                    ticker,
+                    date.fromisoformat(watermark["date"]),
+                    watermark["high"],
+                )
+
     async def max_lookback(self, date_string):
         async with self.pool.acquire() as conn:
             count = await conn.fetchval(
