@@ -333,6 +333,101 @@ async def test_out_of_order_publication_folds_skipped_highs_without_regressing()
     ]
 
 
+class _GapSplitProvider:
+    def __init__(self, fail_date=None):
+        self.calls = []
+        self.fail_date = fail_date
+
+    async def fetch_daily_splits(self, date_string):
+        self.calls.append(date_string)
+        if date_string == self.fail_date:
+            raise ValueError("recovered split provider failed")
+        if date_string == "2024-01-18":
+            return [
+                {"code": "AAA", "date": date_string, "split": "2:1"},
+                {"code": "OTHER", "date": date_string, "split": "3:1"},
+            ]
+        return []
+
+    async def fetch_splits(self, ticker, start_date=None, end_date=None):
+        del ticker, start_date, end_date
+        raise AssertionError("daily publication must not fetch splits per ticker")
+
+
+@pytest.mark.asyncio
+async def test_out_of_order_recovery_applies_skipped_session_split_before_t_and_next():
+    store = _RecoveryStore(
+        [
+            _bar("AAA", "2024-01-22", 125.0),
+            _bar("AAA", "2024-01-19", 120.0),
+            _bar("AAA", "2024-01-18", 130.0),
+        ],
+        {"AAA": {"date": "2024-01-17", "high": 200.0}},
+    )
+    provider = _GapSplitProvider()
+
+    await publish_us_session_v2(
+        _mongo([{"ticker": "AAA"}]),
+        object(),
+        "2024-01-19",
+        history_store=store,
+        split_provider=provider,
+    )
+    with pytest.raises(RuntimeError, match="verified high history"):
+        await publish_us_session_v2(
+            _mongo([{"ticker": "AAA"}]),
+            object(),
+            "2024-01-18",
+            history_store=store,
+            split_provider=provider,
+        )
+    await publish_us_session_v2(
+        _mongo([{"ticker": "AAA"}]),
+        object(),
+        "2024-01-22",
+        history_store=store,
+        split_provider=provider,
+    )
+
+    assert provider.calls == [
+        "2024-01-18",
+        "2024-01-19",
+        "2024-01-18",
+        "2024-01-22",
+    ]
+    assert store.splits == {"AAA": [{"date": "2024-01-18", "ratio": 2.0}]}
+    assert store.snapshots["2024-01-19"]["rows"][0]["previous_all_time_high"] == 130.0
+    assert store.watermarks["AAA"] == {"date": "2024-01-22", "high": 130.0}
+    assert store.snapshots["2024-01-22"]["rows"][0]["previous_all_time_high"] == 130.0
+
+
+@pytest.mark.asyncio
+async def test_gap_split_failure_aborts_before_any_split_or_watermark_write():
+    store = _RecoveryStore(
+        [
+            _bar("AAA", "2024-01-18", 130.0),
+            _bar("AAA", "2024-01-19", 120.0),
+        ],
+        {"AAA": {"date": "2024-01-17", "high": 200.0}},
+    )
+    provider = _GapSplitProvider(fail_date="2024-01-19")
+
+    with pytest.raises(RuntimeError, match="recovered split provider failed"):
+        await publish_us_session_v2(
+            _mongo([{"ticker": "AAA"}]),
+            object(),
+            "2024-01-19",
+            history_store=store,
+            split_provider=provider,
+        )
+
+    assert provider.calls == ["2024-01-18", "2024-01-19"]
+    assert store.splits == {}
+    assert store.writes == []
+    assert store.snapshots == {}
+    assert store.watermarks["AAA"] == {"date": "2024-01-17", "high": 200.0}
+
+
 @pytest.mark.asyncio
 async def test_watermark_at_or_after_target_is_excluded_with_degraded_coverage():
     store = _RecoveryStore(

@@ -91,18 +91,28 @@ async def publish_us_session_v2(
         intervening = await store.load_bars_after_watermarks(
             tickers, watermarks, date_string
         )
-        fetched = await provider.fetch_daily_splits(date_string)
+        recovery_dates = sorted(
+            {
+                missed_bar["date"]
+                for missed_bars in intervening.values()
+                for missed_bar in missed_bars
+            }
+        )
+        fetched_daily_splits = []
+        for split_date in [*recovery_dates, date_string]:
+            fetched_daily_splits.append(await provider.fetch_daily_splits(split_date))
         daily_splits = {}
-        for split in fetched:
-            ticker = str(split.get("code", "")).upper()
-            if ticker not in tickers:
-                continue
-            daily_splits.setdefault(ticker, []).append(
-                {
-                    "date": split.get("date", split.get("split_date"))[:10],
-                    "ratio": split_ratio(split),
-                }
-            )
+        for fetched in fetched_daily_splits:
+            for split in fetched:
+                ticker = str(split.get("code", "")).upper()
+                if ticker not in tickers:
+                    continue
+                daily_splits.setdefault(ticker, []).append(
+                    {
+                        "date": split.get("date", split.get("split_date"))[:10],
+                        "ratio": split_ratio(split),
+                    }
+                )
         for ticker, normalized in daily_splits.items():
             await store.persist_splits(ticker, normalized)
         splits = await store.load_splits(tickers, watermarks, date_string)
