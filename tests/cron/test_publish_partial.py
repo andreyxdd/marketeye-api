@@ -20,8 +20,13 @@ def _stock_bounce_stub(monkeypatch):
         del conn, pool, date
         return {"coverage": "exact"}
 
+    async def seed_stub(conn, pool, date):
+        del conn, pool, date
+        return {"seeded_count": 0, "failed_count": 0}
+
     monkeypatch.setattr(publish_service, "publish_us_session", publish_stub)
     monkeypatch.setattr(publish_service, "publish_us_session_v2", publish_stub)
+    monkeypatch.setattr(publish_service, "seed_us_session_v2", seed_stub)
 
 
 @pytest.mark.asyncio
@@ -210,3 +215,66 @@ async def test_publish_day_skips_when_no_tickers(monkeypatch):
 
     assert result["tickers_written"] == 0
     assert upserts["artifacts"] == []
+
+
+@pytest.mark.asyncio
+async def test_us_publication_seeds_newcomers_immediately_before_v2(monkeypatch):
+    calls = []
+    seed_report = {
+        "candidates_count": 1,
+        "seeded_count": 0,
+        "no_prior_history_count": 0,
+        "failed_count": 1,
+        "errors": {"NEW": "mock failure"},
+    }
+
+    async def market_stub(conn, date):
+        del conn, date
+        return {}
+
+    async def seed_stub(conn, pool, date):
+        del conn, pool, date
+        calls.append("seed")
+        return seed_report
+
+    async def publish_v2_stub(conn, pool, date):
+        del conn, pool, date
+        assert calls == ["seed"]
+        calls.append("publish_v2")
+        return {"coverage": "degraded"}
+
+    async def lists_empty(
+        conn, date, market="US", price_band=None, include_mentions=False
+    ):
+        del conn, date, market, price_band, include_mentions
+        return {
+            "by_one_day_avg_mf": [],
+            "by_three_day_avg_mf": [],
+            "by_volume": [],
+            "by_three_day_avg_volume": [],
+            "by_macd": [],
+        }
+
+    monkeypatch.setattr(
+        publish_service.analytics_service,
+        "get_market_analytics_hot",
+        market_stub,
+    )
+    monkeypatch.setattr(publish_service, "seed_us_session_v2", seed_stub)
+    monkeypatch.setattr(publish_service, "publish_us_session_v2", publish_v2_stub)
+    monkeypatch.setattr(
+        publish_service.analytics_service,
+        "get_analytics_lists_by_criteria_hot",
+        lists_empty,
+    )
+
+    result = await publish_service.publish_day(
+        conn=object(),
+        pool=object(),
+        date="2024-06-03",
+        market="US",
+    )
+
+    assert calls == ["seed", "publish_v2"]
+    assert result["stock_bounce_v2_seeding"] == seed_report
+    assert result["stock_bounce_v2_seeding"]["failed_count"] == 1

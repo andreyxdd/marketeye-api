@@ -119,6 +119,7 @@ async def publish_us_session_v2(
         rows = []
         advanced = {}
         exclusions = {universe: 0 for universe in UNIVERSES}
+        unseeded = {universe: 0 for universe in UNIVERSES}
         for ticker in tickers:
             membership = [
                 universe
@@ -130,6 +131,9 @@ async def publish_us_session_v2(
             ]
             bar = bars.get(ticker)
             watermark = watermarks.get(ticker)
+            if watermark is None:
+                for universe in membership:
+                    unseeded[universe] += 1
             if bar is None or watermark is None or watermark["date"] >= date_string:
                 for universe in membership:
                     exclusions[universe] += 1
@@ -164,11 +168,13 @@ async def publish_us_session_v2(
                 "status": "degraded" if exclusions["whole_market"] else "exact",
                 "universe_provenance": "mongo_analytics+local_ohlcv",
                 "exclusions_count": exclusions["whole_market"],
+                "unseeded_count": unseeded["whole_market"],
             },
             "macd_history": {
                 "status": "degraded" if exclusions["macd_history"] else "exact",
                 "universe_provenance": "recoverable_macd_membership",
                 "exclusions_count": exclusions["macd_history"],
+                "unseeded_count": unseeded["macd_history"],
             },
         }
         if not rows:

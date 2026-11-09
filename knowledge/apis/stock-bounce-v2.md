@@ -63,7 +63,8 @@ Query: required `date=YYYY-MM-DD` and `lookback=1..1260` trading sessions. One r
     "coverage": {
       "status": "exact",
       "universe_provenance": "archived_tickers+local_ohlcv",
-      "exclusions_count": 0
+      "exclusions_count": 0,
+      "unseeded_count": 0
     }
   },
   "macd_history": {
@@ -71,7 +72,8 @@ Query: required `date=YYYY-MM-DD` and `lookback=1..1260` trading sessions. One r
     "coverage": {
       "status": "degraded",
       "universe_provenance": "recoverable_macd_membership",
-      "exclusions_count": 3
+      "exclusions_count": 3,
+      "unseeded_count": 1
     }
   }
 }
@@ -79,7 +81,7 @@ Query: required `date=YYYY-MM-DD` and `lookback=1..1260` trading sessions. One r
 
 For a lookback of N, compare the opening price of the first of N sessions ending at T-1 with T-1's close. N=1 therefore measures T-1 open to close. Require that signed change to be negative and T's open-to-close change to be positive.
 
-The whole-market list uses the declared NYSE/NASDAQ universe for T. The MACD-history list independently uses every recoverable ticker present in MACD App data on or before T-1, including symbols no longer currently listed. Both lists require usable start, T-1, and T bars; exclusions are recorded and never silently filled with partial-period calculations.
+The whole-market list uses the declared NYSE/NASDAQ universe for T. The MACD-history list independently uses every recoverable ticker present in MACD App data on or before T-1, including symbols no longer currently listed. Both lists require usable start, T-1, and T bars; exclusions are recorded and never silently filled with partial-period calculations. Within `exclusions_count`, `unseeded_count` identifies tickers still lacking a verified high watermark after scheduled newcomer seeding.
 
 A candidate qualifies only when T's split-adjusted daily high is strictly above every earlier split-adjusted daily high. Split events, not dividend-adjusted close prices, define the adjustment. Unverifiable all-time-high history excludes the candidate. Apply this filter before ranking by T open-to-close change descending and ticker ascending, then return at most 20 rows.
 

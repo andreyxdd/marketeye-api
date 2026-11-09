@@ -15,6 +15,7 @@ from db.crud.published_archive import (
 )
 from db.crud.tracking import CRITERIA
 from services.stock_bounce.publication import publish_us_session, publish_us_session_v2
+from services.stock_bounce.seeding import seed_us_session_v2
 from utils.price_bands import PRICE_BANDS
 
 
@@ -48,6 +49,7 @@ async def publish_day(
     artifact_writes: list[tuple[str, dict]] = []
     skipped_artifacts: list[str] = []
     phase_errors: list[str] = []
+    seeding_report = None
 
     if market == "US":
         try:
@@ -63,6 +65,10 @@ async def publish_day(
         except Exception as bounce_error:  # pylint: disable=broad-except
             skipped_artifacts.append("stock_bounce:v1")
             phase_errors.append(f"stock_bounce: {bounce_error}")
+        try:
+            seeding_report = await seed_us_session_v2(conn, pool, date)
+        except Exception as seed_error:  # pylint: disable=broad-except
+            phase_errors.append(f"stock_bounce:v2-seed: {seed_error}")
         try:
             await publish_us_session_v2(conn, pool, date)
         except Exception as bounce_v2_error:  # pylint: disable=broad-except
@@ -101,6 +107,7 @@ async def publish_day(
             "tickers_written": 0,
             "skipped_artifacts": skipped_artifacts,
             "phase_errors": phase_errors,
+            "stock_bounce_v2_seeding": seeding_report,
         }
 
     artifacts_written = 0
@@ -131,4 +138,5 @@ async def publish_day(
         "tickers_written": len(tickers_to_publish),
         "skipped_artifacts": skipped_artifacts,
         "phase_errors": phase_errors,
+        "stock_bounce_v2_seeding": seeding_report,
     }

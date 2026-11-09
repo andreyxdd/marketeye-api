@@ -4,7 +4,7 @@
 
 `scripts/backfill_stock_bounce.py` reconstructs `stock_bounce:v2` snapshots. It targets published US sessions in the 365-calendar-day window ending when the command starts. It does not alter v1 screening or v1 query authentication.
 
-Before an apply, deploy migrations through `004_stock_bounce_v2.sql` and the daily publishers. The v2 publisher requires durable high-watermark and split state established by the backfill; it never downloads full history in the daily or request path. US Mongo cleanup remains blocked until generic analytics, valid `stock_bounce:v1`, and valid `stock_bounce:v2` artifacts are durable. TO cleanup is unchanged.
+Before an apply, deploy migrations through `004_stock_bounce_v2.sql` and the daily publishers. The v2 publisher requires durable high-watermark and split state established by the backfill or the separate scheduled newcomer seeder; neither the publisher nor request path downloads full history. The seeder uses bounded retries/workers, folds only strict pre-T bars, and isolates per-ticker failures before normal publication. US Mongo cleanup remains blocked until generic analytics, valid `stock_bounce:v1`, and valid `stock_bounce:v2` artifacts are durable. TO cleanup is unchanged.
 
 Live provider imports and production applies are post-deploy operational gates. Do not run them in CI or as part of local implementation verification.
 

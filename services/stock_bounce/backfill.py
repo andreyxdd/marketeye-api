@@ -259,7 +259,7 @@ class StockBounceBackfillV2:
         self.max_concurrency = max(1, int(max_concurrency))
         self.storage_limit_bytes = storage_limit_bytes or PG_STORAGE_LIMIT_BYTES
 
-    async def _fetch_payload(self, ticker: str, end_date: str) -> dict:
+    async def fetch_full_history(self, ticker: str, end_date: str) -> dict:
         last_error = None
         for attempt in range(self.retry_attempts):
             try:
@@ -470,7 +470,7 @@ class StockBounceBackfillV2:
                     if range_key in completed:
                         payload = await self.store.get_range(ticker, None, end_date)
                     else:
-                        payload = await self._fetch_payload(ticker, end_date)
+                        payload = await self.fetch_full_history(ticker, end_date)
                         payload["bounded_bars"] = bounded_bars(
                             payload["bars"], first_date, end_date
                         )

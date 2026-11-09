@@ -27,7 +27,7 @@ A canonical PostgreSQL `published_artifacts` row uses key `stock_bounce:v2`. It 
 
 The evaluator reads the v2 snapshot plus stored start/T-1 bars, computes signed lookback change and positive T open/close change, applies the strict new-high test, then ranks and truncates each list independently. One combined read hides universe reconstruction, split handling, history completeness, filtering, and ordering from the HTTP adapter and desktop.
 
-The initial backfill targets the most recent 365 calendar days of recoverable sessions. All-time-high verification still uses the provider's full available daily history and explicit split events; only the supported result-session range is limited to one year. The backfill retains reusable bars/checkpoints and per-session high watermarks rather than downloading history during reads. Daily publication advances the same high-watermark state and applies new split events before publishing.
+The initial backfill targets the most recent 365 calendar days of recoverable sessions. All-time-high verification still uses the provider's full available daily history and explicit split events; only the supported result-session range is limited to one year. The backfill retains reusable bars/checkpoints and per-session high watermarks rather than downloading history during reads. A bounded pre-publication seeder gives current analytics newcomers a strict pre-T watermark from full provider history; failures and symbols without pre-T bars remain visible as unseeded exclusions without blocking seeded tickers. Daily publication then advances the same high-watermark state and applies new split events before publishing.
 
 ## Usage example
 
