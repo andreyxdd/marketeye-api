@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/bounce-ath-v2-publication-recovery.plan.md",
+  "target_branch": "main",
+  "base_sha": "113b807be3ad1bf6569dedafdcda1386dc724d1d",
+  "head_sha": "e3209b646e7ec10ad6a9f8a7e4fab0559208a7ee",
+  "reviewed_at": "2026-11-09T12:08:42.267Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {
+      "id": "publication-py-recovery-fetches-splits-only-for-t",
+      "status": "confirmed",
+      "severity": "high",
+      "location": "services/stock_bounce/publication.py:94",
+      "finding": "Recovery fetches splits only for T before folding every gap bar. If a split occurred on skipped T-1 and T publishes first (or T's provider call fails and cron continues to T+1), the snapshot and watermark advance without that split. The later T-1 retry persists the split but excludes the already-advanced ticker, so it cannot repair the incorrect previous-all-time-high basis; subsequent publications remain wrong. The new out-of-order test uses no gap split and misses this reachable corruption of ATH evidence. `+        fetched = await provider.fetch_daily_splits(date_string)`",
+      "reviewers": [
+        "bugbot"
+      ],
+      "resolution": "fixed"
+    }
+  ]
+}
