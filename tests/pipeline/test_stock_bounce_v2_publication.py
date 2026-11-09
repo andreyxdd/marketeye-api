@@ -85,6 +85,10 @@ class _HistoryStore:
     async def load_watermarks(self, tickers):
         return {ticker: self.watermarks.get(ticker) for ticker in tickers}
 
+    async def load_bars_after_watermarks(self, tickers, watermarks, before_date):
+        del tickers, watermarks, before_date
+        return {}
+
     async def load_splits(self, tickers, watermarks, through_date):
         del watermarks, through_date
         return {ticker: self.splits.get(ticker, []) for ticker in tickers}
@@ -129,9 +133,13 @@ def _mongo(rows):
 
 
 class _NoSplitProvider:
+    async def fetch_daily_splits(self, date_string):
+        del date_string
+        return []
+
     async def fetch_splits(self, ticker, start_date=None, end_date=None):
         del ticker, start_date, end_date
-        return []
+        raise AssertionError("daily publication must not fetch splits per ticker")
 
 
 @pytest.mark.asyncio
@@ -182,13 +190,20 @@ async def test_macd_symbol_first_seen_on_t_is_not_in_t_minus_one_universe():
     assert "AAA" in store.macd
 
 
-class _SplitProvider:
+class _BulkSplitProvider:
     def __init__(self):
         self.calls = []
 
+    async def fetch_daily_splits(self, date_string):
+        self.calls.append(date_string)
+        return [
+            {"code": "AAA", "date": date_string, "split": "2:1"},
+            {"code": "OTHER", "date": date_string, "split": "3:1"},
+        ]
+
     async def fetch_splits(self, ticker, start_date=None, end_date=None):
-        self.calls.append((ticker, start_date, end_date))
-        return [{"date": "2024-01-19", "ratio": 2.0}]
+        del ticker, start_date, end_date
+        raise AssertionError("daily publication must not fetch splits per ticker")
 
     async def fetch_range(self, *args):
         raise AssertionError("daily split refresh must not fetch full price history")
@@ -197,7 +212,7 @@ class _SplitProvider:
 @pytest.mark.asyncio
 async def test_daily_publication_refreshes_new_splits_without_history_refetch():
     store = _HistoryStore(tickers=("AAA",), macd=())
-    provider = _SplitProvider()
+    provider = _BulkSplitProvider()
 
     await publish_us_session_v2(
         _mongo([{"ticker": "AAA"}]),
@@ -210,8 +225,246 @@ async def test_daily_publication_refreshes_new_splits_without_history_refetch():
     row = store.snapshots["2024-01-19"]["rows"][0]
     assert row["previous_all_time_high"] == 55.0
     assert store.watermarks["AAA"] == {"date": "2024-01-19", "high": 111.0}
-    assert provider.calls == [("AAA", "2024-01-18", "2024-01-19")]
-    assert store.splits["AAA"] == [{"date": "2024-01-19", "ratio": 2.0}]
+    assert provider.calls == ["2024-01-19"]
+    assert store.splits == {"AAA": [{"date": "2024-01-19", "ratio": 2.0}]}
+
+
+class _RecoveryStore:
+    def __init__(self, bars, watermarks):
+        self.bars = list(bars)
+        self.watermarks = copy.deepcopy(watermarks)
+        self.snapshots = {}
+        self.splits = {}
+        self.writes = []
+        self.range_reads = []
+
+    async def load_snapshot(self, date_string):
+        return self.snapshots.get(date_string)
+
+    async def list_macd_tickers(self, before_date):
+        del before_date
+        return []
+
+    async def load_bars(self, tickers, date_string):
+        return {
+            ticker: copy.deepcopy(bar)
+            for ticker in tickers
+            for bar in self.bars
+            if bar["ticker"] == ticker and bar["date"] == date_string
+        }
+
+    async def load_watermarks(self, tickers):
+        return {ticker: self.watermarks.get(ticker) for ticker in tickers}
+
+    async def load_bars_after_watermarks(self, tickers, watermarks, before_date):
+        self.range_reads.append(
+            (tuple(tickers), copy.deepcopy(watermarks), before_date)
+        )
+        return {
+            ticker: [
+                copy.deepcopy(bar)
+                for bar in self.bars
+                if bar["ticker"] == ticker
+                and watermarks.get(ticker) is not None
+                and watermarks[ticker]["date"] < bar["date"] < before_date
+            ]
+            for ticker in tickers
+        }
+
+    async def load_splits(self, tickers, watermarks, through_date):
+        del watermarks, through_date
+        return {ticker: self.splits.get(ticker, []) for ticker in tickers}
+
+    async def persist_splits(self, ticker, splits):
+        self.splits[ticker] = copy.deepcopy(splits)
+
+    async def max_lookback(self, date_string):
+        del date_string
+        return 0
+
+    async def publish(
+        self, date_string, snapshot, watermarks, *, current_macd_tickers=()
+    ):
+        del current_macd_tickers
+        self.writes.append((date_string, copy.deepcopy(snapshot)))
+        self.snapshots[date_string] = copy.deepcopy(snapshot)
+        self.watermarks.update(copy.deepcopy(watermarks))
+
+
+@pytest.mark.asyncio
+async def test_out_of_order_publication_folds_skipped_highs_without_regressing():
+    bars = [
+        _bar("AAA", "2024-01-22", 125.0),
+        _bar("AAA", "2024-01-19", 120.0),
+        _bar("AAA", "2024-01-18", 130.0),
+    ]
+    store = _RecoveryStore(bars, {"AAA": {"date": "2024-01-17", "high": 100.0}})
+    provider = _NoSplitProvider()
+
+    for target in ("2024-01-19", "2024-01-22"):
+        await publish_us_session_v2(
+            _mongo([{"ticker": "AAA"}]),
+            object(),
+            target,
+            history_store=store,
+            split_provider=provider,
+        )
+        if target == "2024-01-19":
+            with pytest.raises(RuntimeError, match="verified high history"):
+                await publish_us_session_v2(
+                    _mongo([{"ticker": "AAA"}]),
+                    object(),
+                    "2024-01-18",
+                    history_store=store,
+                    split_provider=provider,
+                )
+            assert store.watermarks["AAA"] == {
+                "date": "2024-01-19",
+                "high": 130.0,
+            }
+
+    assert store.snapshots["2024-01-19"]["rows"][0]["previous_all_time_high"] == 130.0
+    assert store.snapshots["2024-01-22"]["rows"][0]["previous_all_time_high"] == 130.0
+    assert store.watermarks["AAA"] == {"date": "2024-01-22", "high": 130.0}
+    assert [call[2] for call in store.range_reads] == [
+        "2024-01-19",
+        "2024-01-18",
+        "2024-01-22",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_watermark_at_or_after_target_is_excluded_with_degraded_coverage():
+    store = _RecoveryStore(
+        [
+            _bar("AAA", "2024-01-18", 110.0),
+            _bar("BBB", "2024-01-18", 105.0),
+        ],
+        {
+            "AAA": {"date": "2024-01-19", "high": 120.0},
+            "BBB": {"date": "2024-01-17", "high": 100.0},
+        },
+    )
+
+    result = await publish_us_session_v2(
+        _mongo([{"ticker": "AAA"}, {"ticker": "BBB"}]),
+        object(),
+        "2024-01-18",
+        history_store=store,
+        split_provider=_NoSplitProvider(),
+    )
+
+    snapshot = store.snapshots["2024-01-18"]
+    assert [row["ticker"] for row in snapshot["rows"]] == ["BBB"]
+    assert snapshot["rows"][0]["previous_all_time_high"] == 100.0
+    assert snapshot["coverage"]["whole_market"] == {
+        "status": "degraded",
+        "universe_provenance": "mongo_analytics+local_ohlcv",
+        "exclusions_count": 1,
+    }
+    assert result["coverage"]["whole_market"] == "degraded"
+    assert store.watermarks["AAA"] == {"date": "2024-01-19", "high": 120.0}
+
+
+class _FailOnceBulkProvider:
+    def __init__(self):
+        self.calls = []
+
+    async def fetch_daily_splits(self, date_string):
+        self.calls.append(date_string)
+        if len(self.calls) == 1:
+            raise ValueError("bulk split provider failed")
+        return []
+
+    async def fetch_splits(self, ticker, start_date=None, end_date=None):
+        del ticker, start_date, end_date
+        raise AssertionError("daily publication must not fetch splits per ticker")
+
+
+@pytest.mark.asyncio
+async def test_bulk_split_failure_leaves_session_unpublished_and_retryable():
+    store = _HistoryStore(tickers=("AAA",), macd=())
+    provider = _FailOnceBulkProvider()
+
+    with pytest.raises(RuntimeError, match="bulk split provider failed"):
+        await publish_us_session_v2(
+            _mongo([{"ticker": "AAA"}]),
+            object(),
+            "2024-01-19",
+            history_store=store,
+            split_provider=provider,
+        )
+
+    assert store.snapshots == {}
+    assert store.writes == []
+    assert store.watermarks["AAA"] == {"date": "2024-01-18", "high": 110.0}
+
+    await publish_us_session_v2(
+        _mongo([{"ticker": "AAA"}]),
+        object(),
+        "2024-01-19",
+        history_store=store,
+        split_provider=provider,
+    )
+    assert provider.calls == ["2024-01-19", "2024-01-19"]
+    assert store.snapshots["2024-01-19"]["rows"][0]["previous_all_time_high"] == 110.0
+
+
+@pytest.mark.asyncio
+async def test_eodhd_daily_splits_use_one_validated_bulk_request():
+    from services.stock_bounce.adapters import EodhdStockBounceAdapter
+
+    class _Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return [{"code": "AAA", "date": "2024-01-19", "split": "2:1"}]
+
+    class _Provider:
+        def __init__(self):
+            self.urls = []
+
+        def _http_get(self, url):
+            self.urls.append(url)
+            return _Response()
+
+    provider = _Provider()
+    rows = await EodhdStockBounceAdapter(provider).fetch_daily_splits("2024-01-19")
+
+    assert rows == [{"code": "AAA", "date": "2024-01-19", "split": "2:1"}]
+    assert len(provider.urls) == 1
+    assert (
+        "/eod-bulk-last-day/US?type=splits&date=2024-01-19&fmt=json&api_token="
+        in provider.urls[0]
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"code": "AAA", "date": "2024-01-19", "split": "2:1"},
+        [{"code": "AAA", "date": "2024-01-18", "split": "2:1"}],
+    ],
+)
+async def test_eodhd_daily_splits_reject_invalid_shape_or_substituted_date(payload):
+    from services.stock_bounce.adapters import EodhdStockBounceAdapter
+
+    class _Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return payload
+
+    class _Provider:
+        def _http_get(self, url):
+            del url
+            return _Response()
+
+    with pytest.raises(ValueError, match="invalid daily splits"):
+        await EodhdStockBounceAdapter(_Provider()).fetch_daily_splits("2024-01-19")
 
 
 @pytest.mark.asyncio
@@ -252,10 +505,12 @@ async def test_daily_watermark_upsert_does_not_overwrite_newer_state(postgres_po
     await publish_at("2031-01-02", 110.0)
     try:
         async with postgres_pool.acquire() as conn:
-            row = await conn.fetchrow("""
+            row = await conn.fetchrow(
+                """
                 SELECT as_of_date, high FROM stock_bounce_v2_high_watermarks
                 WHERE market = 'US' AND ticker = 'GUARD'
-                """)
+                """
+            )
         assert row["as_of_date"] == date(2031, 1, 3)
         assert row["high"] == 111.0
     finally:

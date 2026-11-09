@@ -106,6 +106,26 @@ class EodhdStockBounceAdapter:
 
         return await asyncio.to_thread(fetch)
 
+    async def fetch_daily_splits(self, date_string: str) -> list[dict]:
+        def fetch():
+            response = self.provider._http_get(  # pylint: disable=protected-access
+                f"{EODHD_BASE_URL}/eod-bulk-last-day/US"
+                f"?type=splits&date={date_string}&fmt=json&api_token={EODHD_API_KEY}"
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, list) or any(
+                not isinstance(row, dict)
+                or str(row.get("date", ""))[:10] != date_string
+                for row in payload
+            ):
+                raise ValueError(
+                    f"EODHD returned invalid daily splits for {date_string}"
+                )
+            return payload
+
+        return await asyncio.to_thread(fetch)
+
 
 class PostgresBackfillStore:
     def __init__(self, pool):
@@ -358,6 +378,46 @@ class PostgresStockBounceHistoryStore:
             }
             for record in records
         }
+
+    async def load_bars_after_watermarks(self, tickers, watermarks, before_date):
+        eligible = [
+            (ticker, watermark["date"])
+            for ticker in tickers
+            if (watermark := watermarks.get(ticker)) is not None
+            and watermark["date"] < before_date
+        ]
+        result = {ticker: [] for ticker in tickers}
+        if not eligible:
+            return result
+        async with self.pool.acquire() as conn:
+            records = await conn.fetch(
+                """
+                SELECT bars.ticker, bars.session_date, bars.open, bars.high,
+                       bars.low, bars.close, bars.volume
+                FROM UNNEST($1::text[], $2::date[]) AS watermark(ticker, as_of_date)
+                JOIN ohlcv_bars AS bars
+                  ON bars.market = 'US' AND bars.ticker = watermark.ticker
+                 AND bars.session_date > watermark.as_of_date
+                 AND bars.session_date < $3
+                ORDER BY bars.ticker, bars.session_date
+                """,
+                [ticker for ticker, _ in eligible],
+                [date.fromisoformat(as_of_date) for _, as_of_date in eligible],
+                date.fromisoformat(before_date),
+            )
+        for record in records:
+            result[record["ticker"]].append(
+                {
+                    "ticker": record["ticker"],
+                    "date": record["session_date"].isoformat(),
+                    "open": float(record["open"]),
+                    "high": float(record["high"]),
+                    "low": float(record["low"]),
+                    "close": float(record["close"]),
+                    "volume": int(record["volume"]),
+                }
+            )
+        return result
 
     async def load_splits(self, tickers, watermarks, through_date):
         del watermarks
@@ -657,10 +717,14 @@ class PostgresBackfillStoreV2:
             index_bytes = int(
                 await conn.fetchval("SELECT pg_indexes_size('published_artifacts')")
             ) + int(await conn.fetchval("SELECT pg_indexes_size('ohlcv_bars')"))
-            average_snapshot = float(await conn.fetchval("""
+            average_snapshot = float(
+                await conn.fetchval(
+                    """
                     SELECT COALESCE(AVG(pg_column_size(payload)), 65536)
                     FROM published_artifacts WHERE artifact_key = 'stock_bounce:v1'
-                    """))
+                    """
+                )
+            )
         artifact_increment = int(len(targets) * average_snapshot * 1.5)
         bar_increment = len(tickers) * 1260 * 128
         checkpoint_increment = len(tickers) * CHECKPOINT_ESTIMATE_BYTES

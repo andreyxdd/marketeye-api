@@ -33,11 +33,12 @@ async def unpublished_session_dates(pool, market: str) -> List[str]:
     dates = [last_session]
     if prior_session:
         dates.append(prior_session)
-    return [
-        date
-        for date in dates
-        if not await is_archive_complete(pool, date, market)
+    unpublished = [
+        date for date in dates if not await is_archive_complete(pool, date, market)
     ]
+    if market == "US":
+        unpublished.sort()
+    return unpublished
 
 
 async def needs_ingest(pool, market: str) -> bool:
@@ -45,9 +46,7 @@ async def needs_ingest(pool, market: str) -> bool:
     return bool(await unpublished_session_dates(pool, market))
 
 
-async def resolve_ingest_dates_for_market(
-    conn, market: str
-) -> List[str]:
+async def resolve_ingest_dates_for_market(conn, market: str) -> List[str]:
     """
     Return session dates to ingest: always LastCompletedSession; include
     PriorCompletedSession only when that date still has missing tickers.
