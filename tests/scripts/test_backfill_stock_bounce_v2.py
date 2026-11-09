@@ -160,24 +160,71 @@ async def test_apply_refuses_projection_above_seventy_percent_before_writes():
 
 
 @pytest.mark.asyncio
-async def test_checkpoint_payload_bound_rejects_oversized_history_before_writes():
+async def test_long_history_checkpoint_is_allowed_within_aggregate_budget(
+    postgres_pool,
+):
     from services.stock_bounce.adapters import PostgresBackfillStoreV2
 
-    class NoWritePool:
-        def acquire(self):
-            raise AssertionError(
-                "oversized checkpoint must not acquire a database connection"
-            )
-
+    store = PostgresBackfillStoreV2(postgres_pool)
+    run_id = "v2-long-history-checkpoint"
+    await store.create_run(run_id)
+    store.storage_limit_bytes = 10**15
     payload = {
         "bars": [{"date": "2024-01-01", "padding": "x" * (3 * 1024 * 1024)}],
         "splits": [],
         "bounded_bars": [],
     }
-    store = PostgresBackfillStoreV2(NoWritePool())
+    try:
+        await store.record_range(run_id, "ABC", None, "2024-01-02", payload)
+        async with postgres_pool.acquire() as conn:
+            stored_bytes = await conn.fetchval(
+                """
+                SELECT octet_length(payload::text)
+                FROM stock_bounce_v2_backfill_ranges WHERE run_id = $1
+                """,
+                run_id,
+            )
+        assert stored_bytes > 3 * 1024 * 1024
+    finally:
+        async with postgres_pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM stock_bounce_v2_backfill_runs WHERE run_id = $1", run_id
+            )
 
-    with pytest.raises(ValueError, match="checkpoint.*payload bound"):
-        await store.record_range("run", "ABC", None, "2024-01-02", payload)
+
+@pytest.mark.asyncio
+async def test_checkpoint_write_uses_actual_size_for_aggregate_storage_guard(
+    postgres_pool,
+):
+    from services.stock_bounce.adapters import PostgresBackfillStoreV2
+
+    store = PostgresBackfillStoreV2(postgres_pool)
+    run_id = "v2-actual-checkpoint-storage-guard"
+    await store.create_run(run_id)
+    async with postgres_pool.acquire() as conn:
+        current = int(
+            await conn.fetchval("SELECT pg_database_size(current_database())")
+        )
+    store.storage_limit_bytes = int((current + 2 * 1024 * 1024) / 0.70)
+    payload = {
+        "bars": [{"date": "2024-01-01", "padding": "x" * (3 * 1024 * 1024)}],
+        "splits": [],
+        "bounded_bars": [],
+    }
+    try:
+        with pytest.raises(StockBounceStorageLimitError, match="70%"):
+            await store.record_range(run_id, "ABC", None, "2024-01-02", payload)
+        async with postgres_pool.acquire() as conn:
+            count = await conn.fetchval(
+                "SELECT COUNT(*) FROM stock_bounce_v2_backfill_ranges WHERE run_id = $1",
+                run_id,
+            )
+        assert count == 0
+    finally:
+        async with postgres_pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM stock_bounce_v2_backfill_runs WHERE run_id = $1", run_id
+            )
 
 
 @pytest.mark.asyncio
@@ -276,26 +323,33 @@ async def test_cli_constructs_v2_runner_and_forwards_resume_and_dry_run(monkeypa
 
 
 @pytest.mark.asyncio
-async def test_postgres_v2_targets_and_storage_estimate_use_local_archive(
+async def test_postgres_v2_targets_track_membership_evidence_and_storage(
     postgres_pool,
 ):
     from db.crud.published_archive import upsert_artifact
     from services.stock_bounce.adapters import PostgresBackfillStoreV2
     from services.stock_bounce.semantics import build_snapshot
 
-    async def source(day, market_payload=None):
+    days = [date(2001, 2, day) for day in (1, 2, 3, 4)]
+
+    async def clear():
+        async with postgres_pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM published_dates WHERE session_date = ANY($1::date[])",
+                days,
+            )
+
+    async def source(day, macd_rows=None, *, combined_artifact=False):
+        day_string = day.isoformat()
         await upsert_artifact(
-            postgres_pool,
-            day,
-            "market_analytics",
-            market_payload or {"SP500": 1},
+            postgres_pool, day_string, "market_analytics", {"SP500": 1}
         )
         await upsert_artifact(
             postgres_pool,
-            day,
+            day_string,
             "stock_bounce:v1",
             build_snapshot(
-                day,
+                day_string,
                 [
                     {
                         "ticker": "ABC",
@@ -308,22 +362,51 @@ async def test_postgres_v2_targets_and_storage_estimate_use_local_archive(
                 ],
             ),
         )
+        if macd_rows is not None:
+            artifact_key = (
+                "lists_by_criteria:all"
+                if combined_artifact
+                else "lists_by_criterion:macd:all"
+            )
+            payload_key = "by_macd" if combined_artifact else "macd"
+            await upsert_artifact(
+                postgres_pool, day_string, artifact_key, {payload_key: macd_rows}
+            )
 
-    await source("2030-02-01")
-    await source("2030-02-02", {"by_macd": [{"ticker": "ABC"}]})
-    await source("2030-02-03")
     store = PostgresBackfillStoreV2(postgres_pool)
     try:
-        targets = await store.list_targets("2030-02-01")
-        without_evidence = next(
-            item for item in targets if item["date"] == "2030-02-02"
+        await source(days[0])
+        await source(days[1])
+        targets = await store.list_targets(days[0].isoformat())
+        missing = next(item for item in targets if item["date"] == "2001-02-02")
+        assert missing["macd_tickers"] == []
+        assert missing["macd_history_estimated"] is True
+        assert missing["macd_history_expected_sessions"] == 1
+        assert missing["macd_history_evidence_sessions"] == 0
+        assert missing["macd_history_provenance"] == (
+            "unavailable_archived_macd_membership"
         )
-        with_evidence = next(item for item in targets if item["date"] == "2030-02-03")
-        assert without_evidence["tickers"] == ["ABC"]
-        assert without_evidence["macd_tickers"] == []
-        assert without_evidence["macd_history_estimated"] is True
-        assert with_evidence["macd_tickers"] == ["ABC"]
-        assert with_evidence["macd_history_estimated"] is False
+
+        await clear()
+        await source(days[0], [{"ticker": "ABC"}])
+        await source(days[1], [{"ticker": "ABC"}], combined_artifact=True)
+        await source(days[2])
+        await source(days[3], [{"ticker": "ABC"}])
+        targets = await store.list_targets(days[0].isoformat())
+        complete = next(item for item in targets if item["date"] == "2001-02-03")
+        partial = next(item for item in targets if item["date"] == "2001-02-04")
+        assert complete["tickers"] == ["ABC"]
+        assert complete["macd_tickers"] == ["ABC"]
+        assert complete["macd_history_estimated"] is False
+        assert complete["macd_history_expected_sessions"] == 2
+        assert complete["macd_history_evidence_sessions"] == 2
+        assert partial["macd_tickers"] == ["ABC"]
+        assert partial["macd_history_estimated"] is True
+        assert partial["macd_history_expected_sessions"] == 3
+        assert partial["macd_history_evidence_sessions"] == 2
+        assert partial["macd_history_provenance"] == (
+            "partial_archived_macd_membership"
+        )
         estimate = await store.estimate_storage(targets, 10_000_000_000)
         assert estimate["projected_bytes"] >= estimate["current_bytes"]
         assert set(estimate["components"]) == {
@@ -333,8 +416,4 @@ async def test_postgres_v2_targets_and_storage_estimate_use_local_archive(
             "checkpoints",
         }
     finally:
-        async with postgres_pool.acquire() as conn:
-            await conn.execute(
-                "DELETE FROM published_dates WHERE session_date = ANY($1::date[])",
-                [date(2030, 2, 1), date(2030, 2, 2), date(2030, 2, 3)],
-            )
+        await clear()

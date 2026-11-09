@@ -145,4 +145,3 @@ test.py
 # Scrapping results
 *.jl
 **/*.jl
-.andx/plans/

@@ -10,10 +10,9 @@ from db.crud.published_archive import STOCK_BOUNCE_ARTIFACT_KEY
 from providers.eodhd_to import EODHD_BASE_URL
 from providers.eodhd_us import EodhdUSProvider
 
-from .backfill import LocalBarsResult
+from .backfill import LocalBarsResult, StockBounceStorageLimitError
 
-CHECKPOINT_RESERVATION_BYTES = 2 * 1024 * 1024
-MAX_CHECKPOINT_SERIALIZED_BYTES = CHECKPOINT_RESERVATION_BYTES // 2
+CHECKPOINT_ESTIMATE_BYTES = 2 * 1024 * 1024
 
 
 class PostgresLocalBarsAdapter:
@@ -501,6 +500,8 @@ class PostgresBackfillStoreV2:
 
     def __init__(self, pool):
         self.pool = pool
+        self.storage_limit_bytes = None
+        self._storage_write_lock = asyncio.Lock()
 
     async def list_targets(self, since):
         async with self.pool.acquire() as conn:
@@ -526,10 +527,20 @@ class PostgresBackfillStoreV2:
                                SELECT history.row->>'ticker' AS ticker
                                FROM published_artifacts prior_source
                                CROSS JOIN LATERAL jsonb_array_elements(
+                                   COALESCE(prior_source.payload->'macd', '[]'::jsonb)
+                               ) AS history(row)
+                               WHERE prior_source.market = 'US'
+                                 AND prior_source.artifact_key =
+                                     'lists_by_criterion:macd:all'
+                                 AND prior_source.session_date < d.session_date
+                               UNION
+                               SELECT history.row->>'ticker' AS ticker
+                               FROM published_artifacts prior_source
+                               CROSS JOIN LATERAL jsonb_array_elements(
                                    COALESCE(prior_source.payload->'by_macd', '[]'::jsonb)
                                ) AS history(row)
                                WHERE prior_source.market = 'US'
-                                 AND prior_source.artifact_key = 'market_analytics'
+                                 AND prior_source.artifact_key = 'lists_by_criteria:all'
                                  AND prior_source.session_date < d.session_date
                                UNION
                                SELECT membership.ticker
@@ -540,19 +551,34 @@ class PostgresBackfillStoreV2:
                            ) member
                        ), ARRAY[]::text[]) AS macd_tickers,
                        (
-                           EXISTS (
-                               SELECT 1 FROM published_artifacts evidence
-                               WHERE evidence.market = 'US'
-                                 AND evidence.artifact_key = 'market_analytics'
-                                 AND evidence.session_date < d.session_date
-                                 AND jsonb_typeof(evidence.payload->'by_macd') = 'array'
-                           ) OR EXISTS (
-                               SELECT 1 FROM stock_bounce_v2_memberships evidence
-                               WHERE evidence.market = 'US'
-                                 AND evidence.universe = 'macd_history'
-                                 AND evidence.first_seen_date < d.session_date
-                           )
-                       ) AS macd_membership_evidence
+                           SELECT COUNT(*) FROM published_artifacts expected
+                           WHERE expected.market = 'US'
+                             AND expected.artifact_key = 'stock_bounce:v1'
+                             AND expected.session_date < d.session_date
+                       )::int AS macd_expected_sessions,
+                       (
+                           SELECT COUNT(*) FROM published_artifacts expected
+                           WHERE expected.market = 'US'
+                             AND expected.artifact_key = 'stock_bounce:v1'
+                             AND expected.session_date < d.session_date
+                             AND (
+                                 EXISTS (
+                                     SELECT 1 FROM published_artifacts evidence
+                                     WHERE evidence.market = 'US'
+                                       AND evidence.session_date = expected.session_date
+                                       AND evidence.artifact_key =
+                                           'lists_by_criterion:macd:all'
+                                       AND jsonb_typeof(evidence.payload->'macd') = 'array'
+                                 ) OR EXISTS (
+                                     SELECT 1 FROM published_artifacts evidence
+                                     WHERE evidence.market = 'US'
+                                       AND evidence.session_date = expected.session_date
+                                       AND evidence.artifact_key = 'lists_by_criteria:all'
+                                       AND jsonb_typeof(evidence.payload->'by_macd') =
+                                           'array'
+                                 )
+                             )
+                       )::int AS macd_evidence_sessions
                 FROM published_dates d
                 JOIN published_artifacts source
                   ON source.session_date = d.session_date AND source.market = 'US'
@@ -574,6 +600,14 @@ class PostgresBackfillStoreV2:
             if isinstance(payload, str):
                 payload = json.loads(payload)
             degraded = payload.get("coverage", {}).get("status") == "degraded"
+            expected_sessions = int(record["macd_expected_sessions"])
+            evidence_sessions = int(record["macd_evidence_sessions"])
+            if evidence_sessions == expected_sessions:
+                macd_provenance = "archived_macd_membership"
+            elif evidence_sessions:
+                macd_provenance = "partial_archived_macd_membership"
+            else:
+                macd_provenance = "unavailable_archived_macd_membership"
             targets.append(
                 {
                     "date": record["session_date"].isoformat(),
@@ -583,15 +617,17 @@ class PostgresBackfillStoreV2:
                     "max_lookback": record["max_lookback"],
                     "estimated": degraded,
                     "whole_market_estimated": degraded,
-                    "macd_history_estimated": not record["macd_membership_evidence"],
+                    "macd_history_estimated": evidence_sessions < expected_sessions,
+                    "macd_history_expected_sessions": expected_sessions,
+                    "macd_history_evidence_sessions": evidence_sessions,
                     "whole_market_provenance": "archived_tickers+local_ohlcv",
-                    "macd_history_provenance": "recoverable_macd_membership",
+                    "macd_history_provenance": macd_provenance,
                 }
             )
         return targets
 
     async def estimate_storage(self, targets, storage_limit_bytes):
-        del storage_limit_bytes
+        self.storage_limit_bytes = int(storage_limit_bytes)
         tickers = {
             ticker
             for target in targets
@@ -627,7 +663,7 @@ class PostgresBackfillStoreV2:
                     """))
         artifact_increment = int(len(targets) * average_snapshot * 1.5)
         bar_increment = len(tickers) * 1260 * 128
-        checkpoint_increment = len(tickers) * CHECKPOINT_RESERVATION_BYTES
+        checkpoint_increment = len(tickers) * CHECKPOINT_ESTIMATE_BYTES
         index_increment = int((artifact_increment + bar_increment) * 0.4)
         projected = current + (
             artifact_increment + bar_increment + checkpoint_increment + index_increment
@@ -709,73 +745,96 @@ class PostgresBackfillStoreV2:
         return {**payload, "bounded_bars": []}
 
     async def record_range(self, run_id, ticker, start_date, end_date, payload):
+        if self.storage_limit_bytes is None:
+            raise RuntimeError("v2 storage estimate must precede checkpoint writes")
         checkpoint = {"bars": payload["bars"], "splits": payload["splits"]}
         serialized = json.dumps(checkpoint, separators=(",", ":"), ensure_ascii=False)
         checkpoint_bytes = len(serialized.encode("utf-8"))
-        if checkpoint_bytes > MAX_CHECKPOINT_SERIALIZED_BYTES:
-            raise ValueError(
-                f"v2 checkpoint requires {checkpoint_bytes} bytes; "
-                f"the {MAX_CHECKPOINT_SERIALIZED_BYTES}-byte payload bound protects "
-                "the backfill storage reservation"
-            )
-        async with self.pool.acquire() as conn:
-            async with conn.transaction():
-                bounded = payload["bounded_bars"]
-                if bounded:
-                    await conn.executemany(
-                        """
-                        INSERT INTO ohlcv_bars(
-                            market, ticker, session_date, open, high, low, close, volume
-                        ) VALUES('US', $1, $2, $3, $4, $5, $6, $7)
-                        ON CONFLICT(market, ticker, session_date) DO UPDATE SET
-                            open = EXCLUDED.open, high = EXCLUDED.high, low = EXCLUDED.low,
-                            close = EXCLUDED.close, volume = EXCLUDED.volume,
-                            fetched_at = NOW()
-                        """,
-                        [
-                            (
-                                ticker,
-                                date.fromisoformat(bar["date"]),
-                                bar["open"],
-                                bar["high"],
-                                bar["low"],
-                                bar["close"],
-                                bar["volume"],
-                            )
-                            for bar in bounded
-                        ],
+        bounded = payload["bounded_bars"]
+        write_estimate = (
+            checkpoint_bytes * 2
+            + 1024
+            + len(bounded) * 256
+            + len(payload["splits"]) * 128
+        )
+        budget = 0.70 * self.storage_limit_bytes
+        async with self._storage_write_lock:
+            async with self.pool.acquire() as conn:
+                async with conn.transaction():
+                    current = int(
+                        await conn.fetchval(
+                            "SELECT pg_database_size(current_database())"
+                        )
                     )
-                if payload["splits"]:
-                    await conn.executemany(
+                    projected = current + write_estimate
+                    if projected > budget:
+                        raise StockBounceStorageLimitError(
+                            current, projected, self.storage_limit_bytes
+                        )
+                    if bounded:
+                        await conn.executemany(
+                            """
+                            INSERT INTO ohlcv_bars(
+                                market, ticker, session_date, open, high, low, close, volume
+                            ) VALUES('US', $1, $2, $3, $4, $5, $6, $7)
+                            ON CONFLICT(market, ticker, session_date) DO UPDATE SET
+                                open = EXCLUDED.open, high = EXCLUDED.high, low = EXCLUDED.low,
+                                close = EXCLUDED.close, volume = EXCLUDED.volume,
+                                fetched_at = NOW()
+                            """,
+                            [
+                                (
+                                    ticker,
+                                    date.fromisoformat(bar["date"]),
+                                    bar["open"],
+                                    bar["high"],
+                                    bar["low"],
+                                    bar["close"],
+                                    bar["volume"],
+                                )
+                                for bar in bounded
+                            ],
+                        )
+                    if payload["splits"]:
+                        await conn.executemany(
+                            """
+                            INSERT INTO stock_bounce_v2_splits(market, ticker, split_date, ratio)
+                            VALUES('US', $1, $2, $3)
+                            ON CONFLICT(market, ticker, split_date) DO UPDATE SET
+                                ratio = EXCLUDED.ratio
+                            """,
+                            [
+                                (
+                                    ticker,
+                                    date.fromisoformat(split["date"]),
+                                    split["ratio"],
+                                )
+                                for split in payload["splits"]
+                            ],
+                        )
+                    await conn.execute(
                         """
-                        INSERT INTO stock_bounce_v2_splits(market, ticker, split_date, ratio)
-                        VALUES('US', $1, $2, $3)
-                        ON CONFLICT(market, ticker, split_date) DO UPDATE SET
-                            ratio = EXCLUDED.ratio
+                        INSERT INTO stock_bounce_v2_backfill_ranges(
+                            run_id, ticker, start_date, end_date, status, payload
+                        ) VALUES($1, $2, $3, $4, 'complete', $5::jsonb)
+                        ON CONFLICT(run_id, ticker, end_date) DO UPDATE SET
+                            status = 'complete', payload = EXCLUDED.payload, fetched_at = NOW()
                         """,
-                        [
-                            (
-                                ticker,
-                                date.fromisoformat(split["date"]),
-                                split["ratio"],
-                            )
-                            for split in payload["splits"]
-                        ],
+                        run_id,
+                        ticker,
+                        date.fromisoformat(start_date) if start_date else None,
+                        date.fromisoformat(end_date),
+                        serialized,
                     )
-                await conn.execute(
-                    """
-                    INSERT INTO stock_bounce_v2_backfill_ranges(
-                        run_id, ticker, start_date, end_date, status, payload
-                    ) VALUES($1, $2, $3, $4, 'complete', $5::jsonb)
-                    ON CONFLICT(run_id, ticker, end_date) DO UPDATE SET
-                        status = 'complete', payload = EXCLUDED.payload, fetched_at = NOW()
-                    """,
-                    run_id,
-                    ticker,
-                    date.fromisoformat(start_date) if start_date else None,
-                    date.fromisoformat(end_date),
-                    serialized,
-                )
+                    actual = int(
+                        await conn.fetchval(
+                            "SELECT pg_database_size(current_database())"
+                        )
+                    )
+                    if actual > budget:
+                        raise StockBounceStorageLimitError(
+                            current, actual, self.storage_limit_bytes
+                        )
 
     async def publish_snapshot(self, run_id, date_string, snapshot, watermarks):
         session_date = date.fromisoformat(date_string)
