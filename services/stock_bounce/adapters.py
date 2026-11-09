@@ -113,7 +113,8 @@ class EodhdStockBounceAdapter:
         def fetch():
             response = self.provider._http_get(  # pylint: disable=protected-access
                 f"{EODHD_BASE_URL}/eod-bulk-last-day/US"
-                f"?type=splits&date={date_string}&fmt=json&api_token={EODHD_API_KEY}"
+                f"?type=splits&date={date_string}&fmt=json&api_token={EODHD_API_KEY}",
+                timeout=EODHD_REQUEST_TIMEOUT,
             )
             response.raise_for_status()
             payload = response.json()

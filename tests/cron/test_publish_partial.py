@@ -214,6 +214,9 @@ async def test_publish_day_skips_when_no_tickers(monkeypatch):
     )
 
     assert result["tickers_written"] == 0
+    assert not any(
+        error.startswith("stock_bounce:v2-seed:") for error in result["phase_errors"]
+    )
     assert upserts["artifacts"] == []
 
 
@@ -221,8 +224,8 @@ async def test_publish_day_skips_when_no_tickers(monkeypatch):
 async def test_us_publication_seeds_newcomers_immediately_before_v2(monkeypatch):
     calls = []
     seed_report = {
-        "candidates_count": 1,
-        "seeded_count": 0,
+        "candidates_count": 2,
+        "seeded_count": 1,
         "no_prior_history_count": 0,
         "failed_count": 1,
         "errors": {"NEW": "mock failure"},
@@ -277,4 +280,6 @@ async def test_us_publication_seeds_newcomers_immediately_before_v2(monkeypatch)
 
     assert calls == ["seed", "publish_v2"]
     assert result["stock_bounce_v2_seeding"] == seed_report
-    assert result["stock_bounce_v2_seeding"]["failed_count"] == 1
+    assert result["phase_errors"] == [
+        "stock_bounce:v2-seed: failed_count=1; NEW: mock failure"
+    ]
