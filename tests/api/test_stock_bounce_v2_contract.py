@@ -47,6 +47,21 @@ async def test_v2_requires_header_and_ignores_query_credentials(monkeypatch):
         assert FIXTURE_API_KEY not in response.text
 
 
+@pytest.mark.parametrize("configured_key", [None, ""])
+def test_v2_empty_server_key_never_authenticates_empty_header(
+    monkeypatch, configured_key
+):
+    from fastapi import HTTPException
+    import utils.handle_validation as validation
+
+    monkeypatch.setattr(validation, "API_KEY", configured_key)
+    with pytest.raises(HTTPException) as caught:
+        validation.validate_v2_api_key(x_api_key="")
+
+    assert caught.value.status_code == 403
+    assert caught.value.detail["code"] == "INVALID_API_KEY"
+
+
 @pytest.mark.asyncio
 async def test_v2_results_arguments_and_structured_errors(monkeypatch):
     async def result_stub(pool, *, date_string, lookback):

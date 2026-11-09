@@ -160,6 +160,27 @@ async def test_apply_refuses_projection_above_seventy_percent_before_writes():
 
 
 @pytest.mark.asyncio
+async def test_checkpoint_payload_bound_rejects_oversized_history_before_writes():
+    from services.stock_bounce.adapters import PostgresBackfillStoreV2
+
+    class NoWritePool:
+        def acquire(self):
+            raise AssertionError(
+                "oversized checkpoint must not acquire a database connection"
+            )
+
+    payload = {
+        "bars": [{"date": "2024-01-01", "padding": "x" * (3 * 1024 * 1024)}],
+        "splits": [],
+        "bounded_bars": [],
+    }
+    store = PostgresBackfillStoreV2(NoWritePool())
+
+    with pytest.raises(ValueError, match="checkpoint.*payload bound"):
+        await store.record_range("run", "ABC", None, "2024-01-02", payload)
+
+
+@pytest.mark.asyncio
 async def test_backfill_computes_split_safe_high_and_persists_only_bounded_bars():
     bars = [
         _bar("ABC", "2023-12-01", 150.0),
@@ -258,12 +279,17 @@ async def test_cli_constructs_v2_runner_and_forwards_resume_and_dry_run(monkeypa
 async def test_postgres_v2_targets_and_storage_estimate_use_local_archive(
     postgres_pool,
 ):
-    from db.crud.published_archive import upsert_artifact, upsert_published_date
+    from db.crud.published_archive import upsert_artifact
     from services.stock_bounce.adapters import PostgresBackfillStoreV2
     from services.stock_bounce.semantics import build_snapshot
 
-    async def source(day):
-        await upsert_artifact(postgres_pool, day, "market_analytics", {"SP500": 1})
+    async def source(day, market_payload=None):
+        await upsert_artifact(
+            postgres_pool,
+            day,
+            "market_analytics",
+            market_payload or {"SP500": 1},
+        )
         await upsert_artifact(
             postgres_pool,
             day,
@@ -284,13 +310,20 @@ async def test_postgres_v2_targets_and_storage_estimate_use_local_archive(
         )
 
     await source("2030-02-01")
-    await source("2030-02-02")
+    await source("2030-02-02", {"by_macd": [{"ticker": "ABC"}]})
+    await source("2030-02-03")
     store = PostgresBackfillStoreV2(postgres_pool)
     try:
         targets = await store.list_targets("2030-02-01")
-        target = next(item for item in targets if item["date"] == "2030-02-02")
-        assert target["tickers"] == ["ABC"]
-        assert target["macd_tickers"] == ["ABC"]
+        without_evidence = next(
+            item for item in targets if item["date"] == "2030-02-02"
+        )
+        with_evidence = next(item for item in targets if item["date"] == "2030-02-03")
+        assert without_evidence["tickers"] == ["ABC"]
+        assert without_evidence["macd_tickers"] == []
+        assert without_evidence["macd_history_estimated"] is True
+        assert with_evidence["macd_tickers"] == ["ABC"]
+        assert with_evidence["macd_history_estimated"] is False
         estimate = await store.estimate_storage(targets, 10_000_000_000)
         assert estimate["projected_bytes"] >= estimate["current_bytes"]
         assert set(estimate["components"]) == {
@@ -303,5 +336,5 @@ async def test_postgres_v2_targets_and_storage_estimate_use_local_archive(
         async with postgres_pool.acquire() as conn:
             await conn.execute(
                 "DELETE FROM published_dates WHERE session_date = ANY($1::date[])",
-                [date(2030, 2, 1), date(2030, 2, 2)],
+                [date(2030, 2, 1), date(2030, 2, 2), date(2030, 2, 3)],
             )

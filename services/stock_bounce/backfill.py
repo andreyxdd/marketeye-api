@@ -503,16 +503,18 @@ class StockBounceBackfillV2:
             for universe in UNIVERSES:
                 base_exclusions = int(target.get(f"{universe}_exclusions", 0))
                 count = exclusions[target_date][universe] + base_exclusions
-                universe_estimated = estimated or bool(
-                    target.get(f"{universe}_estimated", False)
+                universe_estimated = bool(
+                    target.get(f"{universe}_estimated", estimated)
                 )
                 coverage[universe] = {
                     "status": "degraded" if universe_estimated or count else "exact",
                     "universe_provenance": target.get(
                         f"{universe}_provenance",
-                        "archived_tickers+local_ohlcv"
-                        if universe == "whole_market"
-                        else "recoverable_macd_membership",
+                        (
+                            "archived_tickers+local_ohlcv"
+                            if universe == "whole_market"
+                            else "recoverable_macd_membership"
+                        ),
                     ),
                     "exclusions_count": count,
                 }
