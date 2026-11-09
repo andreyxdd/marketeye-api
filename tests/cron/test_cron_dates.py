@@ -12,7 +12,9 @@ from services.cron_dates import (
 
 
 @pytest.mark.asyncio
-async def test_resolve_ingest_dates_includes_prior_when_missing(mongo_client, monkeypatch):
+async def test_resolve_ingest_dates_includes_prior_when_missing(
+    mongo_client, monkeypatch
+):
     async def fake_missing(conn, date, market="US"):
         del conn, market
         return ["AAPL"] if date == "2024-05-31" else []
@@ -27,7 +29,10 @@ async def test_resolve_ingest_dates_includes_prior_when_missing(mongo_client, mo
             "StubProvider",
             (),
             {
-                "resolve_session_dates": lambda self, date: ("2024-06-03", "2024-05-31"),
+                "resolve_session_dates": lambda self, date: (
+                    "2024-06-03",
+                    "2024-05-31",
+                ),
             },
         )(),
     )
@@ -37,7 +42,9 @@ async def test_resolve_ingest_dates_includes_prior_when_missing(mongo_client, mo
 
 
 @pytest.mark.asyncio
-async def test_resolve_ingest_dates_skips_prior_when_complete(mongo_client, monkeypatch):
+async def test_resolve_ingest_dates_skips_prior_when_complete(
+    mongo_client, monkeypatch
+):
     async def fake_missing(conn, date, market="US"):
         del conn, date, market
         return []
@@ -52,7 +59,10 @@ async def test_resolve_ingest_dates_skips_prior_when_complete(mongo_client, monk
             "StubProvider",
             (),
             {
-                "resolve_session_dates": lambda self, date: ("2024-06-03", "2024-05-31"),
+                "resolve_session_dates": lambda self, date: (
+                    "2024-06-03",
+                    "2024-05-31",
+                ),
             },
         )(),
     )
@@ -62,7 +72,9 @@ async def test_resolve_ingest_dates_skips_prior_when_complete(mongo_client, monk
 
 
 @pytest.mark.asyncio
-async def test_resolve_ingest_dates_raises_when_no_last_session(mongo_client, monkeypatch):
+async def test_resolve_ingest_dates_raises_when_no_last_session(
+    mongo_client, monkeypatch
+):
     monkeypatch.setattr(
         "services.cron_dates.get_market_data_provider",
         lambda market="US": type(
@@ -144,7 +156,7 @@ async def test_us_probe_requeues_until_bounce_complete_without_changing_to(monke
     )
 
     assert await unpublished_session_dates(None, "US") == [
-        "2024-06-03",
         "2024-05-31",
+        "2024-06-03",
     ]
     assert await unpublished_session_dates(None, "TO") == []

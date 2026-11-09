@@ -88,23 +88,23 @@ async def publish_us_session_v2(
     try:
         bars = await store.load_bars(tickers, date_string)
         watermarks = await store.load_watermarks(tickers)
-        for ticker, watermark in watermarks.items():
-            if watermark is None:
+        intervening = await store.load_bars_after_watermarks(
+            tickers, watermarks, date_string
+        )
+        fetched = await provider.fetch_daily_splits(date_string)
+        daily_splits = {}
+        for split in fetched:
+            ticker = str(split.get("code", "")).upper()
+            if ticker not in tickers:
                 continue
-            fetched = await provider.fetch_splits(
-                ticker,
-                start_date=watermark["date"],
-                end_date=date_string,
-            )
-            normalized = [
+            daily_splits.setdefault(ticker, []).append(
                 {
                     "date": split.get("date", split.get("split_date"))[:10],
                     "ratio": split_ratio(split),
                 }
-                for split in fetched
-            ]
-            if normalized:
-                await store.persist_splits(ticker, normalized)
+            )
+        for ticker, normalized in daily_splits.items():
+            await store.persist_splits(ticker, normalized)
         splits = await store.load_splits(tickers, watermarks, date_string)
         rows = []
         advanced = {}
@@ -120,12 +120,18 @@ async def publish_us_session_v2(
             ]
             bar = bars.get(ticker)
             watermark = watermarks.get(ticker)
-            if bar is None or watermark is None:
+            if bar is None or watermark is None or watermark["date"] >= date_string:
                 for universe in membership:
                     exclusions[universe] += 1
                 continue
+            ticker_splits = splits.get(ticker, [])
+            current = watermark
+            for missed_bar in sorted(
+                intervening.get(ticker, []), key=lambda item: item["date"]
+            ):
+                _, current = advance_high_watermark(current, missed_bar, ticker_splits)
             previous, next_watermark = advance_high_watermark(
-                watermark, bar, splits.get(ticker, [])
+                current, bar, ticker_splits
             )
             if previous is None:
                 for universe in membership:
