@@ -12,6 +12,9 @@ from providers.eodhd_us import EodhdUSProvider
 
 from .backfill import LocalBarsResult
 
+CHECKPOINT_RESERVATION_BYTES = 2 * 1024 * 1024
+MAX_CHECKPOINT_SERIALIZED_BYTES = CHECKPOINT_RESERVATION_BYTES // 2
+
 
 class PostgresLocalBarsAdapter:
     def __init__(self, pool):
@@ -86,11 +89,15 @@ class EodhdStockBounceAdapter:
 
         return await asyncio.to_thread(fetch)
 
-    async def fetch_splits(self, ticker: str) -> list[dict]:
+    async def fetch_splits(
+        self, ticker: str, start_date=None, end_date=None
+    ) -> list[dict]:
         def fetch():
+            from_param = f"&from={start_date}" if start_date else ""
+            to_param = f"&to={end_date}" if end_date else ""
             response = self.provider._http_get(  # pylint: disable=protected-access
                 f"{EODHD_BASE_URL}/splits/{ticker}.US"
-                f"?api_token={EODHD_API_KEY}&fmt=json"
+                f"?api_token={EODHD_API_KEY}&fmt=json{from_param}{to_param}"
             )
             response.raise_for_status()
             payload = response.json()
@@ -278,6 +285,21 @@ class PostgresStockBounceHistoryStore:
     def __init__(self, pool):
         self.pool = pool
 
+    async def load_snapshot(self, date_string):
+        async with self.pool.acquire() as conn:
+            payload = await conn.fetchval(
+                """
+                SELECT payload FROM published_artifacts
+                WHERE session_date = $1 AND market = 'US'
+                  AND artifact_key = 'stock_bounce:v2'
+                  AND payload->>'schema_version' = '2'
+                """,
+                date.fromisoformat(date_string),
+            )
+        if isinstance(payload, str):
+            return json.loads(payload)
+        return payload
+
     async def list_macd_tickers(self, before_date):
         async with self.pool.acquire() as conn:
             records = await conn.fetch(
@@ -364,6 +386,23 @@ class PostgresStockBounceHistoryStore:
             )
         return result
 
+    async def persist_splits(self, ticker, splits):
+        if not splits:
+            return
+        async with self.pool.acquire() as conn:
+            await conn.executemany(
+                """
+                INSERT INTO stock_bounce_v2_splits(market, ticker, split_date, ratio)
+                VALUES('US', $1, $2, $3)
+                ON CONFLICT(market, ticker, split_date) DO UPDATE SET
+                    ratio = EXCLUDED.ratio
+                """,
+                [
+                    (ticker, date.fromisoformat(split["date"]), split["ratio"])
+                    for split in splits
+                ],
+            )
+
     async def max_lookback(self, date_string):
         async with self.pool.acquire() as conn:
             count = await conn.fetchval(
@@ -376,7 +415,9 @@ class PostgresStockBounceHistoryStore:
             )
         return min(1260, int(count))
 
-    async def publish(self, date_string, snapshot, watermarks):
+    async def publish(
+        self, date_string, snapshot, watermarks, *, current_macd_tickers=()
+    ):
         from db.crud.published_archive import STOCK_BOUNCE_V2_ARTIFACT_KEY
 
         session_date = date.fromisoformat(date_string)
@@ -408,6 +449,8 @@ class PostgresStockBounceHistoryStore:
                     ON CONFLICT(market, ticker) DO UPDATE SET
                         as_of_date = EXCLUDED.as_of_date, high = EXCLUDED.high,
                         updated_at = NOW()
+                    WHERE stock_bounce_v2_high_watermarks.as_of_date
+                        <= EXCLUDED.as_of_date
                     """,
                     [
                         (
@@ -418,13 +461,22 @@ class PostgresStockBounceHistoryStore:
                         for ticker, value in watermarks.items()
                     ],
                 )
-                membership_rows = [
-                    (ticker, universe, session_date, session_date)
+                memberships = {
+                    (row["ticker"], universe): (
+                        row["ticker"],
+                        universe,
+                        session_date,
+                        session_date,
+                    )
                     for row in snapshot["rows"]
-                    for ticker, universes in ((row["ticker"], row["universes"]),)
-                    for universe in universes
-                ]
-                if membership_rows:
+                    for universe in row["universes"]
+                }
+                for ticker in current_macd_tickers:
+                    memberships.setdefault(
+                        (ticker, "macd_history"),
+                        (ticker, "macd_history", session_date, session_date),
+                    )
+                if memberships:
                     await conn.executemany(
                         """
                         INSERT INTO stock_bounce_v2_memberships(
@@ -440,7 +492,7 @@ class PostgresStockBounceHistoryStore:
                                 EXCLUDED.last_seen_date
                             )
                         """,
-                        membership_rows,
+                        list(memberships.values()),
                     )
 
 
@@ -469,15 +521,38 @@ class PostgresBackfillStoreV2:
                              AND prior.payload->>'schema_version' = '2'
                        ))::int AS max_lookback,
                        COALESCE((
-                           SELECT array_agg(DISTINCT history.row->>'ticker' ORDER BY history.row->>'ticker')
-                           FROM published_artifacts prior_source
-                           CROSS JOIN LATERAL jsonb_array_elements(
-                               prior_source.payload->'rows'
-                           ) AS history(row)
-                           WHERE prior_source.market = 'US'
-                             AND prior_source.artifact_key = 'stock_bounce:v1'
-                             AND prior_source.session_date < d.session_date
-                       ), ARRAY[]::text[]) AS macd_tickers
+                           SELECT array_agg(DISTINCT member.ticker ORDER BY member.ticker)
+                           FROM (
+                               SELECT history.row->>'ticker' AS ticker
+                               FROM published_artifacts prior_source
+                               CROSS JOIN LATERAL jsonb_array_elements(
+                                   COALESCE(prior_source.payload->'by_macd', '[]'::jsonb)
+                               ) AS history(row)
+                               WHERE prior_source.market = 'US'
+                                 AND prior_source.artifact_key = 'market_analytics'
+                                 AND prior_source.session_date < d.session_date
+                               UNION
+                               SELECT membership.ticker
+                               FROM stock_bounce_v2_memberships membership
+                               WHERE membership.market = 'US'
+                                 AND membership.universe = 'macd_history'
+                                 AND membership.first_seen_date < d.session_date
+                           ) member
+                       ), ARRAY[]::text[]) AS macd_tickers,
+                       (
+                           EXISTS (
+                               SELECT 1 FROM published_artifacts evidence
+                               WHERE evidence.market = 'US'
+                                 AND evidence.artifact_key = 'market_analytics'
+                                 AND evidence.session_date < d.session_date
+                                 AND jsonb_typeof(evidence.payload->'by_macd') = 'array'
+                           ) OR EXISTS (
+                               SELECT 1 FROM stock_bounce_v2_memberships evidence
+                               WHERE evidence.market = 'US'
+                                 AND evidence.universe = 'macd_history'
+                                 AND evidence.first_seen_date < d.session_date
+                           )
+                       ) AS macd_membership_evidence
                 FROM published_dates d
                 JOIN published_artifacts source
                   ON source.session_date = d.session_date AND source.market = 'US'
@@ -507,6 +582,8 @@ class PostgresBackfillStoreV2:
                     "snapshot_complete": record["snapshot_complete"],
                     "max_lookback": record["max_lookback"],
                     "estimated": degraded,
+                    "whole_market_estimated": degraded,
+                    "macd_history_estimated": not record["macd_membership_evidence"],
                     "whole_market_provenance": "archived_tickers+local_ohlcv",
                     "macd_history_provenance": "recoverable_macd_membership",
                 }
@@ -544,17 +621,13 @@ class PostgresBackfillStoreV2:
             index_bytes = int(
                 await conn.fetchval("SELECT pg_indexes_size('published_artifacts')")
             ) + int(await conn.fetchval("SELECT pg_indexes_size('ohlcv_bars')"))
-            average_snapshot = float(
-                await conn.fetchval(
-                    """
+            average_snapshot = float(await conn.fetchval("""
                     SELECT COALESCE(AVG(pg_column_size(payload)), 65536)
                     FROM published_artifacts WHERE artifact_key = 'stock_bounce:v1'
-                    """
-                )
-            )
+                    """))
         artifact_increment = int(len(targets) * average_snapshot * 1.5)
         bar_increment = len(tickers) * 1260 * 128
-        checkpoint_increment = len(tickers) * 2 * 1024 * 1024
+        checkpoint_increment = len(tickers) * CHECKPOINT_RESERVATION_BYTES
         index_increment = int((artifact_increment + bar_increment) * 0.4)
         projected = current + (
             artifact_increment + bar_increment + checkpoint_increment + index_increment
@@ -637,6 +710,14 @@ class PostgresBackfillStoreV2:
 
     async def record_range(self, run_id, ticker, start_date, end_date, payload):
         checkpoint = {"bars": payload["bars"], "splits": payload["splits"]}
+        serialized = json.dumps(checkpoint, separators=(",", ":"), ensure_ascii=False)
+        checkpoint_bytes = len(serialized.encode("utf-8"))
+        if checkpoint_bytes > MAX_CHECKPOINT_SERIALIZED_BYTES:
+            raise ValueError(
+                f"v2 checkpoint requires {checkpoint_bytes} bytes; "
+                f"the {MAX_CHECKPOINT_SERIALIZED_BYTES}-byte payload bound protects "
+                "the backfill storage reservation"
+            )
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 bounded = payload["bounded_bars"]
@@ -693,7 +774,7 @@ class PostgresBackfillStoreV2:
                     ticker,
                     date.fromisoformat(start_date) if start_date else None,
                     date.fromisoformat(end_date),
-                    json.dumps(checkpoint),
+                    serialized,
                 )
 
     async def publish_snapshot(self, run_id, date_string, snapshot, watermarks):

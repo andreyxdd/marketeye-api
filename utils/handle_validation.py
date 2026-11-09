@@ -38,16 +38,18 @@ def validate_v2_api_key(
                 "details": {},
             },
         )
-    expected = str(API_KEY or "")
-    if not hmac.compare_digest(x_api_key.encode("utf-8"), expected.encode("utf-8")):
-        raise HTTPException(
-            status_code=403,
-            detail={
-                "code": "INVALID_API_KEY",
-                "message": "API key is invalid",
-                "details": {},
-            },
-        )
+    invalid = HTTPException(
+        status_code=403,
+        detail={
+            "code": "INVALID_API_KEY",
+            "message": "API key is invalid",
+            "details": {},
+        },
+    )
+    if not API_KEY or not x_api_key:
+        raise invalid
+    if not hmac.compare_digest(x_api_key.encode("utf-8"), str(API_KEY).encode("utf-8")):
+        raise invalid
 
 
 def validate_date_string(

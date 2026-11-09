@@ -51,16 +51,27 @@ async def publish_us_session(conn, pool, date_string: str) -> dict:
 
 
 async def publish_us_session_v2(
-    conn, pool, date_string: str, history_store=None
+    conn, pool, date_string: str, history_store=None, split_provider=None
 ) -> dict:
     """Publish a complete v2 snapshot using only incremental local high state."""
     from db.crud.published_archive import STOCK_BOUNCE_V2_ARTIFACT_KEY
-    from .adapters import PostgresStockBounceHistoryStore
+    from .adapters import EodhdStockBounceAdapter, PostgresStockBounceHistoryStore
     from .backfill import sanitize_provider_text
-    from .history import advance_high_watermark
+    from .history import advance_high_watermark, split_ratio
     from .semantics_v2 import UNIVERSES, build_snapshot_v2
 
     store = history_store or PostgresStockBounceHistoryStore(pool)
+    existing = await store.load_snapshot(date_string)
+    if existing is not None:
+        coverage = existing["coverage"]
+        return {
+            "date": date_string,
+            "market": "US",
+            "artifact_key": STOCK_BOUNCE_V2_ARTIFACT_KEY,
+            "rows": len(existing["rows"]),
+            "coverage": {key: value["status"] for key, value in coverage.items()},
+        }
+
     cursor = conn[MONGO_DB_NAME]["analytics"].find(
         {"date": get_epoch(date_string), **market_mongo_filter("US")}
     )
@@ -71,12 +82,29 @@ async def publish_us_session_v2(
     current_macd = {
         str(row["ticker"]).upper() for row in analytics if row.get("macd") is not None
     }
-    historical_macd = set(await store.list_macd_tickers(date_string))
-    macd = current_macd | historical_macd
+    macd = set(await store.list_macd_tickers(date_string))
     tickers = sorted(whole | macd)
+    provider = split_provider or EodhdStockBounceAdapter()
     try:
         bars = await store.load_bars(tickers, date_string)
         watermarks = await store.load_watermarks(tickers)
+        for ticker, watermark in watermarks.items():
+            if watermark is None:
+                continue
+            fetched = await provider.fetch_splits(
+                ticker,
+                start_date=watermark["date"],
+                end_date=date_string,
+            )
+            normalized = [
+                {
+                    "date": split.get("date", split.get("split_date"))[:10],
+                    "ratio": split_ratio(split),
+                }
+                for split in fetched
+            ]
+            if normalized:
+                await store.persist_splits(ticker, normalized)
         splits = await store.load_splits(tickers, watermarks, date_string)
         rows = []
         advanced = {}
@@ -137,7 +165,12 @@ async def publish_us_session_v2(
             coverage=coverage,
             max_lookback=await store.max_lookback(date_string),
         )
-        await store.publish(date_string, snapshot, advanced)
+        await store.publish(
+            date_string,
+            snapshot,
+            advanced,
+            current_macd_tickers=current_macd,
+        )
     except Exception as error:
         raise RuntimeError(sanitize_provider_text(error)) from None
     return {
