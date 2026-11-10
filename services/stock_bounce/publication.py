@@ -134,7 +134,12 @@ async def publish_us_session_v2(
             if watermark is None:
                 for universe in membership:
                     unseeded[universe] += 1
-            if bar is None or watermark is None or watermark["date"] >= date_string:
+            if (
+                bar is None
+                or watermark is None
+                or watermark["date"] >= date_string
+                or float(bar["open"]) <= 0
+            ):
                 for universe in membership:
                     exclusions[universe] += 1
                 continue

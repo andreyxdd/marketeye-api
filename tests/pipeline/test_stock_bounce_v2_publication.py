@@ -286,7 +286,9 @@ class _RecoveryStore:
         self, date_string, snapshot, watermarks, *, current_macd_tickers=()
     ):
         del current_macd_tickers
-        self.writes.append((date_string, copy.deepcopy(snapshot)))
+        self.writes.append(
+            (date_string, copy.deepcopy(snapshot), copy.deepcopy(watermarks))
+        )
         self.snapshots[date_string] = copy.deepcopy(snapshot)
         self.watermarks.update(copy.deepcopy(watermarks))
 
@@ -460,6 +462,44 @@ async def test_watermark_at_or_after_target_is_excluded_with_degraded_coverage()
     }
     assert result["coverage"]["whole_market"] == "degraded"
     assert store.watermarks["AAA"] == {"date": "2024-01-19", "high": 120.0}
+
+
+@pytest.mark.asyncio
+async def test_zero_open_bar_is_excluded_without_blocking_valid_rows():
+    store = _RecoveryStore(
+        [
+            {
+                **_bar("BFJA", "2024-01-19", 0.0, open_price=0.0, close=17.275),
+                "volume": 14,
+            },
+            _bar("BBB", "2024-01-19", 105.0),
+        ],
+        {
+            "BFJA": {"date": "2024-01-18", "high": 20.615},
+            "BBB": {"date": "2024-01-18", "high": 100.0},
+        },
+    )
+
+    result = await publish_us_session_v2(
+        _mongo([{"ticker": "BFJA"}, {"ticker": "BBB"}]),
+        object(),
+        "2024-01-19",
+        history_store=store,
+        split_provider=_NoSplitProvider(),
+    )
+
+    snapshot = store.snapshots["2024-01-19"]
+    assert [row["ticker"] for row in snapshot["rows"]] == ["BBB"]
+    assert snapshot["coverage"]["whole_market"] == {
+        "status": "degraded",
+        "universe_provenance": "mongo_analytics+local_ohlcv",
+        "exclusions_count": 1,
+        "unseeded_count": 0,
+    }
+    assert result["rows"] == 1
+    assert result["coverage"]["whole_market"] == "degraded"
+    assert "BFJA" not in store.writes[0][2]
+    assert store.watermarks["BFJA"] == {"date": "2024-01-18", "high": 20.615}
 
 
 class _FailOnceBulkProvider:
