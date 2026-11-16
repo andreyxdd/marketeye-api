@@ -164,11 +164,13 @@ async def backfill_market(
     dry_run: bool,
     full_publish: bool = False,
     reingest_missing: bool = False,
-) -> None:
+) -> int:
+    """Apply or dry-run one market. Returns count of failed apply dates."""
     market = normalize_market(market)
     date_rows = await get_published_dates(pool, market=market)
     dates = select_trading_days(date_rows, trading_days)
     print(f"{market}: {len(dates)} session(s) in window (trading-days={trading_days})")
+    failures = 0
 
     for date in dates:
         has_analytics = await analytics_exist(conn, date, market)
@@ -194,6 +196,13 @@ async def backfill_market(
             # One-shot ops recovery only — not wired into daily cron auto-repair.
             print(f"  apply {market} {date}: ingest analytics")
             await ingest_base_analytics_for_market(conn, date, market=market)
+            if not await analytics_exist(conn, date, market):
+                print(
+                    f"  fail {market} {date}: analytics still missing after ingest; "
+                    "skipping put_top_tickers and frequency patch"
+                )
+                failures += 1
+                continue
 
         print(f"  apply {market} {date}: put_top_tickers")
         await put_top_tickers(conn, date, market=market)
@@ -208,6 +217,8 @@ async def backfill_market(
             written = await patch_day_frequencies(conn, pool, date, market=market)
             print(f"  apply {market} {date}: patched {written} artifact(s)")
 
+    return failures
+
 
 async def run_backfill(
     markets: Iterable[str],
@@ -215,14 +226,16 @@ async def run_backfill(
     dry_run: bool,
     full_publish: bool = False,
     reingest_missing: bool = False,
-) -> None:
+) -> int:
+    """Returns total failed apply dates across markets (0 on dry-run / success)."""
     await connect_mongo()
     await connect_postgres()
+    failures = 0
     try:
         conn = await get_mongo_database()
         pool = await get_postgres_pool()
         for market in markets:
-            await backfill_market(
+            failures += await backfill_market(
                 conn,
                 pool,
                 market,
@@ -234,6 +247,7 @@ async def run_backfill(
     finally:
         await close_mongo()
         await close_postgres()
+    return failures
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -285,7 +299,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     markets = parse_markets(args.markets)
-    asyncio.run(
+    failures = asyncio.run(
         run_backfill(
             markets=markets,
             trading_days=args.trading_days,
@@ -294,7 +308,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             reingest_missing=args.reingest_missing,
         )
     )
-    return 0
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":

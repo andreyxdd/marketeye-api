@@ -377,6 +377,7 @@ async def test_reingest_missing_dry_run_prints_ingest_plan(monkeypatch, capsys):
 @pytest.mark.asyncio
 async def test_reingest_missing_apply_ingests_then_puts_then_patches(monkeypatch):
     calls = []
+    present = {"2024-06-03"}
 
     async def fake_get_published_dates(pool, market="TO"):
         del pool
@@ -384,10 +385,11 @@ async def test_reingest_missing_apply_ingests_then_puts_then_patches(monkeypatch
 
     async def fake_analytics_exist(conn, date, market):
         del conn, market
-        return date == "2024-06-03"
+        return date in present
 
     async def fake_ingest(conn, date, market="US"):
         calls.append(("ingest", date, market))
+        present.add(date)
         return "ingested"
 
     async def fake_put(conn, date, market="US"):
@@ -413,13 +415,14 @@ async def test_reingest_missing_apply_ingests_then_puts_then_patches(monkeypatch
     )
     _patch_connections(monkeypatch)
 
-    await backfill_band_tracking.run_backfill(
+    failures = await backfill_band_tracking.run_backfill(
         markets=["TO"],
         trading_days=15,
         dry_run=False,
         reingest_missing=True,
     )
 
+    assert failures == 0
     assert calls == [
         ("ingest", "2024-06-01", "TO"),
         ("put", "2024-06-01", "TO"),
@@ -427,6 +430,62 @@ async def test_reingest_missing_apply_ingests_then_puts_then_patches(monkeypatch
         ("put", "2024-06-03", "TO"),
         ("patch", "2024-06-03", "TO"),
     ]
+
+
+@pytest.mark.asyncio
+async def test_reingest_missing_ingest_empty_skips_track_and_patch(
+    monkeypatch, capsys
+):
+    """Ingest can return normally with zero rows; must not fake track/patch success."""
+    calls = []
+
+    async def fake_get_published_dates(pool, market="TO"):
+        del pool
+        return [{"date_string": "2024-06-01"}]
+
+    async def fake_analytics_exist(conn, date, market):
+        del conn, date, market
+        return False
+
+    async def fake_ingest(conn, date, market="US"):
+        calls.append(("ingest", date, market))
+        return "No tickers to insert"
+
+    async def fake_put(conn, date, market="US"):
+        calls.append(("put", date, market))
+        return "put"
+
+    async def fake_patch(conn, pool, date, market="US"):
+        calls.append(("patch", date, market))
+        return 1
+
+    monkeypatch.setattr(
+        backfill_band_tracking, "get_published_dates", fake_get_published_dates
+    )
+    monkeypatch.setattr(
+        backfill_band_tracking, "analytics_exist", fake_analytics_exist
+    )
+    monkeypatch.setattr(
+        backfill_band_tracking, "ingest_base_analytics_for_market", fake_ingest
+    )
+    monkeypatch.setattr(backfill_band_tracking, "put_top_tickers", fake_put)
+    monkeypatch.setattr(
+        backfill_band_tracking, "patch_day_frequencies", fake_patch
+    )
+    _patch_connections(monkeypatch)
+
+    failures = await backfill_band_tracking.run_backfill(
+        markets=["TO"],
+        trading_days=15,
+        dry_run=False,
+        reingest_missing=True,
+    )
+
+    assert failures == 1
+    assert calls == [("ingest", "2024-06-01", "TO")]
+    out = capsys.readouterr().out.lower()
+    assert "fail" in out or "still missing" in out or "no mongo analytics" in out
+    assert "put_top_tickers" not in out or "fail" in out
 
 
 def test_parse_markets_default_and_normalize():
