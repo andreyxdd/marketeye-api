@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/fix-tsx-frequencies-shallow-history.plan.md",
+  "target_branch": "main",
+  "base_sha": "87b1008cb155048cab801dc382df7a551218f021",
+  "head_sha": "762138dc86f074c9ccce3c4db0c46a60501fbad0",
+  "review_head_sha": "8a1624f231c1331a1d50a4e765c6bd8928c65d04",
+  "reviewed_at": "2026-11-16T18:18:20.556Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {
+      "id": "backfill-band-tracking-py-reingest-missing-apply-path",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "scripts/backfill_band_tracking.py",
+      "finding": "`--reingest-missing` apply path always runs `put_top_tickers` + `patch_day_frequencies` after ingest with no check that analytics exist or any rows inserted. `ingest_base_analytics_for_market` can return normally with zero inserts (per-ticker API `None`, `\"No tickers to insert\"`, or all rows skipped) — script still patches, gap stays, exit 0. Recovery can look successful while TO frequencies stay shallow. Evidence: `            await ingest_base_analytics_for_market(conn, date, market=market)`",
+      "reviewers": [
+        "bugbot"
+      ]
+    },
+    {
+      "id": "cronjob-py-track-density-marks-cron-failed-and",
+      "status": "confirmed",
+      "severity": "low",
+      "location": "cronjob.py",
+      "finding": "`track_density` marks cron failed and notifies, but `run_crud_ops` still calls `publish_day` — Postgres can get shallow frequencies same run. Plan says alert-only; not regression, but guard ≠ publish gate. Evidence: `                    if prior < TO_TRACKING_DENSITY_FLOOR:`",
+      "reviewers": [
+        "bugbot"
+      ],
+      "resolution": "deferred"
+    }
+  ]
+}
