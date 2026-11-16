@@ -16,7 +16,15 @@ import asyncpg
 from core.markets import MARKETS, list_markets, normalize_market
 from core.settings import MONGO_HOT_WINDOW_DAYS
 from db.crud.analytics import get_analytics_tickers
-from db.crud.tracking import put_top_tickers
+from db.crud.tracking import (
+    count_prior_unbanded_tracking_sessions,
+    put_top_tickers,
+)
+
+# Alert when TO prior unbanded tracking sessions in the frequencies window
+# fall below this floor (alert/fail only — no auto-backfill).
+TO_TRACKING_DENSITY_FLOOR = 10
+TO_TRACKING_DENSITY_PERIOD = 25
 from db.crud.published_archive import is_archive_complete
 from db.crud.mongo_storage import prune_mongo_session_date
 from db.mongodb import (
@@ -189,6 +197,31 @@ async def run_crud_ops(
             msgs.append(msg_track)
         except Exception as track_error:  # pylint: disable=broad-except
             report.record(market, date_to_insert, "track", track_error)
+        else:
+            if market == "TO":
+                try:
+                    prior = await count_prior_unbanded_tracking_sessions(
+                        conn,
+                        date_to_insert,
+                        period=TO_TRACKING_DENSITY_PERIOD,
+                        market=market,
+                    )
+                    if prior < TO_TRACKING_DENSITY_FLOOR:
+                        report.record(
+                            market,
+                            date_to_insert,
+                            "track_density",
+                            (
+                                f"TO prior unbanded tracking sessions={prior} "
+                                f"below floor={TO_TRACKING_DENSITY_FLOOR} "
+                                f"(period={TO_TRACKING_DENSITY_PERIOD}); "
+                                "frequencies history is too shallow"
+                            ),
+                        )
+                except Exception as density_error:  # pylint: disable=broad-except
+                    report.record(
+                        market, date_to_insert, "track_density", density_error
+                    )
 
         if not ingest_ok:
             return "\n\n".join(msgs)

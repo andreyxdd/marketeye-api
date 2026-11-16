@@ -320,6 +320,115 @@ async def test_skips_dates_without_analytics(monkeypatch, capsys):
     assert "skip" in out.lower()
 
 
+@pytest.mark.asyncio
+async def test_reingest_missing_dry_run_prints_ingest_plan(monkeypatch, capsys):
+    calls = []
+
+    async def fake_get_published_dates(pool, market="TO"):
+        del pool
+        return [{"date_string": "2024-06-01"}, {"date_string": "2024-06-03"}]
+
+    async def fake_analytics_exist(conn, date, market):
+        del conn, market
+        return date == "2024-06-03"
+
+    async def fake_ingest(conn, date, market="US"):
+        calls.append(("ingest", date, market))
+        return "ingested"
+
+    async def fake_put(conn, date, market="US"):
+        calls.append(("put", date, market))
+        return "put"
+
+    async def fake_patch(conn, pool, date, market="US"):
+        calls.append(("patch", date, market))
+        return 1
+
+    monkeypatch.setattr(
+        backfill_band_tracking, "get_published_dates", fake_get_published_dates
+    )
+    monkeypatch.setattr(
+        backfill_band_tracking, "analytics_exist", fake_analytics_exist
+    )
+    monkeypatch.setattr(
+        backfill_band_tracking, "ingest_base_analytics_for_market", fake_ingest
+    )
+    monkeypatch.setattr(backfill_band_tracking, "put_top_tickers", fake_put)
+    monkeypatch.setattr(
+        backfill_band_tracking, "patch_day_frequencies", fake_patch
+    )
+    _patch_connections(monkeypatch)
+
+    await backfill_band_tracking.run_backfill(
+        markets=["TO"],
+        trading_days=15,
+        dry_run=True,
+        reingest_missing=True,
+    )
+
+    assert calls == []
+    out = capsys.readouterr().out.lower()
+    assert "2024-06-01" in out
+    assert "ingest" in out
+    assert "skip" not in out
+    assert "2024-06-03" in out
+
+
+@pytest.mark.asyncio
+async def test_reingest_missing_apply_ingests_then_puts_then_patches(monkeypatch):
+    calls = []
+
+    async def fake_get_published_dates(pool, market="TO"):
+        del pool
+        return [{"date_string": "2024-06-01"}, {"date_string": "2024-06-03"}]
+
+    async def fake_analytics_exist(conn, date, market):
+        del conn, market
+        return date == "2024-06-03"
+
+    async def fake_ingest(conn, date, market="US"):
+        calls.append(("ingest", date, market))
+        return "ingested"
+
+    async def fake_put(conn, date, market="US"):
+        calls.append(("put", date, market))
+        return "put"
+
+    async def fake_patch(conn, pool, date, market="US"):
+        calls.append(("patch", date, market))
+        return 1
+
+    monkeypatch.setattr(
+        backfill_band_tracking, "get_published_dates", fake_get_published_dates
+    )
+    monkeypatch.setattr(
+        backfill_band_tracking, "analytics_exist", fake_analytics_exist
+    )
+    monkeypatch.setattr(
+        backfill_band_tracking, "ingest_base_analytics_for_market", fake_ingest
+    )
+    monkeypatch.setattr(backfill_band_tracking, "put_top_tickers", fake_put)
+    monkeypatch.setattr(
+        backfill_band_tracking, "patch_day_frequencies", fake_patch
+    )
+    _patch_connections(monkeypatch)
+
+    await backfill_band_tracking.run_backfill(
+        markets=["TO"],
+        trading_days=15,
+        dry_run=False,
+        reingest_missing=True,
+    )
+
+    assert calls == [
+        ("ingest", "2024-06-01", "TO"),
+        ("put", "2024-06-01", "TO"),
+        ("patch", "2024-06-01", "TO"),
+        ("put", "2024-06-03", "TO"),
+        ("patch", "2024-06-03", "TO"),
+    ]
+
+
 def test_parse_markets_default_and_normalize():
     assert backfill_band_tracking.parse_markets("US,TO") == ["US", "TO"]
     assert backfill_band_tracking.parse_markets("us, to") == ["US", "TO"]
@@ -331,6 +440,14 @@ def test_parser_full_publish_default_off():
     assert args.full_publish is False
     args_on = parser.parse_args(["--full-publish"])
     assert args_on.full_publish is True
+
+
+def test_parser_reingest_missing_default_off():
+    parser = backfill_band_tracking.build_parser()
+    args = parser.parse_args([])
+    assert args.reingest_missing is False
+    args_on = parser.parse_args(["--reingest-missing"])
+    assert args_on.reingest_missing is True
 
 
 async def _async_noop():

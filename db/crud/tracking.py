@@ -130,6 +130,48 @@ async def put_top_tickers(conn: AsyncIOMotorClient, date: str, market: str = DEF
         ) from e
 
 
+def _unbanded_price_band_filter() -> dict:
+    return {
+        "$or": [
+            {"price_band": None},
+            {"price_band": {"$exists": False}},
+        ]
+    }
+
+
+async def count_prior_unbanded_tracking_sessions(
+    conn: AsyncIOMotorClient,
+    date: str,
+    criterion: str = "one_day_avg_mf",
+    period: Optional[int] = 25,
+    market: str = DEFAULT_MARKET,
+) -> int:
+    """Count unbanded prior tracking docs in the same window as frequencies.
+
+    Uses ``$lt`` on ``date`` so the viewed/tracked session itself is excluded.
+    """
+    try:
+        market = normalize_market(market)
+        past_date = get_past_date(period, date)
+        epoch_past_date = get_epoch(past_date)
+        epoch_date = get_epoch(date)
+        query = {
+            "criterion": criterion,
+            "date": {"$gt": epoch_past_date, "$lt": epoch_date},
+            **_merge_filters(market_mongo_filter(market), _unbanded_price_band_filter()),
+        }
+        return await conn[MONGO_DB_NAME][MONGO_TRACKING_COLLECTION].count_documents(
+            query
+        )
+    except Exception as e:  # pylint: disable=W0703
+        raise Exception(
+            _format_db_error(
+                "db/crud/tracking.py, def count_prior_unbanded_tracking_sessions",
+                e,
+            )
+        ) from e
+
+
 async def get_analytics_frequencies(
     conn: AsyncIOMotorClient,
     date: str,
@@ -147,12 +189,7 @@ async def get_analytics_frequencies(
         band_filter = (
             {"price_band": price_band}
             if price_band is not None
-            else {
-                "$or": [
-                    {"price_band": None},
-                    {"price_band": {"$exists": False}},
-                ]
-            }
+            else _unbanded_price_band_filter()
         )
         pipeline = [
             {

@@ -18,6 +18,7 @@ Examples:
   python scripts/backfill_band_tracking.py --markets US,TO --trading-days 15 --dry-run
   python scripts/backfill_band_tracking.py --markets US,TO --trading-days 15
   python scripts/backfill_band_tracking.py --markets US --trading-days 15 --full-publish
+  python scripts/backfill_band_tracking.py --markets TO --trading-days 40 --reingest-missing
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ from db.mongodb import get_database as get_mongo_database
 from db.postgres import close as close_postgres
 from db.postgres import connect as connect_postgres
 from db.postgres import get_pool as get_postgres_pool
+from services.analytics_service import ingest_base_analytics_for_market
 from services.publish_service import PRICE_BANDS_TO_PUBLISH, publish_day
 from utils.handle_datetimes import get_epoch
 
@@ -161,6 +163,7 @@ async def backfill_market(
     trading_days: int,
     dry_run: bool,
     full_publish: bool = False,
+    reingest_missing: bool = False,
 ) -> None:
     market = normalize_market(market)
     date_rows = await get_published_dates(pool, market=market)
@@ -168,14 +171,29 @@ async def backfill_market(
     print(f"{market}: {len(dates)} session(s) in window (trading-days={trading_days})")
 
     for date in dates:
-        if not await analytics_exist(conn, date, market):
+        has_analytics = await analytics_exist(conn, date, market)
+        needs_ingest = not has_analytics
+        if needs_ingest and not reingest_missing:
             print(f"  skip {market} {date}: no Mongo analytics")
             continue
 
         if dry_run:
             action = "publish_day" if full_publish else "patch frequencies"
-            print(f"  dry-run {market} {date}: would put_top_tickers then {action}")
+            if needs_ingest:
+                print(
+                    f"  dry-run {market} {date}: would ingest analytics then "
+                    f"put_top_tickers then {action}"
+                )
+            else:
+                print(
+                    f"  dry-run {market} {date}: would put_top_tickers then {action}"
+                )
             continue
+
+        if needs_ingest:
+            # One-shot ops recovery only — not wired into daily cron auto-repair.
+            print(f"  apply {market} {date}: ingest analytics")
+            await ingest_base_analytics_for_market(conn, date, market=market)
 
         print(f"  apply {market} {date}: put_top_tickers")
         await put_top_tickers(conn, date, market=market)
@@ -196,6 +214,7 @@ async def run_backfill(
     trading_days: int,
     dry_run: bool,
     full_publish: bool = False,
+    reingest_missing: bool = False,
 ) -> None:
     await connect_mongo()
     await connect_postgres()
@@ -210,6 +229,7 @@ async def run_backfill(
                 trading_days=trading_days,
                 dry_run=dry_run,
                 full_publish=full_publish,
+                reingest_missing=reingest_missing,
             )
     finally:
         await close_mongo()
@@ -251,6 +271,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Call publish_day (hot enrich) instead of frequency patch (default: off)",
     )
+    parser.add_argument(
+        "--reingest-missing",
+        action="store_true",
+        help=(
+            "For dates missing Mongo analytics, ingest then track+patch "
+            "(default: skip those dates)"
+        ),
+    )
     return parser
 
 
@@ -263,6 +291,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             trading_days=args.trading_days,
             dry_run=args.dry_run,
             full_publish=args.full_publish,
+            reingest_missing=args.reingest_missing,
         )
     )
     return 0
