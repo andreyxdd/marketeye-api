@@ -11,6 +11,10 @@ from core.settings import MONGO_DB_NAME
 from db.crud.analytics import remove_base_analytics
 from db.crud.published_archive import is_archive_complete
 
+# Protect TO frequencies lookback from emergency/rolling Mongo prune.
+# Ceiling: TO only (US unchanged); upgrade = shared per-market lookback config.
+TO_FREQUENCIES_LOOKBACK_TRADING_DAYS = 40
+
 
 async def get_mongo_storage_ratio(
     conn: AsyncIOMotorClient,
@@ -23,14 +27,49 @@ async def get_mongo_storage_ratio(
     return size_bytes, ratio
 
 
+async def is_to_date_in_frequencies_lookback(
+    pool: asyncpg.Pool,
+    date: str,
+) -> bool:
+    """True when ``date`` is among the last N published TO trading days."""
+    async with pool.acquire() as pg_conn:
+        rows = await pg_conn.fetch(
+            """
+            SELECT session_date
+            FROM published_dates
+            WHERE market = $1
+            ORDER BY session_date DESC
+            LIMIT $2
+            """,
+            "TO",
+            TO_FREQUENCIES_LOOKBACK_TRADING_DAYS,
+        )
+    protected = {row["session_date"].isoformat() for row in rows}
+    return date in protected
+
+
 async def prune_mongo_session_date(
     conn: AsyncIOMotorClient,
     date: str,
     market: str,
-) -> None:
+    pool: Optional[asyncpg.Pool] = None,
+) -> bool:
+    """Delete Mongo analytics+tracking for a market/date.
+
+    For TO, refuses (returns False) when ``date`` sits inside the frequencies
+    lookback of the latest published TO sessions. ``pool`` is required for TO.
+    """
     market = normalize_market(market)
+    if market == "TO":
+        if pool is None:
+            raise TypeError(
+                "pool required to prune TO (frequencies lookback guard)"
+            )
+        if await is_to_date_in_frequencies_lookback(pool, date):
+            return False
     await remove_base_analytics(conn, date, market=market)
     await remove_base_analytics(conn, date, "tracking", market=market)
+    return True
 
 
 async def prune_mongo_if_published(
@@ -41,8 +80,7 @@ async def prune_mongo_if_published(
 ) -> bool:
     if not await is_archive_complete(pool, date, market):
         return False
-    await prune_mongo_session_date(conn, date, market)
-    return True
+    return await prune_mongo_session_date(conn, date, market, pool=pool)
 
 
 async def prune_oldest_published_mongo_session(
@@ -83,5 +121,5 @@ async def prune_oldest_published_mongo_session(
     date_string = session_date.isoformat()
     for market in list_markets():
         if await is_archive_complete(pool, date_string, market):
-            await prune_mongo_session_date(conn, date_string, market)
+            await prune_mongo_session_date(conn, date_string, market, pool=pool)
     return date_string

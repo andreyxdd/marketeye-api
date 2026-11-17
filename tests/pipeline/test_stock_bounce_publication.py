@@ -212,9 +212,10 @@ async def test_prune_guard_uses_archive_completeness(monkeypatch):
         del pool, date_string
         return market == "TO"
 
-    async def prune_stub(conn, date_string, market):
-        del conn
+    async def prune_stub(conn, date_string, market, pool=None):
+        del conn, pool
         calls.append((date_string, market))
+        return True
 
     monkeypatch.setattr("db.crud.mongo_storage.is_archive_complete", complete_stub)
     monkeypatch.setattr("db.crud.mongo_storage.prune_mongo_session_date", prune_stub)
