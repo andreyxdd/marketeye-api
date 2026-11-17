@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/fix-tsx-frequencies-blank-latest.plan.md",
+  "target_branch": "main",
+  "base_sha": "796d48573040a643ea7d6b2a05f156098eca5a0e",
+  "head_sha": "f7f9c03414a15635b15bd29e3d03587cb1296f28",
+  "review_head_sha": "f7f9c03414a15635b15bd29e3d03587cb1296f28",
+  "reviewed_at": "2026-11-17T19:36:31.489Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": []
+}
