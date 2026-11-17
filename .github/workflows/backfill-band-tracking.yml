@@ -60,7 +60,7 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
           python scripts/backfill_band_tracking.py $ARGS
 
-      - name: Verify Micro frequencies nonempty
+      - name: Verify Standard + Micro frequencies nonempty
         if: ${{ inputs.dry_run == false }}
         run: |
           python - <<'PY'
@@ -84,20 +84,24 @@ jobs:
               with urllib.request.urlopen(req, timeout=60) as resp:
                   return json.load(resp)
 
-          def assert_nonempty_frequencies(market: str, price_band: str) -> None:
+          def assert_nonempty_frequencies(market: str, price_band: str | None = None) -> None:
               dates = get_json("/api/analytics/get_dates", {"market": market})
               if not dates:
                   raise RuntimeError(f"{market}: empty get_dates payload")
               latest = dates[-1]["date_string"]
               criterion = "one_day_avg_mf"
+              params = {
+                  "market": market,
+                  "date": latest,
+                  "criterion": criterion,
+              }
+              band_label = ":all"
+              if price_band is not None:
+                  params["price_band"] = price_band
+                  band_label = price_band
               payload = get_json(
                   "/api/analytics/get_analytics_lists_by_criterion",
-                  {
-                      "market": market,
-                      "date": latest,
-                      "criterion": criterion,
-                      "price_band": price_band,
-                  },
+                  params,
               )
               rows = payload.get(criterion) or []
               nonempty = [
@@ -107,16 +111,18 @@ jobs:
               ]
               if not nonempty:
                   raise RuntimeError(
-                      f"{market}/{price_band} date={latest}: zero rows with nonempty frequencies "
+                      f"{market}/{band_label} date={latest}: zero rows with nonempty frequencies "
                       f"(rows={len(rows)})"
                   )
               print(
-                  f"OK {market}/{price_band} date={latest}: "
+                  f"OK {market}/{band_label} date={latest}: "
                   f"{len(nonempty)}/{len(rows)} rows with nonempty frequencies"
               )
 
           try:
               assert_nonempty_frequencies("US", "lte5")
+              # TO Standard (omit price_band → :all) and Micro (lte5)
+              assert_nonempty_frequencies("TO")
               assert_nonempty_frequencies("TO", "lte5")
           except (RuntimeError, urllib.error.URLError, KeyError, json.JSONDecodeError) as err:
               print(f"verify failed: {err}", file=sys.stderr)
