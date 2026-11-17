@@ -27,10 +27,11 @@ async def test_run_crud_ops_happy_path(monkeypatch):
         del pool
         return date == "2024-03-04" and market == "US"
 
-    async def prune_stub(conn, date, market):
-        del conn
+    async def prune_stub(conn, date, market, pool=None):
+        del conn, pool
         calls["order"].append("prune")
         calls["prune"].append((date, market))
+        return True
 
     async def get_db_stub():
         return object()
@@ -91,10 +92,11 @@ async def test_run_crud_ops_publish_gate_skips_delete(monkeypatch):
         del pool
         return date == "2024-03-04" and market == "US"
 
-    async def prune_stub(conn, date, market):
-        del conn, date, market
+    async def prune_stub(conn, date, market, pool=None):
+        del conn, date, market, pool
         calls["order"].append("prune")
         calls["pruned"] += 1
+        return True
 
     def notify_stub(**kwargs):
         del kwargs

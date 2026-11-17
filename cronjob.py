@@ -178,7 +178,9 @@ async def run_crud_ops(
             pg_pool, date_to_remove, market
         ):
             try:
-                await prune_mongo_session_date(conn, date_to_remove, market)
+                await prune_mongo_session_date(
+                    conn, date_to_remove, market, pool=pg_pool
+                )
             except Exception as prune_error:  # pylint: disable=broad-except
                 report.record(market, date_to_insert, "prune", prune_error)
 
@@ -192,6 +194,9 @@ async def run_crud_ops(
             report.record(market, date_to_insert, "ingest", ingest_error)
             return "\n\n".join(msgs)
 
+        # TO only: skip publish when frequencies lookback is too shallow
+        # (ceiling: skip publish only — no auto-backfill).
+        skip_publish_for_density = False
         try:
             msg_track = await put_top_tickers(conn, date_to_insert, market=market)
             msgs.append(msg_track)
@@ -218,12 +223,21 @@ async def run_crud_ops(
                                 "frequencies history is too shallow"
                             ),
                         )
+                        skip_publish_for_density = True
                 except Exception as density_error:  # pylint: disable=broad-except
                     report.record(
                         market, date_to_insert, "track_density", density_error
                     )
+                    skip_publish_for_density = True
 
         if not ingest_ok:
+            return "\n\n".join(msgs)
+
+        if skip_publish_for_density:
+            msgs.append(
+                "Skipping publish_service.publish_day:"
+                f" TO tracking density below floor on {date_to_insert}"
+            )
             return "\n\n".join(msgs)
 
         tickers_in_mongo = await get_analytics_tickers(

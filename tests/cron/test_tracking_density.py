@@ -55,7 +55,7 @@ async def test_count_prior_unbanded_sessions_uses_frequency_window(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_run_crud_ops_to_below_density_floor_records_failure(monkeypatch):
-    calls = {"notified": 0}
+    calls = {"notified": 0, "publish": 0}
 
     async def get_db_stub():
         return object()
@@ -74,6 +74,7 @@ async def test_run_crud_ops_to_below_density_floor_records_failure(monkeypatch):
 
     async def publish_stub(conn, pool, date, market="US", include_mentions=True):
         del conn, pool, date, market, include_mentions
+        calls["publish"] += 1
         return {"artifacts_written": 1, "tickers_written": 1}
 
     async def tickers_stub(conn, date, market="US"):
@@ -121,10 +122,14 @@ async def test_run_crud_ops_to_below_density_floor_records_failure(monkeypatch):
     assert str(cronjob.TO_TRACKING_DENSITY_FLOOR) in density_err.error
     assert cronjob.cron_failed()
     assert calls["notified"] >= 1
+    # Density fail must not publish blank Frequencies artifacts.
+    assert calls["publish"] == 0
 
 
 @pytest.mark.asyncio
 async def test_run_crud_ops_to_at_density_floor_no_density_error(monkeypatch):
+    calls = {"publish": 0}
+
     async def get_db_stub():
         return object()
 
@@ -142,6 +147,7 @@ async def test_run_crud_ops_to_at_density_floor_no_density_error(monkeypatch):
 
     async def publish_stub(conn, pool, date, market="US", include_mentions=True):
         del conn, pool, date, market, include_mentions
+        calls["publish"] += 1
         return {"artifacts_written": 1, "tickers_written": 1}
 
     async def tickers_stub(conn, date, market="US"):
@@ -178,6 +184,7 @@ async def test_run_crud_ops_to_at_density_floor_no_density_error(monkeypatch):
 
     assert not any(e.phase == "track_density" for e in report.errors)
     assert not report.has_errors()
+    assert calls["publish"] == 1
 
 
 @pytest.mark.asyncio
