@@ -1,6 +1,7 @@
 """Cron ingest date resolution, session probing, and freshness reporting."""
 
 import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import List
 
@@ -16,6 +17,8 @@ from db.crud.published_archive import (
 from utils.handle_datetimes import get_today_utc_date_in_timezone
 from providers import get_market_data_provider
 
+
+logger = logging.getLogger(__name__)
 
 _PROVIDER_PROBE_TIMEOUT_SECONDS = 10.0
 
@@ -100,17 +103,18 @@ async def freshness_report(pool) -> dict:
         try:
             provider = get_market_data_provider(market)
             calendar_end = get_today_utc_date_in_timezone(config["timezone"])
-            expected_session, _ = await asyncio.wait_for(
-                asyncio.to_thread(provider.resolve_session_dates, calendar_end),
-                timeout=_PROVIDER_PROBE_TIMEOUT_SECONDS,
+            expected_session, _ = await asyncio.to_thread(
+                provider.resolve_session_dates,
+                calendar_end,
+                timeout_seconds=_PROVIDER_PROBE_TIMEOUT_SECONDS,
             )
             if not expected_session:
                 raise ValueError(f"could not resolve LastCompletedSession for {market}")
-        except Exception:  # pylint: disable=broad-except
-            import logging
-
-            logging.getLogger(__name__).exception(
-                "Freshness provider probe failed for %s", market
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error(
+                "Freshness provider probe failed for %s (%s)",
+                market,
+                type(error).__name__,
             )
             markets[market] = {
                 "expected_session": None,
@@ -128,11 +132,11 @@ async def freshness_report(pool) -> dict:
                 "status": "fresh" if analytics_fresh else "stale",
                 "latest_session": latest_session,
             }
-        except Exception:  # pylint: disable=broad-except
-            import logging
-
-            logging.getLogger(__name__).exception(
-                "Freshness analytics lookup failed for %s", market
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error(
+                "Freshness analytics lookup failed for %s (%s)",
+                market,
+                type(error).__name__,
             )
             analytics = {"status": "unavailable", "latest_session": None}
         components = {"analytics": analytics}
@@ -161,13 +165,12 @@ async def freshness_report(pool) -> dict:
                     latest_artifact = await get_latest_artifact_date(
                         pool, artifact_key, market=market
                     )
-                except Exception:  # pylint: disable=broad-except
-                    import logging
-
-                    logging.getLogger(__name__).exception(
-                        "Freshness artifact lookup failed for %s %s",
+                except Exception as error:  # pylint: disable=broad-except
+                    logger.error(
+                        "Freshness artifact lookup failed for %s %s (%s)",
                         market,
                         component_name,
+                        type(error).__name__,
                     )
                     components[component_name] = {
                         "status": "unavailable",
@@ -179,7 +182,7 @@ async def freshness_report(pool) -> dict:
                 if snapshot is not None:
                     try:
                         validator(snapshot)
-                    except (KeyError, TypeError, ValueError):
+                    except (KeyError, OverflowError, TypeError, ValueError):
                         artifact_fresh = False
                     else:
                         artifact_fresh = snapshot["date"] == expected_session

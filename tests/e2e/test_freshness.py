@@ -123,12 +123,15 @@ def _clear_freshness_report_cache():
 
 @pytest.mark.asyncio
 async def test_freshness_returns_sanitized_unavailable_report_on_internal_failure(
-    client, monkeypatch
+    client, monkeypatch, caplog
 ):
+    import logging
+
     async def report_failure(pool):
         del pool
         raise RuntimeError("private stack and credential-bearing-url")
 
+    caplog.set_level(logging.ERROR, logger="api.endpoints.health")
     monkeypatch.setattr(health, "freshness_report", report_failure)
 
     response = await client.get("/freshness")
@@ -142,6 +145,9 @@ async def test_freshness_returns_sanitized_unavailable_report_on_internal_failur
     assert data["markets"]["TO"]["components"]["analytics"]["status"] == "unavailable"
     assert "private stack" not in response.text
     assert "credential-bearing-url" not in response.text
+    assert "credential-bearing-url" not in caplog.text
+    assert "RuntimeError" in caplog.text
+    assert all(record.exc_info is None for record in caplog.records)
 
 
 @pytest.fixture

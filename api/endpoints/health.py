@@ -1,6 +1,7 @@
 """Liveness, readiness, and production freshness probe endpoints."""
 
 import asyncio
+import logging
 from time import monotonic
 
 from fastapi import APIRouter
@@ -15,6 +16,7 @@ from db.redis import ping as ping_redis
 from services.cron_dates import freshness_report
 
 health_router = APIRouter()
+logger = logging.getLogger(__name__)
 
 _PROBE_TIMEOUT_SECONDS = 5.0
 _FRESHNESS_CACHE_SECONDS = 60.0
@@ -123,10 +125,10 @@ async def _cached_freshness_report():
         try:
             pool = await get_postgres_pool()
             report = await freshness_report(pool)
-        except Exception:  # pylint: disable=broad-except
-            import logging
-
-            logging.getLogger(__name__).exception("Freshness report generation failed")
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error(
+                "Freshness report generation failed (%s)", type(error).__name__
+            )
             report = _unavailable_freshness_report()
         _freshness_cache = (monotonic(), report)
         return report

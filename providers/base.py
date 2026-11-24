@@ -53,6 +53,6 @@ class MarketDataProvider(Protocol):
         """Liquid benchmark ticker for session-date probing."""
 
     def resolve_session_dates(
-        self, date: str
+        self, date: str, timeout_seconds: Optional[float] = None
     ) -> tuple[Optional[str], Optional[str]]:
-        """Return (LastCompletedSession, PriorCompletedSession) for the market."""
+        """Return session dates; optional timeout enables bounded provider probing."""

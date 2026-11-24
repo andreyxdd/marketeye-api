@@ -54,6 +54,7 @@ class EodhdTOProvider(OhlcvCacheMixin):
         offset_n_days: int,
         actual_offset_n_days: int,
         utc_dates: bool,
+        timeout_seconds: Optional[float] = None,
     ) -> pd.DataFrame:
         end_date = pd.to_datetime(date)
         start_date = end_date - pd.Timedelta(days=offset_n_days)
@@ -61,8 +62,13 @@ class EodhdTOProvider(OhlcvCacheMixin):
 
         backoff = 1
         while True:
-            response = self._http_get(url)
+            request_kwargs = (
+                {} if timeout_seconds is None else {"timeout": timeout_seconds}
+            )
+            response = self._http_get(url, **request_kwargs)
             if response.status_code == 429:
+                if timeout_seconds is not None:
+                    response.raise_for_status()
                 print(
                     f"providers/eodhd_to.py: rate limit hit for {ticker}, "
                     f"sleeping {backoff}s"
@@ -174,11 +180,21 @@ class EodhdTOProvider(OhlcvCacheMixin):
         return base_analytics_from_ohlcv_utc(df)
 
     def resolve_session_dates(
-        self, date: str
+        self, date: str, timeout_seconds: Optional[float] = None
     ) -> tuple[Optional[str], Optional[str]]:
-        df = self.fetch_ohlcv(
-            self.probe_ticker, date, offset_n_days=10, actual_offset_n_days=2
-        )
+        if timeout_seconds is None:
+            df = self.fetch_ohlcv(
+                self.probe_ticker, date, offset_n_days=10, actual_offset_n_days=2
+            )
+        else:
+            df = self._fetch_ohlcv_from_api(
+                self.probe_ticker,
+                date,
+                offset_n_days=10,
+                actual_offset_n_days=2,
+                utc_dates=False,
+                timeout_seconds=timeout_seconds,
+            )
         return session_dates_from_ohlcv(df)
 
     def fetch_ticker_universe(self, date: str) -> list[str]:

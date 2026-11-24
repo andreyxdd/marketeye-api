@@ -13,7 +13,10 @@ EXPECTED_SESSION = "2026-11-23"
 
 def _provider():
     return types.SimpleNamespace(
-        resolve_session_dates=lambda date: (EXPECTED_SESSION, "2026-11-20")
+        resolve_session_dates=lambda date, timeout_seconds=None: (
+            EXPECTED_SESSION,
+            "2026-11-20",
+        )
     )
 
 
@@ -123,12 +126,19 @@ async def test_freshness_report_is_fresh_when_all_expected_artifacts_are_valid(
 
 @pytest.mark.asyncio
 async def test_freshness_report_marks_provider_failure_unavailable_without_details(
-    monkeypatch,
+    monkeypatch, caplog
 ):
-    def fail_provider(date):
-        del date
-        raise RuntimeError("provider credential-bearing-url must stay private")
+    import logging
 
+    import requests
+
+    def fail_provider(date, timeout_seconds=None):
+        del date, timeout_seconds
+        raise requests.HTTPError(
+            "429 for https://eodhd.test/api?api_token=private-token"
+        )
+
+    caplog.set_level(logging.ERROR, logger="services.cron_dates")
     monkeypatch.setattr(
         cron_dates,
         "get_market_data_provider",
@@ -148,7 +158,10 @@ async def test_freshness_report_marks_provider_failure_unavailable_without_detai
     assert report["markets"]["TO"]["components"] == {
         "analytics": {"status": "unavailable", "latest_session": None}
     }
-    assert "credential-bearing-url" not in str(report)
+    assert "private-token" not in str(report)
+    assert "private-token" not in caplog.text
+    assert "HTTPError" in caplog.text
+    assert all(record.exc_info is None for record in caplog.records)
 
 
 @pytest.mark.asyncio
@@ -229,15 +242,17 @@ async def test_freshness_report_distinguishes_stale_and_malformed_artifacts(
 
 
 @pytest.mark.asyncio
-async def test_freshness_report_bounds_provider_probes_off_event_loop(monkeypatch):
+async def test_freshness_report_probes_provider_off_event_loop(monkeypatch):
     import threading
     import time
 
     threads = []
+    timeouts = []
 
-    def slow_provider(date):
+    def slow_provider(date, timeout_seconds=None):
         del date
         threads.append(threading.current_thread())
+        timeouts.append(timeout_seconds)
         time.sleep(0.05)
         return EXPECTED_SESSION, "2026-11-20"
 
@@ -253,6 +268,7 @@ async def test_freshness_report_bounds_provider_probes_off_event_loop(monkeypatc
     assert report["status"] == "unavailable"
     assert threads
     assert all(thread is not threading.main_thread() for thread in threads)
+    assert timeouts == [0.01, 0.01]
 
 
 @pytest.mark.asyncio
@@ -307,3 +323,95 @@ async def test_freshness_report_reads_real_archive_artifacts(postgres_pool, monk
         "status": "fresh",
         "latest_session": EXPECTED_SESSION,
     }
+
+
+@pytest.mark.asyncio
+async def test_freshness_report_requests_bounded_provider_io(monkeypatch):
+    timeouts = []
+
+    def fail_after_recording_timeout(date, timeout_seconds=None):
+        del date
+        timeouts.append(timeout_seconds)
+        raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr(
+        cron_dates,
+        "get_market_data_provider",
+        lambda market: types.SimpleNamespace(
+            resolve_session_dates=fail_after_recording_timeout
+        ),
+    )
+
+    report = await cron_dates.freshness_report(None)
+
+    assert report["status"] == "unavailable"
+    assert timeouts == [10.0, 10.0]
+
+
+def test_eodhd_bounded_session_probe_times_out_http_and_does_not_retry_429(
+    monkeypatch,
+):
+    import requests
+    from providers.eodhd_to import EodhdTOProvider
+
+    provider = EodhdTOProvider()
+    calls = []
+    response = requests.Response()
+    response.status_code = 429
+    response.url = "https://eodhd.test/api?api_token=private-token"
+
+    def rate_limited(url, **kwargs):
+        calls.append((url, kwargs))
+        return response
+
+    def sleep_unexpected(seconds):
+        del seconds
+        raise AssertionError("bounded freshness probe must not retry HTTP 429")
+
+    monkeypatch.setattr(provider, "_http_get", rate_limited)
+    monkeypatch.setattr("providers.eodhd_to.time.sleep", sleep_unexpected)
+
+    with pytest.raises(requests.HTTPError):
+        provider.resolve_session_dates("2026-11-24", timeout_seconds=0.25)
+
+    assert len(calls) == 1
+    assert calls[0][1] == {"timeout": 0.25}
+
+
+@pytest.mark.asyncio
+async def test_freshness_report_marks_only_overflowing_artifact_stale(monkeypatch):
+    async def archive_complete(pool, date, market):
+        del pool, date, market
+        return True
+
+    async def latest_published(pool, market):
+        del pool, market
+        return EXPECTED_SESSION
+
+    async def artifact(pool, date, key, market="US"):
+        del pool, market
+        if key == "stock_bounce:v1":
+            snapshot = _snapshot_v1(date)
+            snapshot["rows"][0]["open"] = 10**10000
+            return snapshot
+        return _snapshot_v2(date)
+
+    async def latest_artifact(pool, key, market="US"):
+        del pool, key, market
+        return EXPECTED_SESSION
+
+    monkeypatch.setattr(cron_dates, "get_market_data_provider", lambda market: _provider())
+    monkeypatch.setattr(cron_dates, "is_archive_complete", archive_complete)
+    monkeypatch.setattr(cron_dates, "get_latest_published_date", latest_published)
+    monkeypatch.setattr(cron_dates, "get_artifact_payload", artifact)
+    monkeypatch.setattr(cron_dates, "get_latest_artifact_date", latest_artifact)
+
+    report = await cron_dates.freshness_report(None)
+
+    assert report["status"] == "stale"
+    assert report["markets"]["US"]["components"]["stock_bounce_v1"] == {
+        "status": "stale",
+        "latest_session": EXPECTED_SESSION,
+    }
+    assert report["markets"]["US"]["components"]["stock_bounce_v2"]["status"] == "fresh"
+    assert report["markets"]["TO"]["components"]["analytics"]["status"] == "fresh"
