@@ -1,5 +1,11 @@
 # Knowledge log
 
+## 2026-11-24 — Production freshness reliability plan
+
+**Incident:** All desktop flavors remained on 2026-11-20 during an approximately 17-hour GitHub Actions scheduled-run gap. The eventual cron published 2026-11-23 without phase errors; infrastructure readiness had remained green because it did not measure data freshness.
+
+**Accepted direction:** Keep ingestion and manual recovery on GitHub Actions. Move schedules off `:00`/`:30`, cache workflow Python environments, record prune/ingest/track/publish timings, and add a public `GET /freshness` aggregate for US/TO analytics and StockBounce v1/v2. An external UptimeRobot check alerts after 60 minutes of continuous staleness through direct Telegram Bot API down/up webhooks to the existing dev bot/channel. Contract: `knowledge/apis/freshness.md`. Deployment and external-service configuration remain manual follow-up actions after implementation review.
+
 ## 2026-11-18 — TO Frequencies blank on latest (density + prune)
 
 **Symptom:** Latest TO session returned 0/20 nonempty Frequencies for Standard (`:all`) and Micro (`lte5`). Postgres dates ≤2026-11-13 still good; Mongo lookback mostly gone.
