@@ -2,7 +2,9 @@
 
 import asyncio
 import logging
+import multiprocessing
 from datetime import datetime, timezone
+from time import monotonic
 from typing import List
 
 from core.markets import MARKETS, normalize_market
@@ -21,6 +23,81 @@ from providers import get_market_data_provider
 logger = logging.getLogger(__name__)
 
 _PROVIDER_PROBE_TIMEOUT_SECONDS = 10.0
+_PROVIDER_PROCESS_METHOD = "spawn"
+_PROVIDER_PROCESS_POLL_SECONDS = 0.02
+_PROVIDER_PROCESS_CLEANUP_SECONDS = 0.2
+
+
+class _ProviderProbeError(RuntimeError):
+    """Safe provider failure metadata returned across the process boundary."""
+
+    def __init__(self, error_type: str):
+        super().__init__("provider probe failed")
+        self.error_type = error_type
+
+
+def _provider_probe_worker(market, calendar_end, timeout_seconds, sender):
+    try:
+        provider = get_market_data_provider(market)
+        sessions = provider.resolve_session_dates(
+            calendar_end, timeout_seconds=timeout_seconds
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        result = ("error", type(error).__name__)
+    else:
+        result = ("ok", sessions)
+    try:
+        sender.send(result)
+    except (BrokenPipeError, EOFError):
+        pass
+    finally:
+        sender.close()
+
+
+def _cleanup_provider_process(process):
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout=_PROVIDER_PROCESS_CLEANUP_SECONDS)
+    if process.is_alive():
+        process.kill()
+        process.join(timeout=_PROVIDER_PROCESS_CLEANUP_SECONDS)
+    process.join(timeout=0)
+    if not process.is_alive():
+        process.close()
+
+
+async def _resolve_freshness_sessions(market, calendar_end, timeout_seconds):
+    context = multiprocessing.get_context(_PROVIDER_PROCESS_METHOD)
+    receiver, sender = context.Pipe(duplex=False)
+    process = context.Process(
+        target=_provider_probe_worker,
+        args=(market, calendar_end, timeout_seconds, sender),
+    )
+    deadline = monotonic() + timeout_seconds
+    try:
+        process.start()
+    except Exception:
+        receiver.close()
+        sender.close()
+        process.close()
+        raise
+    sender.close()
+    try:
+        while True:
+            if receiver.poll(0):
+                status, payload = receiver.recv()
+                if status == "error":
+                    raise _ProviderProbeError(payload)
+                return payload
+            if process.exitcode is not None:
+                raise _ProviderProbeError("ProcessExit")
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                raise TimeoutError("freshness provider deadline exceeded")
+            await asyncio.sleep(min(_PROVIDER_PROCESS_POLL_SECONDS, remaining))
+    finally:
+        _cleanup_provider_process(process)
+        receiver.close()
 
 
 async def get_missing_tickers(conn, date: str, market: str = "US"):
@@ -101,20 +178,20 @@ async def freshness_report(pool) -> dict:
         if market == "US":
             component_names.extend(("stock_bounce_v1", "stock_bounce_v2"))
         try:
-            provider = get_market_data_provider(market)
             calendar_end = get_today_utc_date_in_timezone(config["timezone"])
-            expected_session, _ = await asyncio.to_thread(
-                provider.resolve_session_dates,
-                calendar_end,
-                timeout_seconds=_PROVIDER_PROBE_TIMEOUT_SECONDS,
+            expected_session, _ = await _resolve_freshness_sessions(
+                market, calendar_end, _PROVIDER_PROBE_TIMEOUT_SECONDS
             )
             if not expected_session:
                 raise ValueError(f"could not resolve LastCompletedSession for {market}")
         except Exception as error:  # pylint: disable=broad-except
+            error_type = (
+                error.error_type
+                if isinstance(error, _ProviderProbeError)
+                else type(error).__name__
+            )
             logger.error(
-                "Freshness provider probe failed for %s (%s)",
-                market,
-                type(error).__name__,
+                "Freshness provider probe failed for %s (%s)", market, error_type
             )
             markets[market] = {
                 "expected_session": None,

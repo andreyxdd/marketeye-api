@@ -9,6 +9,37 @@ from services import cron_dates
 
 
 EXPECTED_SESSION = "2026-11-23"
+_REAL_RESOLVE_FRESHNESS_SESSIONS = cron_dates._resolve_freshness_sessions
+
+
+def _nonreturning_probe_worker(market, calendar_end, timeout_seconds, sender):
+    import time
+
+    del market, calendar_end, timeout_seconds, sender
+    time.sleep(60)
+
+
+def _trickling_probe_worker(market, calendar_end, timeout_seconds, sender):
+    import os
+
+    from providers.eodhd_to import EodhdTOProvider
+
+    del market
+    provider = EodhdTOProvider()
+    url = os.environ["FRESHNESS_TEST_EOD_URL"]
+    provider._eod_url = lambda ticker, start_date, end_date: url
+    try:
+        sessions = provider.resolve_session_dates(
+            calendar_end, timeout_seconds=timeout_seconds
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        result = ("error", type(error).__name__)
+    else:
+        result = ("ok", sessions)
+    try:
+        sender.send(result)
+    finally:
+        sender.close()
 
 
 def _provider():
@@ -415,3 +446,97 @@ async def test_freshness_report_marks_only_overflowing_artifact_stale(monkeypatc
     }
     assert report["markets"]["US"]["components"]["stock_bounce_v2"]["status"] == "fresh"
     assert report["markets"]["TO"]["components"]["analytics"]["status"] == "fresh"
+
+
+@pytest.mark.asyncio
+async def test_freshness_report_terminates_nonreturning_provider_and_cleans_up(
+    monkeypatch,
+):
+    import multiprocessing
+    import time
+
+    monkeypatch.setattr(
+        cron_dates, "_resolve_freshness_sessions", _REAL_RESOLVE_FRESHNESS_SESSIONS
+    )
+    monkeypatch.setattr(
+        cron_dates, "_provider_probe_worker", _nonreturning_probe_worker
+    )
+    monkeypatch.setattr(cron_dates, "_PROVIDER_PROBE_TIMEOUT_SECONDS", 0.2)
+
+    started = time.monotonic()
+    report = await cron_dates.freshness_report(None)
+    elapsed = time.monotonic() - started
+
+    assert report["status"] == "unavailable"
+    assert elapsed < 1.5
+    assert multiprocessing.active_children() == []
+
+
+@pytest.mark.asyncio
+async def test_freshness_report_deadline_covers_trickling_response_body(monkeypatch):
+    import multiprocessing
+    import threading
+    import time
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    body = b'[{"date":"2026-11-23"}]'
+    requests_seen = []
+
+    class TrickleHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            requests_seen.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            try:
+                for value in body:
+                    self.wfile.write(bytes([value]))
+                    self.wfile.flush()
+                    time.sleep(0.2)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def log_message(self, *args):
+            del args
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), TrickleHandler)
+    server.daemon_threads = True
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    url = f"http://127.0.0.1:{server.server_port}/eod?api_token=private-token"
+    monkeypatch.setenv("FRESHNESS_TEST_EOD_URL", url)
+    monkeypatch.setattr(
+        cron_dates, "_resolve_freshness_sessions", _REAL_RESOLVE_FRESHNESS_SESSIONS
+    )
+    monkeypatch.setattr(cron_dates, "_provider_probe_worker", _trickling_probe_worker)
+    monkeypatch.setattr(cron_dates, "_PROVIDER_PROBE_TIMEOUT_SECONDS", 1.0)
+
+    try:
+        started = time.monotonic()
+        report = await cron_dates.freshness_report(None)
+        elapsed = time.monotonic() - started
+    finally:
+        server.shutdown()
+        server.server_close()
+        server_thread.join(timeout=1.0)
+
+    assert requests_seen
+    assert report["status"] == "unavailable"
+    assert elapsed < 4.0
+    assert multiprocessing.active_children() == []
+
+
+@pytest.fixture(autouse=True)
+def _direct_provider_resolution_for_unit_tests(monkeypatch):
+    import asyncio
+
+    async def resolve_sessions(market, calendar_end, timeout_seconds):
+        provider = cron_dates.get_market_data_provider(market)
+        return await asyncio.to_thread(
+            provider.resolve_session_dates,
+            calendar_end,
+            timeout_seconds=timeout_seconds,
+        )
+
+    monkeypatch.setattr(cron_dates, "_resolve_freshness_sessions", resolve_sessions)
