@@ -1,0 +1,57 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/production-freshness-reliability.plan.md",
+  "target_branch": "main",
+  "base_sha": "33f9db1e66adb7bc4c590a8463e4cb3a0ff2801e",
+  "head_sha": "91ad9a3376886ef528669dde104baf10d666d135",
+  "review_head_sha": "456c950aa5d199c92393431a91254bf9c754c503",
+  "reviewed_at": "2026-11-24T13:10:04.714Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {
+      "id": "cron-dates-py-except-keyerror-typeerror-valueerror-misses",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/cron_dates.py:180-185",
+      "finding": "`except (KeyError, TypeError, ValueError):` misses `OverflowError`, which the existing validators can raise via `math.isfinite` for sufficiently large JSON integers. Such a malformed artifact escapes `freshness_report`, causing the endpoint to replace the entire report with `unavailable` instead of marking only the offending component `stale` as required by the API contract.",
+      "reviewers": [
+        "bugbot"
+      ]
+    },
+    {
+      "id": "cron-dates-py-shrink-three-function-local-logging",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "services/cron_dates.py:112",
+      "finding": "Provider exception logging can disclose the EODHD API key through credential-bearing request URLs.",
+      "reviewers": [
+        "ponytail",
+        "security"
+      ]
+    },
+    {
+      "id": "freshness-provider-timeout-detached-work",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "providers/eodhd_to.py:68",
+      "finding": "The Requests timeout bounds individual socket waits, not total probe duration; a trickling provider can hold the freshness cache lock and a worker thread indefinitely",
+      "reviewers": [
+        "ponytail",
+        "security"
+      ]
+    },
+    {
+      "id": "cron-dates-py-the-timeout-does-not-bound",
+      "status": "confirmed",
+      "severity": "high",
+      "location": "services/cron_dates.py:106-110",
+      "finding": "The provider probe still has no end-to-end deadline. Evidence: `expected_session, _ = await asyncio.to_thread(`. Removing `asyncio.wait_for` means a non-returning provider call blocks the report and freshness-cache lock indefinitely. The new Requests timeout covers connection and intervals between socket reads—not DNS resolution or total elapsed time—so a slow-dripping response can still hang the probe permanently. The prior bounded-probe finding therefore remains open.",
+      "reviewers": [
+        "bugbot"
+      ],
+      "resolution": "fixed"
+    }
+  ]
+}
