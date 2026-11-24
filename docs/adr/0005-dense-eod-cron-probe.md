@@ -12,14 +12,20 @@ and provider capacity.
 
 ## Decision
 
-1. Schedule `.github/workflows/cronjob.yml` every 30 minutes from 20:00 through
-   03:00 UTC; do not cancel an in-progress run.
+1. Schedule `.github/workflows/cronjob.yml` every 30 minutes at minutes 07 and 37
+   from 20:00 through 02:00 UTC, plus 03:07 UTC; do not cancel an in-progress
+   run. The offset avoids the busiest `:00`/`:30` GitHub scheduler slots without
+   narrowing the overnight window.
 2. Run a slim `scripts/cron_probe.py` job first. It resolves each market's
    LastCompletedSession and PriorCompletedSession, then emits `needs_work=true`
    when either session is not `is_session_published`.
-3. Run full dependency installation and `cronjob.py` only when probe emits work.
+3. Cache separate probe and ingest virtual environments by operating system,
+   architecture, Python version, and requirements hash, with restore fallbacks.
+   Both paths install from their locked requirements and run `pip check`; a cache
+   never bypasses dependency integrity validation.
+4. Run full dependency installation and `cronjob.py` only when probe emits work.
    A `workflow_dispatch` `target_date` forces ingest for explicit backfills.
-4. Keep the same published-session gate in `cronjob.py`. It skips a market when
+5. Keep the same published-session gate in `cronjob.py`. It skips a market when
    both sessions are already published, protecting manual or future callers that
    bypass the workflow probe.
 

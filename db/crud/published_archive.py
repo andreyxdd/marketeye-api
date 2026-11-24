@@ -141,6 +141,31 @@ async def get_artifact_payload(
     return _decode_payload(row["payload"])
 
 
+async def get_latest_artifact_date(
+    pool: asyncpg.Pool,
+    artifact_key: str,
+    market: str = DEFAULT_MARKET,
+) -> Optional[str]:
+    """Return the newest archived session for an artifact, without validating it."""
+    market = normalize_market(market)
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT session_date
+            FROM published_artifacts
+            WHERE market = $1
+              AND artifact_key = $2
+            ORDER BY session_date DESC
+            LIMIT 1
+            """,
+            market,
+            artifact_key,
+        )
+    if row is None:
+        return None
+    return row["session_date"].isoformat()
+
+
 async def get_ticker_payload(
     pool: asyncpg.Pool,
     date_string: str,

@@ -74,8 +74,17 @@ class CronPhaseError:
 
 
 @dataclass
+class CronPhaseTiming:
+    market: str
+    date: str
+    phase: str
+    elapsed_seconds: float
+
+
+@dataclass
 class CronRunReport:
     errors: list[CronPhaseError] = field(default_factory=list)
+    timings: list[CronPhaseTiming] = field(default_factory=list)
 
     def record(
         self, market: str, date: str, phase: str, error: Exception | str
@@ -96,15 +105,37 @@ class CronRunReport:
             subject="Cronjob Report",
         )
 
+    def record_timing(
+        self, market: str, date: str, phase: str, elapsed_seconds: float
+    ) -> None:
+        self.timings.append(
+            CronPhaseTiming(
+                market=market,
+                date=date,
+                phase=phase,
+                elapsed_seconds=elapsed_seconds,
+            )
+        )
+
     def has_errors(self) -> bool:
         return bool(self.errors)
 
     def summary_text(self) -> str:
-        if not self.errors:
-            return "Cron run completed with no recorded phase errors."
-        lines = ["Cron run completed with errors:"]
-        for item in self.errors:
-            lines.append(f"- {item.market} {item.date} [{item.phase}]: {item.error}")
+        if self.errors:
+            lines = ["Cron run completed with errors:"]
+            for item in self.errors:
+                lines.append(
+                    f"- {item.market} {item.date} [{item.phase}]: {item.error}"
+                )
+        else:
+            lines = ["Cron run completed with no recorded phase errors."]
+        if self.timings:
+            lines.append("Phase timings (seconds):")
+            for item in self.timings:
+                lines.append(
+                    f"- {item.market} {item.date} [{item.phase}]: "
+                    f"{item.elapsed_seconds}s"
+                )
         return "\n".join(lines)
 
 
@@ -177,13 +208,22 @@ async def run_crud_ops(
         if pg_pool is not None and await is_archive_complete(
             pg_pool, date_to_remove, market
         ):
+            phase_start = time()
             try:
                 await prune_mongo_session_date(
                     conn, date_to_remove, market, pool=pg_pool
                 )
             except Exception as prune_error:  # pylint: disable=broad-except
                 report.record(market, date_to_insert, "prune", prune_error)
+            finally:
+                report.record_timing(
+                    market,
+                    date_to_insert,
+                    "prune",
+                    round(time() - phase_start, 2),
+                )
 
+        phase_start = time()
         try:
             msg_compute = await analytics_service.ingest_base_analytics_for_market(
                 conn, date_to_insert, market=market
@@ -193,10 +233,18 @@ async def run_crud_ops(
         except Exception as ingest_error:  # pylint: disable=broad-except
             report.record(market, date_to_insert, "ingest", ingest_error)
             return "\n\n".join(msgs)
+        finally:
+            report.record_timing(
+                market,
+                date_to_insert,
+                "ingest",
+                round(time() - phase_start, 2),
+            )
 
         # TO only: skip publish when frequencies lookback is too shallow
         # (ceiling: skip publish only — no auto-backfill).
         skip_publish_for_density = False
+        phase_start = time()
         try:
             msg_track = await put_top_tickers(conn, date_to_insert, market=market)
             msgs.append(msg_track)
@@ -229,6 +277,13 @@ async def run_crud_ops(
                         market, date_to_insert, "track_density", density_error
                     )
                     skip_publish_for_density = True
+        finally:
+            report.record_timing(
+                market,
+                date_to_insert,
+                "track",
+                round(time() - phase_start, 2),
+            )
 
         if not ingest_ok:
             return "\n\n".join(msgs)
@@ -250,6 +305,7 @@ async def run_crud_ops(
             )
             return "\n\n".join(msgs)
 
+        phase_start = time()
         try:
             publish_result = await _publish_day_with_retry(
                 conn, pg_pool, date_to_insert, market
@@ -269,6 +325,13 @@ async def run_crud_ops(
         except Exception as publish_error:  # pylint: disable=broad-except
             report.record(market, date_to_insert, "publish", publish_error)
             msgs.append("publish_service.publish_day failed")
+        finally:
+            report.record_timing(
+                market,
+                date_to_insert,
+                "publish",
+                round(time() - phase_start, 2),
+            )
 
         return "\n\n".join(msgs)
     finally:

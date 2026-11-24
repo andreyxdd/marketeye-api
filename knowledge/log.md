@@ -6,6 +6,8 @@
 
 **Accepted direction:** Keep ingestion and manual recovery on GitHub Actions. Move schedules off `:00`/`:30`, cache workflow Python environments, record prune/ingest/track/publish timings, and add a public `GET /freshness` aggregate for US/TO analytics and StockBounce v1/v2. An external UptimeRobot check alerts after 60 minutes of continuous staleness through direct Telegram Bot API down/up webhooks to the existing dev bot/channel. Contract: `knowledge/apis/freshness.md`. Deployment and external-service configuration remain manual follow-up actions after implementation review.
 
+**Implementation handoff:** The endpoint implements the accepted 200/503 contract with no-store responses, retry headers, bounded provider probes, and a 60-second server cache. Scheduled slots now use `:07`/`:37` plus 03:07, with separate requirements-keyed probe/ingest virtual-environment caches and `pip check`. Cron summaries include attempted phase durations. Manual rollout, single-attempt webhook caveats, non-destructive down/up tests, recovery, and next-session checks are in `docs/handoff/production-freshness-monitoring.md`; the incident baseline and comparison commands are in `docs/handoff/cron-performance.md`. No deployment, external resource, ingestion dispatch, or Telegram delivery was performed by implementation.
+
 ## 2026-11-18 — TO Frequencies blank on latest (density + prune)
 
 **Symptom:** Latest TO session returned 0/20 nonempty Frequencies for Standard (`:all`) and Micro (`lte5`). Postgres dates ≤2026-11-13 still good; Mongo lookback mostly gone.

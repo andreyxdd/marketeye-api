@@ -1,6 +1,7 @@
-"""Liveness and readiness probe endpoints."""
+"""Liveness, readiness, and production freshness probe endpoints."""
 
 import asyncio
+from time import monotonic
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -8,12 +9,17 @@ from typing import Optional
 
 from core.build_info import APP_VERSION, get_deploy_revision
 from db.mongodb import get_database
+from db.postgres import get_pool as get_postgres_pool
 from db.postgres import ping as ping_postgres
 from db.redis import ping as ping_redis
+from services.cron_dates import freshness_report
 
 health_router = APIRouter()
 
 _PROBE_TIMEOUT_SECONDS = 5.0
+_FRESHNESS_CACHE_SECONDS = 60.0
+_freshness_cache = None
+_freshness_cache_lock = asyncio.Lock()
 
 
 def _probe_payload(
@@ -73,3 +79,66 @@ async def readyz():
         payload["status"] = "unavailable"
         return JSONResponse(status_code=503, content=payload)
     return payload
+
+
+def _unavailable_freshness_report() -> dict:
+    from datetime import datetime, timezone
+
+    us_components = {
+        name: {"status": "unavailable", "latest_session": None}
+        for name in ("analytics", "stock_bounce_v1", "stock_bounce_v2")
+    }
+    return {
+        "status": "unavailable",
+        "checked_at": datetime.now(timezone.utc)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
+        "markets": {
+            "US": {"expected_session": None, "components": us_components},
+            "TO": {
+                "expected_session": None,
+                "components": {
+                    "analytics": {"status": "unavailable", "latest_session": None}
+                },
+            },
+        },
+    }
+
+
+async def _cached_freshness_report():
+    global _freshness_cache
+    now = monotonic()
+    if (
+        _freshness_cache is not None
+        and now - _freshness_cache[0] < _FRESHNESS_CACHE_SECONDS
+    ):
+        return _freshness_cache[1]
+    async with _freshness_cache_lock:
+        now = monotonic()
+        if (
+            _freshness_cache is not None
+            and now - _freshness_cache[0] < _FRESHNESS_CACHE_SECONDS
+        ):
+            return _freshness_cache[1]
+        try:
+            pool = await get_postgres_pool()
+            report = await freshness_report(pool)
+        except Exception:  # pylint: disable=broad-except
+            import logging
+
+            logging.getLogger(__name__).exception("Freshness report generation failed")
+            report = _unavailable_freshness_report()
+        _freshness_cache = (monotonic(), report)
+        return report
+
+
+@health_router.get("/freshness", tags=["Health"])
+async def freshness():
+    """Return production archive freshness without exposing application data."""
+    report = await _cached_freshness_report()
+    headers = {"Cache-Control": "no-store"}
+    status_code = 200
+    if report["status"] != "fresh":
+        status_code = 503
+        headers["Retry-After"] = "300"
+    return JSONResponse(status_code=status_code, content=report, headers=headers)

@@ -2,14 +2,14 @@ name: cronjob
 
 on:
   schedule:
-    - cron: "00,30 20 * * *"
-    - cron: "00,30 21 * * *"
-    - cron: "00,30 22 * * *"
-    - cron: "00,30 23 * * *"
-    - cron: "00,30 0 * * *"
-    - cron: "00,30 1 * * *"
-    - cron: "00,30 2 * * *"
-    - cron: "00 3 * * *"
+    - cron: "07,37 20 * * *"
+    - cron: "07,37 21 * * *"
+    - cron: "07,37 22 * * *"
+    - cron: "07,37 23 * * *"
+    - cron: "07,37 0 * * *"
+    - cron: "07,37 1 * * *"
+    - cron: "07,37 2 * * *"
+    - cron: "07 3 * * *"
   workflow_dispatch:
     inputs:
       target_date:
@@ -60,16 +60,21 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Set up cache for probe dependencies
+      - name: Set up cache for probe virtual environment
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-probe-${{ hashFiles('requirements-probe.txt') }}
+          path: .venv-probe
+          key: ${{ runner.os }}-${{ runner.arch }}-py3.10-probe-${{ hashFiles('requirements-probe.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-probe-
+            ${{ runner.os }}-${{ runner.arch }}-py3.10-probe-
+
+      - name: Create probe virtual environment
+        run: python -m venv .venv-probe
 
       - name: Install probe dependencies
-        run: pip install -r requirements-probe.txt
+        run: |
+          .venv-probe/bin/python -m pip install -r requirements-probe.txt
+          .venv-probe/bin/python -m pip check
 
       - name: Check unpublished sessions
         id: check
@@ -77,7 +82,7 @@ jobs:
           if [ -n "${{ inputs.target_date }}" ]; then
             echo "needs_work=true" >> "$GITHUB_OUTPUT"
           else
-            python scripts/cron_probe.py
+            .venv-probe/bin/python scripts/cron_probe.py
           fi
 
     outputs:
@@ -123,16 +128,21 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Set up cache for Python dependencies
+      - name: Set up cache for ingest virtual environment
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          path: .venv-ingest
+          key: ${{ runner.os }}-${{ runner.arch }}-py3.10-ingest-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-${{ runner.arch }}-py3.10-ingest-
+
+      - name: Create ingest virtual environment
+        run: python -m venv .venv-ingest
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        run: |
+          .venv-ingest/bin/python -m pip install -r requirements.txt
+          .venv-ingest/bin/python -m pip check
 
       - name: Update stocks 'analytics' collection
-        run: python cronjob.py ${{ inputs.target_date }}
+        run: .venv-ingest/bin/python cronjob.py ${{ inputs.target_date }}

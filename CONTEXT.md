@@ -22,7 +22,9 @@
 | **LastCompletedSession** | Latest EOD bar date available from the market data provider for a **Market** |
 | **PriorCompletedSession** | Trading session immediately before **LastCompletedSession** (not calendar yesterday) |
 | **Cron probe** | Slim scheduled preflight: resolves latest sessions for US and TO, checks `is_session_published`, then emits GitHub Actions `needs_work` without ticker-universe fan-out |
-| **Dense EOD schedule** | GitHub Actions runs every 30 minutes from 20:00 through 03:00 UTC; full ingest runs only when Cron probe reports work (or an explicit `target_date` is dispatched) |
+| **Dense EOD schedule** | GitHub Actions runs at minutes 07 and 37 from 20:00 through 02:00 UTC, plus 03:07; separate cached probe/ingest virtual environments are keyed by OS, architecture, Python, and requirements and validated with `pip check`. Full ingest runs only when Cron probe reports work (or an explicit `target_date` is dispatched) |
+| **Production freshness** | Public `GET /freshness` reports provider expected sessions and US/TO analytics plus US StockBounce v1/v2 archive status. `200` means every component is fresh; stale/unavailable reports return `503`, `Retry-After: 300`, and all responses use `Cache-Control: no-store`. A 60-second server cache bounds provider calls. External UptimeRobot/Telegram setup and manual recovery are documented in `docs/handoff/production-freshness-monitoring.md`; no monitor-driven ingestion |
+| **Cron phase timings** | `CronRunReport` records elapsed seconds for every attempted prune/ingest/track/publish phase by market/date and prints them in the final summary. Baseline and comparison commands: `docs/handoff/cron-performance.md` |
 | **EodhdUSProvider** | US implementation wrapping EODHD (`.US`, NYSE+NASDAQ) |
 | **EodhdTOProvider** | TO implementation wrapping EODHD |
 | **Price band** | One of four close-price ranges for Micro screening: `lte5`, `5to10`, `10to20`, `20to50` |
