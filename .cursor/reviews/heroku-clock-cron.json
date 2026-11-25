@@ -1,0 +1,68 @@
+{
+  "schema_version": 2,
+  "source": "andx-execute-and-review",
+  "plan": ".cursor/plans/heroku-clock-cron.plan.md",
+  "target_branch": "main",
+  "base_sha": "5dceff6198923fc081b8fc705e06b418ea5b8bd5",
+  "head_sha": "5813bfafe9f175a3c973534a616d6728d20b1752",
+  "review_head_sha": "341a98229cfd13e39bacfa4e92a750afc20af695",
+  "reviewed_at": "2026-11-25T04:05:04.199Z",
+  "verdict": "PASS",
+  "secrets_scan": "NOT_RUN",
+  "findings": [
+    {
+      "id": "test-cron-run-lock-py-acquire-run-lock",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "tests/cron/test_cron_run_lock.py:332",
+      "finding": "acquire_run_lock is stubbed in tests, so the real SQL, the DATABASE_URL guard and normalize_database_url have no automated coverage (deferred to step-3 per plan).",
+      "reviewers": [
+        "spec"
+      ]
+    },
+    {
+      "id": "cronjob-py-run-locked-lock-held-on-an",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "cronjob.py:_run_locked",
+      "finding": "Lock held on an idle dedicated connection for the whole run; an idle timeout or network drop would silently release the session lock mid-run, allowing a second run to double-ingest. No keepalive or check.",
+      "reviewers": [
+        "spec"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "cron-clock-py-run-slot-probe-runs-with",
+      "status": "confirmed",
+      "severity": "medium",
+      "location": "scripts/cron_clock.py:run_slot",
+      "finding": "Probe runs with capture_output and is printed only after exit, not streamed; a hung probe logs nothing and has no timeout.",
+      "reviewers": [
+        "spec"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "cron-clock-py-run-slot-when-the-subprocess",
+      "status": "confirmed",
+      "severity": "low",
+      "location": "scripts/cron_clock.py:run_slot",
+      "finding": "When the subprocess raises (e.g. OSError), the log line reads exit=None plus an extra error: line, a slight format deviation from the plan.",
+      "reviewers": [
+        "spec"
+      ],
+      "resolution": "fixed"
+    },
+    {
+      "id": "cronjob-py-main-held-lock-path-exits-0",
+      "status": "confirmed",
+      "severity": "low",
+      "location": "cronjob.py:main",
+      "finding": "Held-lock path exits 0 without touching cron-failed state; no scope creep; both steps otherwise meet success criteria.",
+      "reviewers": [
+        "spec"
+      ],
+      "resolution": "fixed"
+    }
+  ]
+}
