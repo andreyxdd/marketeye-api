@@ -2,8 +2,11 @@
 
 from datetime import datetime, timezone
 
+import subprocess
+
 import pytest
 
+import scripts.cron_clock as cron_clock
 from scripts.cron_clock import DEFAULT_SLOTS, next_slot, parse_slots
 
 
@@ -48,3 +51,20 @@ SLOTS = [(20, 7), (23, 37), (0, 7), (3, 7)]
 )
 def test_next_slot(now, expected):
     assert next_slot(now, SLOTS) == expected
+
+
+def test_run_slot_probe_timeout_skips_cronjob(monkeypatch, capsys):
+    calls = []
+
+    def run_stub(cmd, **kwargs):
+        calls.append(cmd)
+        raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout"))
+
+    monkeypatch.setattr(cron_clock.subprocess, "run", run_stub)
+
+    cron_clock.run_slot("20:07")
+
+    assert len(calls) == 1 and calls[0][-1] == "scripts/cron_probe.py"
+    out = capsys.readouterr().out
+    assert "TimeoutExpired" in out
+    assert "cron_clock slot=20:07 needs_work=false exit=None" in out

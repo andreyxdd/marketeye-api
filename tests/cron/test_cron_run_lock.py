@@ -112,3 +112,28 @@ def test_main_releases_lock_when_run_raises(monkeypatch):
         cronjob.main()
 
     assert conn.closed
+
+
+def test_main_lock_error_alerts_and_exits_nonzero(monkeypatch):
+    calls = []
+    notified = []
+
+    async def lock_error():
+        raise OSError("connection refused")
+
+    async def ingest_unexpected(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(cronjob, "acquire_run_lock", lock_error)
+    monkeypatch.setattr(cronjob, "cronjob", ingest_unexpected)
+    monkeypatch.setattr(cronjob, "run_explicit_dates", ingest_unexpected)
+    monkeypatch.setattr(cronjob, "notify_developer", lambda **kw: notified.append(kw))
+    monkeypatch.setattr(cronjob, "_parse_args", _args([]))
+
+    with pytest.raises(SystemExit) as exc_info:
+        cronjob.main()
+
+    assert exc_info.value.code == 1
+    assert cronjob.cron_failed() is True
+    assert calls == []
+    assert "connection refused" in notified[0]["body"]

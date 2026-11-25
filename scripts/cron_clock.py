@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+PROBE_TIMEOUT_S = 300  # probe only; cronjob runs as long as it needs
 
 DEFAULT_SLOTS = (
     "20:07,20:37,21:07,21:37,22:07,22:37,23:07,23:37,"
@@ -46,6 +47,7 @@ def run_slot(label: str) -> None:
         probe = subprocess.run(
             [sys.executable, "scripts/cron_probe.py"],
             cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+            timeout=PROBE_TIMEOUT_S,
         )
         print(probe.stdout, end="", flush=True)
         print(probe.stderr, end="", file=sys.stderr, flush=True)

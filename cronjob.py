@@ -509,7 +509,13 @@ async def acquire_run_lock():
 
 
 async def _run_locked(args):
-    lock_conn = await acquire_run_lock()
+    try:
+        lock_conn = await acquire_run_lock()
+    except Exception as e:  # pylint: disable=broad-except
+        print("cronjob.py: could not acquire run lock.")
+        print("Error message:", e)
+        _notify_cron_failure(e)
+        return
     if lock_conn is None:
         print("cron busy: another run holds the lock", flush=True)
         return
