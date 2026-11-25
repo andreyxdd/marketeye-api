@@ -14,7 +14,7 @@ from typing import Optional
 from time import time
 import asyncpg
 from core.markets import MARKETS, list_markets, normalize_market
-from core.settings import MONGO_HOT_WINDOW_DAYS
+from core.settings import DATABASE_URL, MONGO_HOT_WINDOW_DAYS
 from db.crud.analytics import get_analytics_tickers
 from db.crud.tracking import (
     count_prior_unbanded_tracking_sessions,
@@ -36,6 +36,7 @@ from db.postgres import (
     connect as connect_postgres,
     get_pool as get_postgres_pool,
     close as close_postgres,
+    normalize_database_url,
 )
 from utils.handle_telegram import notify_developer
 from utils.handle_datetimes import (
@@ -489,15 +490,44 @@ async def run_explicit_dates(
     await _finalize_cron_run(report, start_time, [])
 
 
+# Fixed key for pg_try_advisory_lock: one cron run at a time (clock dyno, GHA, manual).
+CRON_LOCK_KEY = 74_032_601
+
+
+async def acquire_run_lock():
+    """Return a dedicated connection holding the cron lock, or None if another run holds it.
+
+    Postgres drops the lock when this connection closes or the process dies.
+    """
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not configured")
+    conn = await asyncpg.connect(normalize_database_url(DATABASE_URL))
+    if await conn.fetchval("SELECT pg_try_advisory_lock($1)", CRON_LOCK_KEY):
+        return conn
+    await conn.close()
+    return None
+
+
+async def _run_locked(args):
+    lock_conn = await acquire_run_lock()
+    if lock_conn is None:
+        print("cron busy: another run holds the lock", flush=True)
+        return
+    try:
+        if args.dates:
+            markets = args.markets or list_markets()
+            await run_explicit_dates(args.dates, markets=markets)
+        else:
+            await cronjob(markets=args.markets)
+    finally:
+        await lock_conn.close()
+
+
 def main():
     args = _parse_args()
 
     try:
-        if args.dates:
-            markets = args.markets or list_markets()
-            asyncio.run(run_explicit_dates(args.dates, markets=markets))
-        else:
-            asyncio.run(cronjob(markets=args.markets))
+        asyncio.run(_run_locked(args))
     except (KeyboardInterrupt, SystemExit):
         raise
 
