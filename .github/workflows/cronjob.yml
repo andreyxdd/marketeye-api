@@ -1,15 +1,6 @@
 name: cronjob
 
 on:
-  schedule:
-    - cron: "07,37 20 * * *"
-    - cron: "07,37 21 * * *"
-    - cron: "07,37 22 * * *"
-    - cron: "07,37 23 * * *"
-    - cron: "07,37 0 * * *"
-    - cron: "07,37 1 * * *"
-    - cron: "07,37 2 * * *"
-    - cron: "07 3 * * *"
   workflow_dispatch:
     inputs:
       target_date:
