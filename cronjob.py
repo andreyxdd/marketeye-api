@@ -501,7 +501,17 @@ async def acquire_run_lock():
     """
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL is not configured")
-    conn = await asyncpg.connect(normalize_database_url(DATABASE_URL))
+    # Server-side TCP keepalives: this connection sits idle for the whole run, and an idle flow
+    # dropped by the network would release the lock early. Count x interval tolerates a ~5 min
+    # blip before Postgres gives up on the connection (and the lock).
+    conn = await asyncpg.connect(
+        normalize_database_url(DATABASE_URL),
+        server_settings={
+            "tcp_keepalives_idle": "60",
+            "tcp_keepalives_interval": "30",
+            "tcp_keepalives_count": "10",
+        },
+    )
     if await conn.fetchval("SELECT pg_try_advisory_lock($1)", CRON_LOCK_KEY):
         return conn
     await conn.close()

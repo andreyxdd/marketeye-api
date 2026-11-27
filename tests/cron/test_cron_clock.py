@@ -61,10 +61,31 @@ def test_run_slot_probe_timeout_skips_cronjob(monkeypatch, capsys):
         raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout"))
 
     monkeypatch.setattr(cron_clock.subprocess, "run", run_stub)
+    monkeypatch.setattr(cron_clock, "alert_timeout", lambda *a: None)
 
     cron_clock.run_slot("20:07")
 
     assert len(calls) == 1 and calls[0][-1] == "scripts/cron_probe.py"
     out = capsys.readouterr().out
-    assert "TimeoutExpired" in out
-    assert "cron_clock slot=20:07 needs_work=false exit=None" in out
+    assert "timeout: scripts/cron_probe.py" in out
+    assert "cron_clock slot=20:07 needs_work=false exit=timeout" in out
+
+
+def test_run_slot_cronjob_timeout_alerts_and_continues(monkeypatch, capsys):
+    alerts = []
+
+    def run_stub(cmd, **kwargs):
+        if cmd[-1] == "scripts/cron_probe.py":
+            return subprocess.CompletedProcess(cmd, 0, stdout="needs_work=true\n", stderr="")
+        assert kwargs["timeout"] == cron_clock.CRONJOB_TIMEOUT_S
+        raise subprocess.TimeoutExpired(cmd, kwargs["timeout"])
+
+    monkeypatch.setattr(cron_clock.subprocess, "run", run_stub)
+    monkeypatch.setattr(cron_clock, "alert_timeout", lambda label, err: alerts.append(label))
+
+    cron_clock.run_slot("21:37")
+
+    out = capsys.readouterr().out
+    assert alerts == ["21:37"]
+    assert "cron_clock slot=21:37 timeout: cronjob.py" in out
+    assert "cron_clock slot=21:37 needs_work=true exit=timeout" in out

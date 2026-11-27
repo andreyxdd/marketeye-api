@@ -420,18 +420,25 @@ async def ingest_base_analytics_for_market(
     )
 
     analytics_to_insert = []
+    mismatched = []
     for ticker, ticker_base_analytics in zip(tickers_to_insert, results):
         if not ticker_base_analytics:
             continue
         date_str = bar_date_to_string(ticker_base_analytics["date"])
         if date_str != date:
-            msg.append(
-                f"services/analytics_service: skipped {ticker} — "
-                f"date mismatch {date_str} vs {date}"
-            )
+            mismatched.append(f"{ticker} ({date_str})")
             continue
         ticker_base_analytics["market"] = market
         analytics_to_insert.append(ticker_base_analytics)
+
+    if mismatched:
+        # One line, not one per ticker: hundreds of lines push slot results out of Heroku's log buffer.
+        examples = ", ".join(mismatched[:5])
+        more = f", +{len(mismatched) - 5} more" if len(mismatched) > 5 else ""
+        msg.append(
+            f"services/analytics_service: skipped {len(mismatched)} tickers for {market}"
+            f" — latest bar not on {date}: {examples}{more}"
+        )
 
     msg.append(
         f"services/analytics_service: computed {len(analytics_to_insert)} rows for {market}"

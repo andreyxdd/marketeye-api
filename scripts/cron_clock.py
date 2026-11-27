@@ -8,7 +8,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PROBE_TIMEOUT_S = 300  # probe only; cronjob runs as long as it needs
+PROBE_TIMEOUT_S = 300
+# A nightly run takes ~10 min. On timeout the child gets SIGKILL: no cron report, but the lock
+# dies with its connection and ingest skips stored tickers, so the next slot resumes.
+# Raise this if backfills need longer.
+CRONJOB_TIMEOUT_S = 60 * 60
 
 DEFAULT_SLOTS = (
     "20:07,20:37,21:07,21:37,22:07,22:37,23:07,23:37,"
@@ -41,6 +45,20 @@ def next_slot(now_utc: datetime, slots: list) -> datetime:
     )
 
 
+def alert_timeout(label: str, error: subprocess.TimeoutExpired) -> None:
+    """Telegram alert; the killed child cannot send its own."""
+    try:
+        sys.path.insert(0, str(REPO_ROOT))
+        from utils.handle_telegram import notify_developer  # pylint: disable=import-outside-toplevel
+
+        notify_developer(
+            body=f"cron_clock slot={label}: {error.cmd[-1]} killed after {error.timeout}s",
+            subject="Cronjob Report",
+        )
+    except Exception as alert_error:  # pylint: disable=broad-except
+        print(f"cron_clock slot={label} alert failed: {alert_error!r}", flush=True)
+
+
 def run_slot(label: str) -> None:
     needs_work, code = False, None
     try:
@@ -55,8 +73,13 @@ def run_slot(label: str) -> None:
         needs_work = code == 0 and "needs_work=true" in probe.stdout
         if needs_work:
             code = subprocess.run(
-                [sys.executable, "cronjob.py"], cwd=REPO_ROOT, check=False
+                [sys.executable, "cronjob.py"], cwd=REPO_ROOT, check=False,
+                timeout=CRONJOB_TIMEOUT_S,
             ).returncode
+    except subprocess.TimeoutExpired as error:
+        code = "timeout"
+        print(f"cron_clock slot={label} timeout: {error.cmd[-1]} after {error.timeout}s", flush=True)
+        alert_timeout(label, error)
     except Exception as error:  # pylint: disable=broad-except
         print(f"cron_clock slot={label} error: {error!r}", flush=True)
     print(
