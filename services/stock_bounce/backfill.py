@@ -492,12 +492,14 @@ class StockBounceBackfillV2:
             target_date = target["date"]
             declared = set(target["tickers"]) | set(target.get("macd_tickers", []))
             failed = sorted(declared & set(range_errors))
+            # ponytail: provider 404/errors exclude that ticker only; session still publishes
             if failed:
+                for ticker in failed:
+                    for universe in memberships(ticker, target):
+                        exclusions[target_date][universe] += 1
                 report["errors"][target_date] = "; ".join(
                     f"{ticker}: {range_errors[ticker]}" for ticker in failed
                 )
-                report["unpublished"].append(target_date)
-                continue
             estimated = bool(target.get("estimated", False))
             coverage = {}
             for universe in UNIVERSES:

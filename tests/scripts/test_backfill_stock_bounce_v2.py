@@ -255,6 +255,36 @@ async def test_backfill_computes_split_safe_high_and_persists_only_bounded_bars(
 
 
 @pytest.mark.asyncio
+async def test_provider_history_failure_excludes_ticker_and_still_publishes():
+    class FlakyRemote(RemoteV2):
+        async def fetch_range(self, ticker, start_date, end_date):
+            if ticker == "BAD":
+                raise RuntimeError("404 Client Error: Not Found")
+            return await super().fetch_range(ticker, start_date, end_date)
+
+    bars = {
+        "ABC": [
+            _bar("ABC", "2024-01-01", 100.0),
+            _bar("ABC", "2024-01-02", 101.0),
+        ]
+    }
+    store = MemoryStoreV2(
+        [_target(day="2024-01-02", tickers=("ABC", "BAD"), macd=("ABC", "BAD"))]
+    )
+    remote = FlakyRemote(bars)
+    runner = StockBounceBackfillV2(store, object(), remote, retry_attempts=1)
+
+    report = await runner.run(as_of=date(2024, 1, 2))
+
+    assert report["unpublished"] == []
+    assert report["published"] == ["2024-01-02"]
+    assert "BAD" in report["errors"]["2024-01-02"]
+    coverage = store.snapshots["2024-01-02"]["coverage"]
+    assert coverage["whole_market"]["exclusions_count"] >= 1
+    assert coverage["macd_history"]["exclusions_count"] >= 1
+
+
+@pytest.mark.asyncio
 async def test_resume_uses_completed_checkpoint_without_refetch_and_cleans_on_success():
     payload = {
         "bars": [
